@@ -1,0 +1,28 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+
+# Environment files (never commit real secrets/config)
+.env
+!.env.example
+
+# Database
+*.db
+*.sqlite3
+
+# Node / Frontend
+node_modules/
+dist/
+.vite/
+
+# Editor / OS
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
