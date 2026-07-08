@@ -4,6 +4,7 @@ from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
+
 class Employee(Base):
     __tablename__ = "employees"
 
@@ -11,12 +12,16 @@ class Employee(Base):
     name = Column(String, nullable=False)
     role_designation = Column(String, nullable=True)
     team = Column(String, nullable=True)
-    reporting_manager_id = Column(String, ForeignKey("employees.employee_id"), nullable=True)
+    reporting_manager_id = Column(
+        String, ForeignKey("employees.employee_id"), nullable=True
+    )
     join_date = Column(Date, nullable=True)
-    
-    employment_status = Column(String, default="active", nullable=False) 
-    
-    access_tier = Column(String, default="Employee", nullable=False)  
+
+    employment_status = Column(String, default="active", nullable=False)
+
+    access_tier = Column(String, default="Employee", nullable=False)
     contact_details = Column(String, nullable=True)
 
-    manager = relationship("Employee", remote_side=[employee_id], backref="subordinates")
+    manager = relationship(
+        "Employee", remote_side=[employee_id], backref="subordinates"
+    )
