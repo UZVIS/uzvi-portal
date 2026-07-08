@@ -1,16 +1,17 @@
-import { useEffect, useState } from 'react'
+import AnnouncementsPage from "./modules/announcements/AnnouncementsPage";
 
 function App() {
-  const [status, setStatus] = useState('checking...')
-
-  useEffect(() => {
-    fetch('/api/health')
-      .then((res) => res.json())
-      .then((data) => setStatus(data.status))
-      .catch(() => setStatus('backend unreachable'))
-  }, [])
-
-  return <h1>Backend status: {status}</h1>
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        backgroundColor: "#f5f7fa",
+        padding: "30px",
+      }}
+    >
+      <AnnouncementsPage />
+    </div>
+  );
 }
 
-export default App
+export default App;
