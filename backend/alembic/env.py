@@ -20,6 +20,9 @@ from app.modules.m0_employee.models import Base
 import app.modules.m5_onboarding.models
 import app.modules.m8_documents.models
 
+# M6 Training Module: Register models for Alembic autogeneration.
+import app.modules.training.models
+
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
