@@ -19,7 +19,7 @@ if config.config_file_name is not None:
 from app.modules.m0_employee.models import Base
 import app.modules.m5_onboarding.models
 import app.modules.m8_documents.models
-
+import app.modules.assets.models 
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
