@@ -5,16 +5,21 @@ from sqlalchemy.orm import Session
 
 from app.modules.training.database import get_db
 from app.modules.training.models import (
+    Enrollment,
     TrainingProgram,
     TrainingUnit,
 )
+
+from app.modules.m0_employee.models import Employee
+
 from app.modules.training.schemas import (
+    EnrollmentCreate,
+    EnrollmentResponse,
     TrainingProgramCreate,
     TrainingProgramResponse,
     TrainingUnitCreate,
     TrainingUnitResponse,
 )
-
 
 router = APIRouter(
     prefix="/training",
@@ -167,3 +172,82 @@ def list_training_units(
         .order_by(TrainingUnit.sequence)
         .all()
     )
+
+@router.post(
+    "/enrollments",
+    response_model=EnrollmentResponse,
+    status_code=201,
+)
+def create_enrollment(
+    enrollment_in: EnrollmentCreate,
+    db: Session = Depends(get_db),
+):
+    """
+    Enroll an existing employee into a training program.
+    """
+
+    employee = (
+        db.query(Employee)
+        .filter(Employee.employee_id == enrollment_in.employee_id)
+        .first()
+    )
+
+    if not employee:
+        raise HTTPException(
+            status_code=404,
+            detail="Employee not found.",
+        )
+
+    program = (
+        db.query(TrainingProgram)
+        .filter(
+            TrainingProgram.program_id == enrollment_in.program_id
+        )
+        .first()
+    )
+
+    if not program:
+        raise HTTPException(
+            status_code=404,
+            detail="Training program not found.",
+        )
+
+    existing_enrollment = (
+        db.query(Enrollment)
+        .filter(
+            Enrollment.employee_id == enrollment_in.employee_id,
+            Enrollment.program_id == enrollment_in.program_id,
+        )
+        .first()
+    )
+
+    if existing_enrollment:
+        raise HTTPException(
+            status_code=400,
+            detail="Employee is already enrolled in this program.",
+        )
+
+    new_enrollment = Enrollment(
+        employee_id=enrollment_in.employee_id,
+        program_id=enrollment_in.program_id,
+    )
+
+    db.add(new_enrollment)
+    db.commit()
+    db.refresh(new_enrollment)
+
+    return new_enrollment
+
+
+@router.get(
+    "/enrollments",
+    response_model=List[EnrollmentResponse],
+)
+def list_enrollments(
+    db: Session = Depends(get_db),
+):
+    """
+    Return all training enrollments.
+    """
+
+    return db.query(Enrollment).all()

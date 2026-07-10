@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.modules.m0_employee.models import Base
+from app.modules.m0_employee.models import Base, Employee
 from app.modules.training.database import get_db
 from app.modules.training.router import router
 
@@ -46,6 +46,33 @@ client = TestClient(app)
 def setup_function():
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
+
+
+# --------------------------------------------------
+# Test Helper
+# --------------------------------------------------
+
+
+def create_test_employee():
+    """
+    Create an employee required for enrollment API tests.
+    """
+
+    db = TestingSessionLocal()
+
+    employee = Employee(
+        employee_id="EMP001",
+        name="Test Employee",
+    )
+
+    db.add(employee)
+    db.commit()
+    db.close()
+
+
+# --------------------------------------------------
+# Training Program API Tests
+# --------------------------------------------------
 
 
 def test_create_training_program():
@@ -101,6 +128,11 @@ def test_duplicate_training_program():
     assert response.json()["detail"] == (
         "A training program with this name already exists."
     )
+
+
+# --------------------------------------------------
+# Training Unit API Tests
+# --------------------------------------------------
 
 
 def test_create_training_unit():
@@ -215,4 +247,145 @@ def test_unit_for_missing_program():
     assert response.status_code == 404
     assert response.json()["detail"] == (
         "Training program not found."
+    )
+
+
+# --------------------------------------------------
+# Enrollment API Tests
+# --------------------------------------------------
+
+
+def test_create_enrollment():
+    create_test_employee()
+
+    program_response = client.post(
+        "/training/programs",
+        json={
+            "name": "Python Full Stack Development",
+        },
+    )
+
+    program_id = program_response.json()["program_id"]
+
+    response = client.post(
+        "/training/enrollments",
+        json={
+            "employee_id": "EMP001",
+            "program_id": program_id,
+        },
+    )
+
+    assert response.status_code == 201
+
+    data = response.json()
+
+    assert data["employee_id"] == "EMP001"
+    assert data["program_id"] == program_id
+    assert "enrolled_at" in data
+
+
+def test_list_enrollments():
+    create_test_employee()
+
+    program_response = client.post(
+        "/training/programs",
+        json={
+            "name": "Python Full Stack Development",
+        },
+    )
+
+    program_id = program_response.json()["program_id"]
+
+    client.post(
+        "/training/enrollments",
+        json={
+            "employee_id": "EMP001",
+            "program_id": program_id,
+        },
+    )
+
+    response = client.get("/training/enrollments")
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert len(data) == 1
+    assert data[0]["employee_id"] == "EMP001"
+    assert data[0]["program_id"] == program_id
+
+
+def test_enrollment_missing_employee():
+    program_response = client.post(
+        "/training/programs",
+        json={
+            "name": "Python Full Stack Development",
+        },
+    )
+
+    program_id = program_response.json()["program_id"]
+
+    response = client.post(
+        "/training/enrollments",
+        json={
+            "employee_id": "UNKNOWN",
+            "program_id": program_id,
+        },
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == (
+        "Employee not found."
+    )
+
+
+def test_enrollment_missing_program():
+    create_test_employee()
+
+    response = client.post(
+        "/training/enrollments",
+        json={
+            "employee_id": "EMP001",
+            "program_id": 99999,
+        },
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == (
+        "Training program not found."
+    )
+
+
+def test_duplicate_enrollment():
+    create_test_employee()
+
+    program_response = client.post(
+        "/training/programs",
+        json={
+            "name": "Python Full Stack Development",
+        },
+    )
+
+    program_id = program_response.json()["program_id"]
+
+    request_body = {
+        "employee_id": "EMP001",
+        "program_id": program_id,
+    }
+
+    first_response = client.post(
+        "/training/enrollments",
+        json=request_body,
+    )
+
+    assert first_response.status_code == 201
+
+    second_response = client.post(
+        "/training/enrollments",
+        json=request_body,
+    )
+
+    assert second_response.status_code == 400
+    assert second_response.json()["detail"] == (
+        "Employee is already enrolled in this program."
     )
