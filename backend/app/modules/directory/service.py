@@ -1,7 +1,8 @@
+
 from sqlalchemy.orm import Session
 
-from app.modules.directory.models import Employee
-from app.modules.directory.schemas import EmployeeCreate, EmployeeUpdate
+from app.modules.directory.models import Employee, Team
+from app.modules.directory.schemas import EmployeeCreate, EmployeeUpdate, TeamCreate
 
 
 class EmployeeAlreadyExists(Exception):
@@ -10,6 +11,26 @@ class EmployeeAlreadyExists(Exception):
 
 class EmployeeNotFound(Exception):
     pass
+
+
+class TeamAlreadyExists(Exception):
+    pass
+
+
+def create_team(db: Session, team_in: TeamCreate) -> Team:
+    existing = db.query(Team).filter(Team.team_id == team_in.team_id).first()
+    if existing:
+        raise TeamAlreadyExists(team_in.team_id)
+
+    new_team = Team(**team_in.model_dump())
+    db.add(new_team)
+    db.commit()
+    db.refresh(new_team)
+    return new_team
+
+
+def list_teams(db: Session) -> list[Team]:
+    return db.query(Team).all()
 
 
 def create_employee(db: Session, employee_in: EmployeeCreate) -> Employee:
@@ -29,7 +50,7 @@ def get_employee(db: Session, employee_id: str) -> Employee | None:
 
 
 def list_active_employees(db: Session) -> list[Employee]:
-
+  
     return db.query(Employee).filter(Employee.employment_status == "active").all()
 
 

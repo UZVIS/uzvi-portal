@@ -5,11 +5,12 @@ from typing import Optional
 
 class DocumentBase(BaseModel):
     employee_id: str = Field(..., description="The owner of the document record")
-    document_type: str = Field(
+    uploaded_by: str = Field(..., description="Employee ID of whoever uploaded this document")
+    doc_type: str = Field(
         ..., description="Type categorization (e.g., id_proof, offer_letter)"
     )
     file_path: str = Field(..., description="Secure local or cloud target path link")
-    expiry_date: Optional[date] = Field(
+    retention_expiry: Optional[date] = Field(
         None, description="DPDP retention compliance target limit tracking"
     )
 
@@ -28,7 +29,7 @@ class DocumentResponse(DocumentBase):
 class DocumentAccessLogResponse(BaseModel):
     log_id: int
     document_id: str
-    actor_id: str
+    accessed_by: str
     action: str
     timestamp: datetime
 

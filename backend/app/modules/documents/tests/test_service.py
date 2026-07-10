@@ -27,7 +27,8 @@ def test_create_document(db):
         DocumentCreate(
             document_id="D001",
             employee_id="E001",
-            document_type="offer_letter",
+            uploaded_by="E001",
+            doc_type="offer_letter",
             file_path="/secure/E001/offer_letter.pdf",
         ),
     )
@@ -40,7 +41,8 @@ def test_view_document_writes_access_log(db):
         DocumentCreate(
             document_id="D001",
             employee_id="E001",
-            document_type="offer_letter",
+            uploaded_by="E001",
+            doc_type="offer_letter",
             file_path="/secure/E001/offer_letter.pdf",
         ),
     )

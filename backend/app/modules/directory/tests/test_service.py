@@ -4,7 +4,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.database import Base
 from app.modules.directory import service
-from app.modules.directory.schemas import EmployeeCreate, EmployeeUpdate
+from app.modules.directory.schemas import EmployeeCreate, EmployeeUpdate, TeamCreate
 
 
 @pytest.fixture
@@ -44,11 +44,28 @@ def test_list_active_excludes_exited(db):
 
 
 def test_update_employee(db):
+    service.create_team(db, TeamCreate(team_id="T1", name="Delivery"))
     service.create_employee(db, EmployeeCreate(employee_id="E001", name="Asha Rao"))
-    updated = service.update_employee(db, "E001", EmployeeUpdate(team="Delivery"))
-    assert updated.team == "Delivery"
+    updated = service.update_employee(db, "E001", EmployeeUpdate(team_id="T1"))
+    assert updated.team_id == "T1"
 
 
 def test_update_missing_employee_raises(db):
     with pytest.raises(service.EmployeeNotFound):
-        service.update_employee(db, "NOPE", EmployeeUpdate(team="Delivery"))
+        service.update_employee(db, "NOPE", EmployeeUpdate(team_id="T1"))
+
+
+def test_create_team_and_link_employee(db):
+    team = service.create_team(db, TeamCreate(team_id="T1", name="Delivery"))
+    assert team.name == "Delivery"
+
+    emp = service.create_employee(
+        db, EmployeeCreate(employee_id="E001", name="Asha Rao", team_id="T1")
+    )
+    assert emp.team_id == "T1"
+
+
+def test_create_duplicate_team_raises(db):
+    service.create_team(db, TeamCreate(team_id="T1", name="Delivery"))
+    with pytest.raises(service.TeamAlreadyExists):
+        service.create_team(db, TeamCreate(team_id="T1", name="Delivery"))

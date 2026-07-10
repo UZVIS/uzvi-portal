@@ -7,7 +7,12 @@ import app.modules.directory.models  # noqa: F401 - registers Employee for the F
 from app.modules.directory import service as directory_service
 from app.modules.directory.schemas import EmployeeCreate
 from app.modules.onboarding import service
-from app.modules.onboarding.schemas import OnboardingInstanceCreate, TaskCompletionCreate
+from app.modules.onboarding.schemas import (
+    OnboardingTemplateCreate,
+    OnboardingTaskCreate,
+    OnboardingInstanceCreate,
+    TaskCompletionCreate,
+)
 
 
 @pytest.fixture
@@ -21,38 +26,57 @@ def db():
     session.close()
 
 
-def test_create_instance(db):
-    instance = service.create_instance(
-        db, OnboardingInstanceCreate(instance_id="OI001", employee_id="E001")
+def _make_template_with_two_tasks(db):
+    service.create_template(db, OnboardingTemplateCreate(template_id="TPL1", name="Standard"))
+    service.add_task_to_template(
+        db,
+        OnboardingTaskCreate(
+            task_id="T1", template_id="TPL1", name="Collect ID proof", seq=1, responsible_role="hr"
+        ),
     )
-    assert instance.completion_pct == 0.0
+    service.add_task_to_template(
+        db,
+        OnboardingTaskCreate(
+            task_id="T2", template_id="TPL1", name="Issue laptop", seq=2, responsible_role="it"
+        ),
+    )
+
+
+def test_create_instance_requires_valid_template(db):
+    with pytest.raises(service.TemplateNotFound):
+        service.create_instance(
+            db, OnboardingInstanceCreate(instance_id="OI001", employee_id="E001", template_id="NOPE")
+        )
+
+
+def test_create_instance(db):
+    _make_template_with_two_tasks(db)
+    instance = service.create_instance(
+        db, OnboardingInstanceCreate(instance_id="OI001", employee_id="E001", template_id="TPL1")
+    )
+    assert service.get_completion_pct(db, instance.instance_id) == 0.0
 
 
 def test_complete_task_updates_completion_pct(db):
-    service.create_instance(db, OnboardingInstanceCreate(instance_id="OI001", employee_id="E001"))
+    _make_template_with_two_tasks(db)
+    service.create_instance(
+        db, OnboardingInstanceCreate(instance_id="OI001", employee_id="E001", template_id="TPL1")
+    )
 
     service.complete_task(
-        db,
-        TaskCompletionCreate(
-            task_id="T1",
-            instance_id="OI001",
-            task_name="Collect ID proof",
-            responsible_party="hr",
-            completed_by="E001",
-        ),
+        db, TaskCompletionCreate(instance_id="OI001", task_id="T1", completed_by="E001")
     )
-    instance = service.get_instance(db, "OI001")
-    assert instance.completion_pct == 100.0
+    assert service.get_completion_pct(db, "OI001") == 50.0
+
+    service.complete_task(
+        db, TaskCompletionCreate(instance_id="OI001", task_id="T2", completed_by="E001")
+    )
+    assert service.get_completion_pct(db, "OI001") == 100.0
 
 
 def test_complete_task_missing_instance_raises(db):
+    _make_template_with_two_tasks(db)
     with pytest.raises(service.InstanceNotFound):
         service.complete_task(
-            db,
-            TaskCompletionCreate(
-                task_id="T1",
-                instance_id="DOES_NOT_EXIST",
-                task_name="Collect ID proof",
-                responsible_party="hr",
-            ),
+            db, TaskCompletionCreate(instance_id="DOES_NOT_EXIST", task_id="T1")
         )

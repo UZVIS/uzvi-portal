@@ -34,15 +34,12 @@ def get_document(db: Session, document_id: str) -> EmployeeDocument | None:
 
 
 def view_document(db: Session, document_id: str, requester_id: str) -> EmployeeDocument:
-    # NOTE: this does NOT yet enforce FR-DOC-02/06 (only the owner + HR-Restricted
-    # tier may read). It logs every access per NFR-AUD-02 but access control still
-    # needs to be wired in once auth/roles exist — flagging rather than guessing
-    # at a role check here.
+
     doc = get_document(db, document_id)
     if not doc:
         raise DocumentNotFound(document_id)
 
-    db.add(DocumentAccessLog(document_id=document_id, actor_id=requester_id, action="VIEW"))
+    db.add(DocumentAccessLog(document_id=document_id, accessed_by=requester_id, action="VIEW"))
     db.commit()
     return doc
 

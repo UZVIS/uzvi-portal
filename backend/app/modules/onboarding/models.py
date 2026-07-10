@@ -1,8 +1,34 @@
-from sqlalchemy import Column, String, Float, Boolean, DateTime, ForeignKey, Date
+from sqlalchemy import Column, String, Boolean, DateTime, ForeignKey, Date, Integer
 from sqlalchemy.orm import relationship
 import datetime
 
 from app.database import Base
+
+
+class OnboardingTemplate(Base):
+    __tablename__ = "onboarding_templates"
+
+    template_id = Column(String, primary_key=True, index=True, nullable=False)
+    name = Column(String, nullable=False)
+
+    tasks = relationship(
+        "OnboardingTask", back_populates="template", cascade="all, delete-orphan"
+    )
+    instances = relationship("OnboardingInstance", back_populates="template")
+
+
+class OnboardingTask(Base):
+    __tablename__ = "onboarding_tasks"
+
+    task_id = Column(String, primary_key=True, index=True, nullable=False)
+    template_id = Column(
+        String, ForeignKey("onboarding_templates.template_id"), nullable=False
+    )
+    name = Column(String, nullable=False)
+    seq = Column(Integer, nullable=False)
+    responsible_role = Column(String, nullable=False)
+
+    template = relationship("OnboardingTemplate", back_populates="tasks")
 
 
 class OnboardingInstance(Base):
@@ -12,30 +38,29 @@ class OnboardingInstance(Base):
     employee_id = Column(
         String, ForeignKey("employees.employee_id"), unique=True, nullable=False
     )
+    template_id = Column(
+        String, ForeignKey("onboarding_templates.template_id"), nullable=False
+    )
     start_date = Column(Date, default=datetime.date.today, nullable=False)
-    completion_pct = Column(Float, default=0.0, nullable=False)
 
     employee = relationship("Employee", foreign_keys=[employee_id])
-    tasks = relationship(
-        "OnboardingTaskCompletion",
-        back_populates="instance",
-        cascade="all, delete-orphan",
+    template = relationship("OnboardingTemplate", back_populates="instances")
+    completions = relationship(
+        "TaskCompletion", back_populates="instance", cascade="all, delete-orphan"
     )
 
 
-class OnboardingTaskCompletion(Base):
-    __tablename__ = "onboarding_task_completions"
+class TaskCompletion(Base):
+    __tablename__ = "task_completions"
 
-    task_id = Column(String, primary_key=True, index=True, nullable=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     instance_id = Column(
         String, ForeignKey("onboarding_instances.instance_id"), nullable=False
     )
-    task_name = Column(String, nullable=False)
-    responsible_party = Column(String, nullable=False)
-    is_completed = Column(Boolean, default=False, nullable=False)
-
+    task_id = Column(String, ForeignKey("onboarding_tasks.task_id"), nullable=False)
     completed_by = Column(String, ForeignKey("employees.employee_id"), nullable=True)
     completed_at = Column(DateTime, nullable=True)
 
-    instance = relationship("OnboardingInstance", back_populates="tasks")
+    instance = relationship("OnboardingInstance", back_populates="completions")
+    task = relationship("OnboardingTask")
     completer = relationship("Employee", foreign_keys=[completed_by])
