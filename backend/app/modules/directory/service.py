@@ -1,8 +1,3 @@
-"""
-Business logic for the Employee Directory (M0).
-Per docs/technical-setup-guide.md Section 6: router.py stays a thin HTTP
-layer and delegates every rule/query here.
-"""
 from sqlalchemy.orm import Session
 
 from app.modules.directory.models import Employee
@@ -34,8 +29,7 @@ def get_employee(db: Session, employee_id: str) -> Employee | None:
 
 
 def list_active_employees(db: Session) -> list[Employee]:
-    # FR-DIR-05: exited employees are soft-deleted, so "active" excludes them
-    # from the default directory view (NFR-DATA-03).
+
     return db.query(Employee).filter(Employee.employment_status == "active").all()
 
 
@@ -53,7 +47,6 @@ def update_employee(db: Session, employee_id: str, update_in: EmployeeUpdate) ->
 
 
 def mark_employee_exited(db: Session, employee_id: str) -> Employee:
-    # FR-DIR-05 / NFR-DATA-03: soft-delete only, never hard-delete.
     employee = get_employee(db, employee_id)
     if not employee:
         raise EmployeeNotFound(employee_id)

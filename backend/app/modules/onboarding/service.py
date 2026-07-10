@@ -1,6 +1,3 @@
-"""
-Business logic for Onboarding (M5).
-"""
 import datetime
 
 from sqlalchemy.orm import Session
@@ -48,9 +45,8 @@ def complete_task(db: Session, task_in: TaskCompletionCreate) -> OnboardingTaskC
         completed_at=datetime.datetime.utcnow(),
     )
     db.add(new_completion)
-    db.flush()  # makes the new row visible to the count queries below, pre-commit
+    db.flush()  
 
-    # FR-ONB-04: recompute completion % whenever a task is marked done.
     _recalculate_completion_pct(db, instance)
 
     db.commit()

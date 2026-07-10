@@ -38,7 +38,6 @@ def retrieve_profile_by_id(employee_id: str, db: Session = Depends(get_db)):
 def edit_employee_profile(
     employee_id: str, update_in: EmployeeUpdate, db: Session = Depends(get_db)
 ):
-    # FR-DIR-05: Admin shall be able to add, edit, and mark an employee as exited.
     try:
         return service.update_employee(db, employee_id, update_in)
     except service.EmployeeNotFound:
@@ -47,7 +46,6 @@ def edit_employee_profile(
 
 @router.post("/{employee_id}/exit", response_model=EmployeeResponse)
 def mark_employee_as_exited(employee_id: str, db: Session = Depends(get_db)):
-    # FR-DIR-05 / NFR-DATA-03: soft-delete, never hard-delete.
     try:
         return service.mark_employee_exited(db, employee_id)
     except service.EmployeeNotFound:

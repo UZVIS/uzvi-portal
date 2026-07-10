@@ -1,6 +1,4 @@
-"""
-Business logic for the Document Repository (M8).
-"""
+
 from sqlalchemy.orm import Session
 
 from app.modules.documents.models import EmployeeDocument, DocumentAccessLog
