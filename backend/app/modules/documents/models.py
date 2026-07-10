@@ -15,11 +15,6 @@ class EmployeeDocument(Base):
     doc_type = Column(String, nullable=False)
     retention_expiry = Column(Date, nullable=True)
 
-    # Not in the ER diagram, but a document repository can't function
-    # without knowing where the file actually is or when it landed.
-    file_path = Column(String, nullable=False)
-    uploaded_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
-
     employee = relationship("Employee", foreign_keys=[employee_id])
     uploader = relationship("Employee", foreign_keys=[uploaded_by])
     access_logs = relationship(

@@ -1,8 +1,8 @@
-"""align field names to ER diagram, add Team and Onboarding templates
+"""remove file_path and uploaded_at, exact match to ER diagram
 
-Revision ID: 99259f6424a5
+Revision ID: 60d5c1c8f1e8
 Revises: 
-Create Date: 2026-07-10 16:57:12.736909
+Create Date: 2026-07-10 17:11:52.928324
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '99259f6424a5'
+revision: str = '60d5c1c8f1e8'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -64,8 +64,6 @@ def upgrade() -> None:
     sa.Column('uploaded_by', sa.String(), nullable=False),
     sa.Column('doc_type', sa.String(), nullable=False),
     sa.Column('retention_expiry', sa.Date(), nullable=True),
-    sa.Column('file_path', sa.String(), nullable=False),
-    sa.Column('uploaded_at', sa.DateTime(), nullable=False),
     sa.ForeignKeyConstraint(['employee_id'], ['employees.employee_id'], ),
     sa.ForeignKeyConstraint(['uploaded_by'], ['employees.employee_id'], ),
     sa.PrimaryKeyConstraint('document_id')

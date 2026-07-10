@@ -34,7 +34,7 @@ def get_document(db: Session, document_id: str) -> EmployeeDocument | None:
 
 
 def view_document(db: Session, document_id: str, requester_id: str) -> EmployeeDocument:
-
+   
     doc = get_document(db, document_id)
     if not doc:
         raise DocumentNotFound(document_id)

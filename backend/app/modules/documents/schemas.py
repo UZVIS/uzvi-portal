@@ -9,7 +9,6 @@ class DocumentBase(BaseModel):
     doc_type: str = Field(
         ..., description="Type categorization (e.g., id_proof, offer_letter)"
     )
-    file_path: str = Field(..., description="Secure local or cloud target path link")
     retention_expiry: Optional[date] = Field(
         None, description="DPDP retention compliance target limit tracking"
     )
@@ -21,7 +20,6 @@ class DocumentCreate(DocumentBase):
 
 class DocumentResponse(DocumentBase):
     document_id: str
-    uploaded_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 

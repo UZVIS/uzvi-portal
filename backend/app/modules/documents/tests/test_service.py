@@ -29,7 +29,6 @@ def test_create_document(db):
             employee_id="E001",
             uploaded_by="E001",
             doc_type="offer_letter",
-            file_path="/secure/E001/offer_letter.pdf",
         ),
     )
     assert doc.document_id == "D001"
@@ -43,7 +42,6 @@ def test_view_document_writes_access_log(db):
             employee_id="E001",
             uploaded_by="E001",
             doc_type="offer_letter",
-            file_path="/secure/E001/offer_letter.pdf",
         ),
     )
     service.view_document(db, "D001", requester_id="E001")
