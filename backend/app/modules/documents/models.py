@@ -1,7 +1,8 @@
 from sqlalchemy import Column, String, DateTime, ForeignKey, Integer, Date
 from sqlalchemy.orm import relationship
 import datetime
-from app.modules.m0_employee.models import Base
+
+from app.database import Base
 
 
 class EmployeeDocument(Base):

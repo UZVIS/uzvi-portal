@@ -1,8 +1,8 @@
 """initialize foundation tables m0 m5 m8
 
-Revision ID: c24cf549cf95
+Revision ID: 3e4382ae0aff
 Revises: 
-Create Date: 2026-07-08 11:08:03.640410
+Create Date: 2026-07-10 05:57:52.898727
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'c24cf549cf95'
+revision: str = '3e4382ae0aff'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None

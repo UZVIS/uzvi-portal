@@ -1,8 +1,7 @@
 from sqlalchemy import Column, String, Date, ForeignKey
 from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base
 
-Base = declarative_base()
+from app.database import Base
 
 
 class Employee(Base):
