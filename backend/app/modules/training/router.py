@@ -11,7 +11,7 @@ from app.modules.training.models import (
     UnitCompletion,
 )
 
-from app.modules.m0_employee.models import Employee
+from app.modules.directory.models import Employee
 
 from app.modules.training.schemas import (
     CohortProgressResponse,

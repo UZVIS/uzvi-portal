@@ -4,7 +4,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.modules.m0_employee.models import Base, Employee
+from app.modules.directory.models import Base, Employee
 from app.modules.training.database import get_db
 from app.modules.training.router import router
 
