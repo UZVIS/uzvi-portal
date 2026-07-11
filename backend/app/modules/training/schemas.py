@@ -93,3 +93,14 @@ class ProgressResponse(BaseModel):
     completed_units: int
     total_units: int
     completion_percentage: float
+
+# -------------------------
+# Cohort Progress
+# -------------------------
+
+class CohortProgressResponse(BaseModel):
+    program_id: int
+    program_name: str
+    total_enrollments: int
+    completed_enrollments: int
+    average_completion_percentage: float

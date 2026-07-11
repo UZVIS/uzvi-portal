@@ -389,3 +389,304 @@ def test_duplicate_enrollment():
     assert second_response.json()["detail"] == (
         "Employee is already enrolled in this program."
     )
+
+# --------------------------------------------------
+# Unit Completion API Tests
+# --------------------------------------------------
+
+def create_test_program_unit_and_enrollment():
+    """
+    Helper used by completion API tests.
+    """
+
+    create_test_employee()
+
+    program_response = client.post(
+        "/training/programs",
+        json={
+            "name": "Python Full Stack Development",
+        },
+    )
+
+    program_id = program_response.json()["program_id"]
+
+    unit_response = client.post(
+        f"/training/programs/{program_id}/units",
+        json={
+            "name": "Python Basics",
+            "sequence": 1,
+        },
+    )
+
+    unit_id = unit_response.json()["unit_id"]
+
+    enrollment_response = client.post(
+        "/training/enrollments",
+        json={
+            "employee_id": "EMP001",
+            "program_id": program_id,
+        },
+    )
+
+    enrollment_id = enrollment_response.json()["enrollment_id"]
+
+    return enrollment_id, unit_id
+
+
+def test_complete_training_unit():
+    enrollment_id, unit_id = create_test_program_unit_and_enrollment()
+
+    response = client.post(
+        "/training/completions",
+        json={
+            "enrollment_id": enrollment_id,
+            "unit_id": unit_id,
+            "score": 95,
+        },
+    )
+
+    assert response.status_code == 201
+
+    data = response.json()
+
+    assert data["enrollment_id"] == enrollment_id
+    assert data["unit_id"] == unit_id
+    assert data["score"] == 95
+
+
+def test_list_completed_units():
+    enrollment_id, unit_id = create_test_program_unit_and_enrollment()
+
+    client.post(
+        "/training/completions",
+        json={
+            "enrollment_id": enrollment_id,
+            "unit_id": unit_id,
+            "score": 90,
+        },
+    )
+
+    response = client.get("/training/completions")
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert len(data) == 1
+    assert data[0]["unit_id"] == unit_id
+
+
+def test_completion_missing_enrollment():
+    response = client.post(
+        "/training/completions",
+        json={
+            "enrollment_id": 99999,
+            "unit_id": 1,
+            "score": 80,
+        },
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Enrollment not found."
+
+
+def test_completion_missing_unit():
+    enrollment_id, _ = create_test_program_unit_and_enrollment()
+
+    response = client.post(
+        "/training/completions",
+        json={
+            "enrollment_id": enrollment_id,
+            "unit_id": 99999,
+            "score": 80,
+        },
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Training unit not found."
+
+
+def test_duplicate_completion():
+    enrollment_id, unit_id = create_test_program_unit_and_enrollment()
+
+    request_body = {
+        "enrollment_id": enrollment_id,
+        "unit_id": unit_id,
+        "score": 90,
+    }
+
+    first_response = client.post(
+        "/training/completions",
+        json=request_body,
+    )
+
+    assert first_response.status_code == 201
+
+    second_response = client.post(
+        "/training/completions",
+        json=request_body,
+    )
+
+    assert second_response.status_code == 400
+    assert second_response.json()["detail"] == (
+        "Unit already completed."
+    )
+
+
+def test_completion_wrong_program():
+    create_test_employee()
+
+    first_program = client.post(
+        "/training/programs",
+        json={
+            "name": "Program One",
+        },
+    ).json()
+
+    second_program = client.post(
+        "/training/programs",
+        json={
+            "name": "Program Two",
+        },
+    ).json()
+
+    unit = client.post(
+        f"/training/programs/{second_program['program_id']}/units",
+        json={
+            "name": "Unit",
+            "sequence": 1,
+        },
+    ).json()
+
+    enrollment = client.post(
+        "/training/enrollments",
+        json={
+            "employee_id": "EMP001",
+            "program_id": first_program["program_id"],
+        },
+    ).json()
+
+    response = client.post(
+        "/training/completions",
+        json={
+            "enrollment_id": enrollment["enrollment_id"],
+            "unit_id": unit["unit_id"],
+            "score": 80,
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == (
+        "Training unit does not belong to enrolled program."
+    )
+
+    # --------------------------------------------------
+# Employee Progress API Tests
+# --------------------------------------------------
+
+def create_completed_training():
+    """
+    Create an employee, program, unit, enrollment,
+    and completed unit for progress testing.
+    """
+
+    create_test_employee()
+
+    program = client.post(
+        "/training/programs",
+        json={
+            "name": "Python Full Stack Development",
+        },
+    ).json()
+
+    unit = client.post(
+        f"/training/programs/{program['program_id']}/units",
+        json={
+            "name": "Python Basics",
+            "sequence": 1,
+        },
+    ).json()
+
+    enrollment = client.post(
+        "/training/enrollments",
+        json={
+            "employee_id": "EMP001",
+            "program_id": program["program_id"],
+        },
+    ).json()
+
+    client.post(
+        "/training/completions",
+        json={
+            "enrollment_id": enrollment["enrollment_id"],
+            "unit_id": unit["unit_id"],
+            "score": 95,
+        },
+    )
+
+
+def test_employee_progress_complete():
+    create_completed_training()
+
+    response = client.get(
+        "/training/progress/EMP001"
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["employee_id"] == "EMP001"
+    assert data["completed_units"] == 1
+    assert data["total_units"] == 1
+    assert data["completion_percentage"] == 100.0
+
+
+def test_employee_progress_not_enrolled():
+    response = client.get(
+        "/training/progress/UNKNOWN"
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == (
+        "Employee is not enrolled in any training program."
+    )
+
+
+def test_employee_progress_zero_completion():
+    create_test_employee()
+
+    program = client.post(
+        "/training/programs",
+        json={
+            "name": "Python Full Stack Development",
+        },
+    ).json()
+
+    client.post(
+        f"/training/programs/{program['program_id']}/units",
+        json={
+            "name": "Python Basics",
+            "sequence": 1,
+        },
+    )
+
+    client.post(
+        "/training/enrollments",
+        json={
+            "employee_id": "EMP001",
+            "program_id": program["program_id"],
+        },
+    )
+
+    response = client.get(
+        "/training/progress/EMP001"
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["completed_units"] == 0
+    assert data["total_units"] == 1
+    assert data["completion_percentage"] == 0.0
