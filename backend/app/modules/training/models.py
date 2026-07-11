@@ -2,7 +2,7 @@ from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 import datetime
 
-from app.modules.m0_employee.models import Base
+from app.modules.directory.models import Base
 
 
 # M6 Training Module: Stores training programs available to employees.
