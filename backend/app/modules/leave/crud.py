@@ -3,7 +3,7 @@
 from sqlalchemy.orm import Session
 
 from app.modules.m0_employee.models import Employee
-from app.modules.m2_leavemanagement.models import (
+from app.modules.leave.models import (
     LeaveApplication,
     LeaveAuditLog,
     LeaveBalance,

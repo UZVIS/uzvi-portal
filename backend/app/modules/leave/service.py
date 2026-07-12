@@ -3,12 +3,12 @@ from datetime import datetime
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from app.modules.m2_leavemanagement import crud
-from app.modules.m2_leavemanagement.models import (
+from app.modules.leave import crud
+from app.modules.leave.models import (
     LeaveApplication,
     LeaveAuditLog,
 )
-from app.modules.m2_leavemanagement.schemas import (
+from app.modules.leave.schemas import (
     LeaveApplicationCreate,
 )
 

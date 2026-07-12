@@ -2,11 +2,11 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
-from app.modules.m2_leavemanagement.schemas import (
+from app.modules.leave.schemas import (
     LeaveApplicationCreate,
     LeaveApplicationResponse,
 )
-from app.modules.m2_leavemanagement import service
+from app.modules.leave import service
 
 def get_db():
     db = SessionLocal()
