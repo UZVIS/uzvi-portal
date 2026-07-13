@@ -16,9 +16,12 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
-from app.modules.m0_employee.models import Base
+from app.database import Base
+
+import app.modules.m0_employee.models
 import app.modules.m5_onboarding.models
 import app.modules.m8_documents.models
+import app.modules.assets.models
 
 target_metadata = Base.metadata
 
