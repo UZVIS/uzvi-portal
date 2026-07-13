@@ -13,7 +13,7 @@ from app.modules.assets.schemas import (
     AssignmentDetailsResponse,
     InventorySummaryResponse,
 )
-from app.modules.m0_employee.models import Employee
+from app.modules.directory.models import Employee
 
 router = APIRouter(
     prefix="/api/v1/assets",
