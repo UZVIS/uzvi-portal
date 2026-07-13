@@ -27,6 +27,10 @@ from app.database import Base
 import app.modules.directory.models
 import app.modules.onboarding.models
 import app.modules.documents.models
+from app.database import Base
+
+
+import app.modules.assets.models
 
 target_metadata = Base.metadata
 
