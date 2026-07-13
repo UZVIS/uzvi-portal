@@ -16,11 +16,20 @@ if config.config_file_name is not None:
 
 # add your model's MetaData object here
 # for 'autogenerate' support
+#
+# Import the ONE shared Base from app.database, then import every module's
+# models module so its tables register on that Base's metadata. A module
+# whose models.py is never imported here will be silently skipped by
+# `alembic revision --autogenerate` — if you add a new module, add its
+# import to this list.
 from app.database import Base
 
-import app.modules.m0_employee.models
-import app.modules.m5_onboarding.models
-import app.modules.m8_documents.models
+import app.modules.directory.models
+import app.modules.onboarding.models
+import app.modules.documents.models
+from app.database import Base
+
+
 import app.modules.assets.models
 
 target_metadata = Base.metadata
