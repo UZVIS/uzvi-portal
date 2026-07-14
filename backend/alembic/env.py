@@ -33,6 +33,9 @@ from app.database import Base
 import app.modules.assets.models
 import app.modules.announcements.models
 
+# M6 Training Module: Register models for Alembic autogeneration.
+import app.modules.training.models
+
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
