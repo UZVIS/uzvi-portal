@@ -15,9 +15,10 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<LoginPage />} />
 
           <Route path="/" element={<ModuleDirectoryPage />} />
+
+          <Route path="/login" element={<LoginPage />} />
 
           <Route
             path="/announcements"
@@ -34,15 +35,12 @@ export default function App() {
               <Route
                 key={module.id}
                 path={module.prefix}
-                element={
-                  <ProtectedRoute>
-                    <ModulePlaceholderPage module={module} />
-                  </ProtectedRoute>
-                }
+                element={<ModulePlaceholderPage module={module} />}
               />
             ))}
 
           <Route path="*" element={<Navigate to="/" replace />} />
+
         </Routes>
       </BrowserRouter>
     </AuthProvider>
