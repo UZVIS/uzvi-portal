@@ -31,6 +31,7 @@ from app.database import Base
 
 
 import app.modules.assets.models
+import app.modules.announcements.models
 
 target_metadata = Base.metadata
 
