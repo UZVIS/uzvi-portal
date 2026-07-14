@@ -59,8 +59,13 @@ export default function ModuleDirectoryPage() {
               className="card"
               tabIndex={0}
               role="button"
-              onClick={() => navigate(m.prefix)}
-              onKeyDown={(e) => e.key === 'Enter' && navigate(m.prefix)}
+             onClick={() =>
+  navigate(m.prefix === "/announcements" ? "/login" : m.prefix)
+}
+             onKeyDown={(e) =>
+  e.key === "Enter" &&
+  navigate(m.prefix === "/announcements" ? "/login" : m.prefix)
+}
             >
               <div className="card-top">
                 <span className="mod-id">{m.id}</span>
