@@ -31,6 +31,7 @@ from app.database import Base
 
 
 import app.modules.assets.models
+import app.modules.announcements.models
 
 # M6 Training Module: Register models for Alembic autogeneration.
 import app.modules.training.models
