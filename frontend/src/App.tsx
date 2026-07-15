@@ -4,9 +4,9 @@ import { AuthProvider } from "./shared/auth/AuthContext";
 import { LoginPage } from "./shared/auth/LoginPage";
 import { ProtectedRoute } from "./shared/components/ProtectedRoute";
 
-import ModuleDirectoryPage from "./modules/directory/ModuleDirectoryPage";
-import ModulePlaceholderPage from "./modules/directory/ModulePlaceholderPage";
-import { allModules } from "./modules/directory/modules.data";
+import ModuleDirectoryPage from "./modules/directory_dashboard/ModuleDirectoryPage";
+import ModulePlaceholderPage from "./modules/directory_dashboard/ModulePlaceholderPage";
+import { allModules } from "./modules/directory_dashboard/modules.data";
 
 import { AnnouncementsPage } from "./modules/announcements/AnnouncementsPage";
 
