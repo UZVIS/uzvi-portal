@@ -9,7 +9,7 @@ import ModulePlaceholderPage from "./modules/directory/ModulePlaceholderPage";
 import { allModules } from "./modules/directory/modules.data";
 
 import { AnnouncementsPage } from "./modules/announcements/AnnouncementsPage";
-
+import AssetList from "./modules/assets/pages/AssetList";
 export default function App() {
   return (
     <AuthProvider>
@@ -29,8 +29,19 @@ export default function App() {
             }
           />
 
+          <Route
+            path="/assets"
+            element={
+               <ProtectedRoute>
+                 <AssetList />
+               </ProtectedRoute>
+             }
+           />
+
           {allModules
-            .filter((module) => module.prefix !== "/announcements")
+            .filter((module) => module.prefix !== "/announcements" &&
+    module.prefix !== "/assets"
+)
             .map((module) => (
               <Route
                 key={module.id}
