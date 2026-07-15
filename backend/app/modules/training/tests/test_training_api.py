@@ -4,8 +4,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.modules.directory.models import Base, Employee
-from app.modules.training.database import get_db
+from app.modules.directory.models import Employee
+from app.database import Base
+from app.database import get_db
 from app.modules.training.router import router
 
 
