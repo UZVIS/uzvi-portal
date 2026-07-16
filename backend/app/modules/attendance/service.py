@@ -1,6 +1,8 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
+from app.modules.directory.models import Employee
+
 from app.modules.attendance.models import (
     AttendanceRecord,
     AttendanceStatus,
@@ -242,4 +244,30 @@ class AttendanceService:
         )
 
         return records
+
+
+
+    # -----------------------------
+    # Team Attendance
+    # -----------------------------
+    def get_team_attendance(
+        self,
+        team_id: str,
+    ):
+
+        records = (
+        self.db.query(AttendanceRecord)
+        .join(
+            Employee,
+            AttendanceRecord.employee_id == Employee.employee_id
+        )
+        .filter(
+            Employee.team_id == team_id
+        )
+        .all()
+    )
+
+        return records
+
+    
 

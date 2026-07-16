@@ -94,3 +94,21 @@ def unexplained_absences(
 ):
     attendance_service = AttendanceService(db)
     return attendance_service.get_unexplained_absences()
+
+
+@router.get("/team/{team_id}")
+def team_attendance(
+    team_id: str,
+    db: Session = Depends(get_db),
+):
+    attendance_service = AttendanceService(db)
+    return attendance_service.get_team_attendance(team_id)
+
+
+@router.get("/export/{employee_id}")
+def export_attendance(
+    employee_id: str,
+    db: Session = Depends(get_db),
+):
+    attendance_service = AttendanceService(db)
+    return attendance_service.export_attendance(employee_id)
