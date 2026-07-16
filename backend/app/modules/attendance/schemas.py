@@ -10,7 +10,7 @@ from enum import Enum
 
 
 class AttendanceStatus(str, Enum):
-    """Attendance status enum - ఖచ్చితమైన వాల్యూస్ మాత్రమే"""
+    """Attendance status enum"""
     IN_OFFICE = "in-office"
     WFH = "wfh"
     ON_LEAVE = "on-leave"
@@ -46,7 +46,7 @@ class AttendanceUpdate(BaseModel):
 # ========== Response Schema ==========
 class AttendanceResponse(AttendanceBase):
     """Schema for API response - includes auto-generated fields"""
-    attendance_id: int = Field(..., description="Auto-generated unique ID")
+    id: int = Field(..., description="Auto-generated unique ID")
     created_at: datetime = Field(..., description="Record creation timestamp")
     updated_at: datetime = Field(..., description="Last update timestamp")
 
