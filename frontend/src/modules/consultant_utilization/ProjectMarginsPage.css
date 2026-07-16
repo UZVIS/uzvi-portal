@@ -1,0 +1,62 @@
+.pm-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 24px 60px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #1f2430;
+}
+
+.pm-page--status {
+  text-align: center;
+  padding-top: 80px;
+  color: #6b7280;
+}
+
+.pm-page--error {
+  color: #b8433a;
+}
+
+.pm-page__title {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.pm-page__subtitle {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0 0 20px;
+}
+
+.pm-page__empty {
+  font-size: 13px;
+  color: #9aa1ab;
+}
+
+.pm-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: #ffffff;
+  border: 1px solid #e3e6ea;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.pm-table th {
+  text-align: left;
+  color: #6b7280;
+  font-weight: 500;
+  padding: 10px 16px;
+  background: #f7f8fa;
+  border-bottom: 1px solid #e3e6ea;
+}
+
+.pm-table td {
+  padding: 10px 16px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.pm-table__negative {
+  color: #b8433a;
+}
