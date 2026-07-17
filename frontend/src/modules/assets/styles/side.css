@@ -1,0 +1,220 @@
+/* ===========================
+   SIDEBAR
+=========================== */
+
+.sidebar{
+    width:220px;
+    height:100vh;
+
+    position:fixed;
+    top:0;
+    left:0;
+
+    background:#211d1b;
+    color:#fff;
+
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+
+    border-right:1px solid #2f2926;
+
+    overflow:hidden;
+}
+
+
+/* ===========================
+   LOGO
+=========================== */
+
+.sidebar-logo{
+
+    display:flex;
+    align-items:center;
+    gap:12px;
+
+    padding:18px 18px;
+
+    border-bottom:1px solid rgba(255,255,255,.07);
+}
+
+.logo-circle{
+
+    width:42px;
+    height:42px;
+
+    border-radius:50%;
+
+    background:#ef6c22;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    flex-shrink:0;
+}
+
+.sidebar-logo h2{
+
+    margin:0;
+
+    font-size:14px;
+
+    line-height:1.2;
+
+    font-weight:700;
+
+    letter-spacing:.3px;
+}
+
+.sidebar-logo span{
+
+    display:block;
+
+    margin-top:2px;
+
+    font-size:11px;
+
+    color:#ef6c22;
+
+    font-weight:500;
+}
+
+
+/* ===========================
+   MENU
+=========================== */
+
+.sidebar-menu{
+
+    flex:1;
+
+    padding:14px 12px;
+
+    display:flex;
+    flex-direction:column;
+
+    gap:2px;
+}
+
+.menu-item{
+
+    display:flex;
+    align-items:center;
+
+    gap:10px;
+
+    height:40px;
+
+    padding:0 12px;
+
+    border-radius:8px;
+
+    color:#d6d6d6;
+
+    text-decoration:none;
+
+    cursor:pointer;
+
+    transition:.25s;
+
+    font-size:12px;
+
+    font-weight:500;
+}
+
+.menu-item svg{
+
+    font-size:17px;
+
+    flex-shrink:0;
+}
+
+.menu-item:hover{
+
+    background:#2a2523;
+
+    color:#ffffff;
+}
+
+.menu-item.active{
+
+    background:#ef6c22;
+
+    color:#fff;
+
+    box-shadow:0 8px 18px rgba(239,108,34,.28);
+}
+
+
+/* ===========================
+   USER CARD
+=========================== */
+
+.sidebar-user{
+
+    margin:14px;
+
+    padding:10px;
+
+    border-radius:10px;
+
+    border:1px solid rgba(255,255,255,.08);
+
+    display:flex;
+    align-items:center;
+
+    gap:10px;
+}
+
+.avatar{
+
+    width:38px;
+    height:38px;
+
+    border-radius:50%;
+
+    background:#ef6c22;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    font-size:15px;
+
+    font-weight:700;
+
+    flex-shrink:0;
+}
+
+.user-info{
+
+    flex:1;
+}
+
+.user-info strong{
+
+    display:block;
+
+    font-size:13px;
+
+    font-weight:600;
+
+    margin-bottom:2px;
+}
+
+.user-info small{
+
+    display:block;
+
+    font-size:11px;
+
+    color:#ef6c22;
+}
+
+.user-arrow{
+
+    color:#aaa;
+
+    font-size:13px;
+}

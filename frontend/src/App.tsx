@@ -9,7 +9,7 @@ import ModulePlaceholderPage from "./modules/directory/ModulePlaceholderPage";
 import { allModules } from "./modules/directory/modules.data";
 
 import { AnnouncementsPage } from "./modules/announcements/AnnouncementsPage";
-import AssetList from "./modules/assets/pages/AssetList";
+import { assetRoutes } from "./modules/assets/routes";
 export default function App() {
   return (
     <AuthProvider>
@@ -29,14 +29,7 @@ export default function App() {
             }
           />
 
-          <Route
-            path="/assets"
-            element={
-               <ProtectedRoute>
-                 <AssetList />
-               </ProtectedRoute>
-             }
-           />
+          {assetRoutes}
 
           {allModules
             .filter((module) => module.prefix !== "/announcements" &&
@@ -53,6 +46,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
 
         </Routes>
+        
       </BrowserRouter>
     </AuthProvider>
   );
