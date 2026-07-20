@@ -10,72 +10,101 @@ import AssetForm, {
     type AssetFormData,
 } from "../components/AssetForm";
 import DeleteDialog from "../components/DeleteDialog";
-import { deleteAsset } from "../services/assetService";
-import { createAsset, updateAsset } from "../services/assetService";
+import AssignDialog from "../components/AssignDialog";
+import {
+    createAsset,
+    updateAsset,
+    deleteAsset,
+} from "../services/assetService";
 
 import type {
-    AssetStatus,
     AssetCreate,
+    AssetStatus,
 } from "../types/asset";
 
 import "../styles/dashboard.css";
+
 import { toast } from "sonner";
+import { assignAsset } from "../services/assetService";
 export default function Dashboard() {
 
     const [showAssetForm, setShowAssetForm] = useState(false);
 
     const [reloadAssets, setReloadAssets] = useState(false);
 
-    const [formMode, setFormMode] = useState<"add" | "edit">("add");
+    const [formMode, setFormMode] =
+        useState<"add" | "edit">("add");
+
+    const [viewMode, setViewMode] =
+        useState(false);
 
     const [selectedAsset, setSelectedAsset] =
         useState<AssetFormData>(emptyAssetForm);
-    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-    const [selectedAssetId, setSelectedAssetId] = useState("");
+    const [showDeleteDialog, setShowDeleteDialog] =
+        useState(false);
+
+    const [selectedAssetId, setSelectedAssetId] =
+        useState("");
+    
+    const [search, setSearch] = useState("");
+
+    const [statusFilter, setStatusFilter] = useState("");
+
+    const [typeFilter, setTypeFilter] = useState("");
+    const [showAssignDialog, setShowAssignDialog] = useState(false);
+
+    const [assignAssetId, setAssignAssetId] = useState("");
+
     async function handleSave(data: AssetFormData) {
 
-    const payload: AssetCreate = {
-        asset_id: data.id,
-        tag: data.tag,
-        asset_type: data.type as string,
-        purchase_date: data.purchaseDate,
-        status: data.status as AssetStatus,
-    };
+        const payload: AssetCreate = {
+            asset_id: data.id,
+            tag: data.tag,
+            asset_type: data.type as string,
+            purchase_date: data.purchaseDate,
+            status: data.status as AssetStatus,
+        };
 
-    try {
+        try {
 
-        if (formMode === "add") {
+            if (formMode === "add") {
 
-            await createAsset(payload);
+                await createAsset(payload);
 
-            toast.success(`Asset ${data.id} added successfully.`);
+                toast.success(
+                    `Asset ${data.id} added successfully.`
+                );
 
-        } else {
+            } else {
 
-            await updateAsset(data.id, payload);
+                await updateAsset(data.id, payload);
 
-            toast.success(`Asset ${data.id} updated successfully.`);
+                toast.success(
+                    `Asset ${data.id} updated successfully.`
+                );
 
-        }
+            }
 
-        setReloadAssets(prev => !prev);
+            setReloadAssets(prev => !prev);
 
-        setShowAssetForm(false);
+            setShowAssetForm(false);
 
-    } catch (error: unknown) {
+            setViewMode(false);
 
-        console.error(error);
+        } catch (error: unknown) {
 
-        if (error instanceof Error) {
-            toast.error(error.message);
-        } else {
-            toast.error("Failed to save asset.");
+            console.error(error);
+
+            if (error instanceof Error) {
+                toast.error(error.message);
+            } else {
+                toast.error("Failed to save asset.");
+            }
+
         }
 
     }
-
-}
 
     return (
 
@@ -96,65 +125,167 @@ export default function Dashboard() {
 
                             setFormMode("add");
 
+                            setViewMode(false);
+
                             setSelectedAsset(emptyAssetForm);
 
                             setShowAssetForm(true);
 
                         }}
+                        search={search}
+                        onSearchChange={setSearch}
+
+                        status={statusFilter}
+                        onStatusChange={setStatusFilter}
+
+                        type={typeFilter}
+                        onTypeChange={setTypeFilter}
+
                     />
 
                     <AssetTable
-    reload={reloadAssets}
-    onEdit={(asset) => {
+                        reload={reloadAssets}
+                        search={search}
+                        status={statusFilter}
+                        type={typeFilter}
 
-        setFormMode("edit");
-        setSelectedAsset(asset);
-        setShowAssetForm(true);
+                        onView={(asset) => {
 
-    }}
-    onDelete={(assetId) => {
+                            setSelectedAsset(asset);
 
-        setSelectedAssetId(assetId);
-        setShowDeleteDialog(true);
+                            setFormMode("edit");
 
-    }}
-/>
+                            setViewMode(true);
+
+                            setShowAssetForm(true);
+
+                        }}
+
+                        onEdit={(asset) => {
+
+                            setSelectedAsset(asset);
+
+                            setFormMode("edit");
+
+                            setViewMode(false);
+
+                            setShowAssetForm(true);
+
+                        }}
+                        onAssign={(assetId) => {
+
+                        setAssignAssetId(assetId);
+
+                       setShowAssignDialog(true);
+
+                      }}
+
+                        onDelete={(assetId) => {
+
+                            setSelectedAssetId(assetId);
+
+                            setShowDeleteDialog(true);
+
+                        }}
+
+                    />
 
                     <AssetForm
                         isOpen={showAssetForm}
                         mode={formMode}
+                        readOnly={viewMode}
                         initialData={selectedAsset}
-                        onClose={() => setShowAssetForm(false)}
+                        onClose={() => {
+
+                            setShowAssetForm(false);
+
+                            setViewMode(false);
+
+                        }}
                         onSave={handleSave}
                     />
 
                     <DeleteDialog
-    isOpen={showDeleteDialog}
-    assetId={selectedAssetId}
-    onClose={() => setShowDeleteDialog(false)}
-    onConfirm={async () => {
+                        isOpen={showDeleteDialog}
+                        assetId={selectedAssetId}
+                        onClose={() =>
+                            setShowDeleteDialog(false)
+                        }
+                        onConfirm={async () => {
 
-        try {
+                            try {
 
-            await deleteAsset(selectedAssetId);
+                                await deleteAsset(
+                                    selectedAssetId
+                                );
 
-            setReloadAssets(prev => !prev);
+                                toast.success(
+                                    `Asset ${selectedAssetId} deleted successfully.`
+                                );
 
-            setShowDeleteDialog(false);
+                                setReloadAssets(prev => !prev);
 
-        } catch (error: unknown) {
+                                setShowDeleteDialog(false);
 
-    console.error(error);
+                            } catch (error: unknown) {
 
-    if (error instanceof Error) {
-        toast.error(error.message);
-    } else {
-        toast.error("Something went wrong");
+                                console.error(error);
+
+                                if (error instanceof Error) {
+                                    toast.error(error.message);
+                                } else {
+                                    toast.error(
+                                        "Something went wrong."
+                                    );
+                                }
+
+                            }
+
+                        }}
+
+
+                    />
+         <AssignDialog
+    isOpen={showAssignDialog}
+    assetId={assignAssetId}
+    onClose={() => setShowAssignDialog(false)}
+     onAssign={async (data) => {
+
+    try {
+
+        await assignAsset({
+
+            assignment_id: `ASN${Date.now()}`,
+
+            asset_id: assignAssetId,
+
+            employee_id: data.employeeId,
+
+            assigned_date: data.assignedDate,
+
+            returned_date: null,
+
+            remarks: data.remarks,
+
+        });
+
+        toast.success("Asset assigned successfully.");
+
+        setShowAssignDialog(false);
+
+        setReloadAssets(prev => !prev);
+
+    } catch (error) {
+
+        if (error instanceof Error) {
+            toast.error(error.message);
+        } else {
+            toast.error("Failed to assign asset.");
+        }
+
     }
 
-}
-
-    }}
+}}
 />
 
                 </main>

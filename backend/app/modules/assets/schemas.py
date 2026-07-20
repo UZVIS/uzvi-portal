@@ -18,11 +18,25 @@ class AssetResponse(BaseModel):
     asset_type: str
     purchase_date: date
     status: str
+    
 
     model_config = {
         "from_attributes": True
     }
 
+class AssetListResponse(BaseModel):
+    asset_id: str
+    tag: str
+    asset_type: str
+    purchase_date: date
+    status: str
+
+    employee_id: Optional[str] = None
+    employee_name: Optional[str] = None
+
+    model_config = {
+        "from_attributes": True
+    }
 
 class AssetAssignmentCreate(BaseModel):
     assignment_id: str

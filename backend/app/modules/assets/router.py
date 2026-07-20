@@ -6,6 +6,7 @@ from app.modules.assets.models import Asset, AssetAssignment
 from app.modules.assets.schemas import (
     AssetCreate,
     AssetResponse,
+    AssetListResponse,
     AssetAssignmentCreate,
     AssetAssignmentResponse,
     AssetReturn,
@@ -111,12 +112,60 @@ def get_assigned_assets(
 # ----------------------------
 # Get All Assets
 # ----------------------------
-@router.get("/", response_model=list[AssetResponse])
+@router.get(
+    "/",
+    response_model=list[AssetListResponse]
+)
 def get_all_assets(
     db: Session = Depends(get_db)
 ):
-    return db.query(Asset).all()
 
+    assets = db.query(Asset).all()
+
+    result = []
+
+    for asset in assets:
+
+        assignment = (
+            db.query(AssetAssignment)
+            .filter(
+                AssetAssignment.asset_id == asset.asset_id,
+                AssetAssignment.returned_date == None
+            )
+            .first()
+        )
+
+        employee_id = None
+        employee_name = None
+
+        if assignment:
+
+            employee = (
+                db.query(Employee)
+                .filter(
+                    Employee.employee_id == assignment.employee_id
+                )
+                .first()
+            )
+
+            if employee:
+
+                employee_id = employee.employee_id
+                employee_name = employee.name
+
+        result.append(
+            AssetListResponse(
+                asset_id=asset.asset_id,
+                tag=asset.tag,
+                asset_type=asset.asset_type,
+                purchase_date=asset.purchase_date,
+                status=asset.status,
+                employee_id=employee_id,
+                employee_name=employee_name,
+            )
+        )
+
+    return result
 
 
 # ----------------------------

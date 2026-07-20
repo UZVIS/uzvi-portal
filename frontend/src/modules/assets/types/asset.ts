@@ -10,6 +10,8 @@ export interface Asset {
   asset_type: string;
   purchase_date: string;
   status: AssetStatus;
+  employee_id?: string | null;
+  employee_name?: string | null;
 }
 
 export interface AssetCreate {
@@ -40,4 +42,13 @@ export interface InventorySummary {
   assigned_assets: number;
   under_repair_assets: number;
   retired_assets: number;
+}
+
+export interface AssetAssignmentCreate {
+    assignment_id: string;
+    asset_id: string;
+    employee_id: string;
+    assigned_date: string;
+    returned_date: string | null;
+    remarks: string;
 }

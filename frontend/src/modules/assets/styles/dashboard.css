@@ -480,9 +480,9 @@ body,
 
     border-radius:10px;
 
-    background:#2b2523;
+    background:hsl(20, 10%, 94%);
 
-    color:white;
+    color:rgb(12, 12, 12);
 
     display:flex;
 
@@ -501,7 +501,7 @@ body,
 
 .filter-btn:hover{
 
-    background:#161311;
+    background:hsl(24, 41%, 93%);
 }
 
 /* Add Asset */

@@ -36,6 +36,7 @@ interface AssetFormProps {
     initialData?: AssetFormData;
     onClose: () => void;
     onSave: (data: AssetFormData) => void;
+    readOnly?: boolean;
 }
 
 export default function AssetForm({
@@ -44,6 +45,7 @@ export default function AssetForm({
     initialData,
     onClose,
     onSave,
+    readOnly = false,
 }: AssetFormProps) {
 
     const [form, setForm] = useState<AssetFormData>(
@@ -65,21 +67,18 @@ export default function AssetForm({
     const handleChange =
         (field: keyof AssetFormData) =>
         (
-            e: ChangeEvent<
-                HTMLInputElement |
-                HTMLSelectElement
-            >
+            e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
         ) => {
 
             const value = e.target.value;
 
-            setForm((prev) => ({
+            setForm(prev => ({
                 ...prev,
                 [field]: value,
             }));
 
             if (errors[field]) {
-                setErrors((prev) => ({
+                setErrors(prev => ({
                     ...prev,
                     [field]: undefined,
                 }));
@@ -112,10 +111,11 @@ export default function AssetForm({
 
     const handleSave = () => {
 
+        if (readOnly) return;
+
         if (!validate()) return;
 
         onSave(form);
-
     };
 
     const handleOverlayClick = (
@@ -125,7 +125,6 @@ export default function AssetForm({
         if (e.target === e.currentTarget) {
             onClose();
         }
-
     };
 
     return (
@@ -151,7 +150,9 @@ export default function AssetForm({
 
                             <h2 className="asset-form-title">
 
-                                {isEdit
+                                {readOnly
+                                    ? "View Asset"
+                                    : isEdit
                                     ? "Edit Asset"
                                     : "Add New Asset"}
 
@@ -159,9 +160,11 @@ export default function AssetForm({
 
                             <p className="asset-form-subtitle">
 
-                                {isEdit
-                                    ? "Update asset details"
-                                    : "Enter asset details"}
+                                {readOnly
+                                    ? "View asset information"
+                                    : isEdit
+                                    ? "Update the details of this asset"
+                                    : "Enter the details of the new asset"}
 
                             </p>
 
@@ -173,9 +176,7 @@ export default function AssetForm({
                         className="asset-form-close"
                         onClick={onClose}
                     >
-
                         <X size={20} />
-
                     </button>
 
                 </div>
@@ -200,14 +201,13 @@ export default function AssetForm({
                                 placeholder="AST001"
                                 value={form.id}
                                 onChange={handleChange("id")}
-                                disabled={isEdit}
+                                disabled={readOnly || isEdit}
                             />
 
                             {errors.id &&
                                 <p className="asset-form-error">
                                     {errors.id}
                                 </p>}
-
                         </div>
 
                         {/* Tag */}
@@ -224,16 +224,16 @@ export default function AssetForm({
                                 placeholder="LT001"
                                 value={form.tag}
                                 onChange={handleChange("tag")}
+                                disabled={readOnly}
                             />
 
                             {errors.tag &&
                                 <p className="asset-form-error">
                                     {errors.tag}
                                 </p>}
-
                         </div>
 
-                        {/* Type */}
+                        {/* Asset Type */}
 
                         <div className="asset-form-field">
 
@@ -246,18 +246,14 @@ export default function AssetForm({
                                 className={`asset-form-select ${errors.type ? "input-error" : ""}`}
                                 value={form.type}
                                 onChange={handleChange("type")}
+                                disabled={readOnly}
                             >
 
                                 <option value="">Select Type</option>
-
                                 <option value="Laptop">Laptop</option>
-
                                 <option value="Desktop">Desktop</option>
-
                                 <option value="Monitor">Monitor</option>
-
                                 <option value="Keyboard">Keyboard</option>
-
                                 <option value="Mouse">Mouse</option>
 
                             </select>
@@ -266,7 +262,6 @@ export default function AssetForm({
                                 <p className="asset-form-error">
                                     {errors.type}
                                 </p>}
-
                         </div>
 
                         {/* Status */}
@@ -282,16 +277,13 @@ export default function AssetForm({
                                 className={`asset-form-select ${errors.status ? "input-error" : ""}`}
                                 value={form.status}
                                 onChange={handleChange("status")}
+                                disabled={readOnly}
                             >
 
                                 <option value="">Select Status</option>
-
                                 <option value="In Stock">In Stock</option>
-
                                 <option value="Assigned">Assigned</option>
-
                                 <option value="Under Repair">Under Repair</option>
-
                                 <option value="Retired">Retired</option>
 
                             </select>
@@ -300,7 +292,6 @@ export default function AssetForm({
                                 <p className="asset-form-error">
                                     {errors.status}
                                 </p>}
-
                         </div>
 
                         {/* Purchase Date */}
@@ -317,13 +308,13 @@ export default function AssetForm({
                                 className={`asset-form-input ${errors.purchaseDate ? "input-error" : ""}`}
                                 value={form.purchaseDate}
                                 onChange={handleChange("purchaseDate")}
+                                disabled={readOnly}
                             />
 
                             {errors.purchaseDate &&
                                 <p className="asset-form-error">
                                     {errors.purchaseDate}
                                 </p>}
-
                         </div>
 
                     </div>
@@ -338,17 +329,19 @@ export default function AssetForm({
                         className="asset-form-cancel-btn"
                         onClick={onClose}
                     >
-                        Cancel
+                        {readOnly ? "Close" : "Cancel"}
                     </button>
 
-                    <button
-                        className="asset-form-save-btn"
-                        onClick={handleSave}
-                    >
-                        {isEdit
-                            ? "Save Changes"
-                            : "Save Asset"}
-                    </button>
+                    {!readOnly && (
+                        <button
+                            className="asset-form-save-btn"
+                            onClick={handleSave}
+                        >
+                            {isEdit
+                                ? "Save Changes"
+                                : "Save Asset"}
+                        </button>
+                    )}
 
                 </div>
 
@@ -357,5 +350,4 @@ export default function AssetForm({
         </div>
 
     );
-
 }

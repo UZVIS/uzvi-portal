@@ -4,7 +4,7 @@ import {
   apiPut,
   apiDelete,
 } from "../../../api/client";
-
+import type { AssetAssignmentCreate } from "../types/asset";
 import type {
   Asset,
   AssetCreate,
@@ -77,7 +77,7 @@ export async function getAssignmentById(
 }
 
 export async function assignAsset(
-  assignment: AssetAssignment
+  assignment: AssetAssignmentCreate
 ): Promise<AssetAssignment> {
   return apiPost(`${BASE_URL}/assign`, assignment);
 }
