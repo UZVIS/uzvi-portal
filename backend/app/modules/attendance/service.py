@@ -12,7 +12,6 @@ from app.modules.attendance.schemas import (
     AttendanceUpdate,
 )
 
-
 class AttendanceService:
 
     def __init__(self, db: Session):
