@@ -62,6 +62,13 @@ def retrieve_announcement_by_id(announcement_id: str, db: Session = Depends(get_
         raise HTTPException(status_code=404, detail="Announcement not found.")
     return announcement
 
+@router.delete("/{announcement_id}", status_code=204)
+def delete_announcement(announcement_id: str, db: Session = Depends(get_db)):
+    try:
+        service.delete_announcement(db, announcement_id)
+    except service.AnnouncementNotFound:
+        raise HTTPException(status_code=404, detail="Announcement not found.")
+
 
 @router.post(
     "/{announcement_id}/acknowledge",

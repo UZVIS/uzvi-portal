@@ -79,6 +79,19 @@ def get_announcement(db: Session, announcement_id: str) -> Announcement | None:
     )
 
 
+def delete_announcement(db: Session, announcement_id: str) -> None:
+    """Permanently remove an announcement (e.g. cleaning up a duplicate post)."""
+    announcement = get_announcement(db, announcement_id)
+    if not announcement:
+        raise AnnouncementNotFound(announcement_id)
+
+    db.query(AnnouncementAck).filter(
+        AnnouncementAck.announcement_id == announcement_id
+    ).delete()
+    db.delete(announcement)
+    db.commit()
+
+
 def _archive_expired(db: Session) -> None:
     """FR-ANN-04: archived (not deleted) after expiry."""
     today = date.today()

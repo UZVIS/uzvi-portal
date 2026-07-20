@@ -1,0 +1,273 @@
+.ack-overview-screen {
+  min-height: 100vh;
+  background: var(--color-paper);
+}
+
+.ack-overview-topbar {
+  background: var(--color-navy);
+  padding: 16px 32px;
+}
+
+.ack-overview-topbar__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s ease;
+}
+
+.ack-overview-topbar__back:hover {
+  background: var(--color-navy-soft);
+}
+
+.ack-overview-page {
+  width: 100%;
+  padding: 40px 48px 64px;
+}
+
+.ack-overview-page__header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.ack-overview-page__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: var(--color-amber-soft);
+  color: var(--color-amber);
+  flex-shrink: 0;
+}
+
+.ack-overview-page__header h1 {
+  font-size: 22px;
+}
+
+.ack-overview-page__header p {
+  margin: 4px 0 0;
+  color: var(--color-slate);
+  font-size: 14px;
+}
+
+.ack-overview-page__summary {
+  margin-left: auto;
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-card);
+  padding: 10px 18px;
+  font-size: 14px;
+  color: var(--color-slate);
+  white-space: nowrap;
+}
+
+.ack-overview-page__summary strong {
+  color: var(--color-ink);
+  font-size: 16px;
+}
+
+.ack-overview-page__state {
+  color: var(--color-slate);
+  font-size: 14px;
+  padding: 24px 0;
+}
+
+.ack-table-wrap {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow-x: auto;
+}
+
+.ack-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.ack-table thead th {
+  text-align: left;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #4361ee;
+  background: #4361ee0d;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--color-hairline);
+  white-space: nowrap;
+}
+
+.ack-table tbody td {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--color-hairline);
+  color: var(--color-ink);
+  vertical-align: middle;
+}
+
+.ack-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.ack-table tbody tr:hover {
+  background: var(--color-paper);
+}
+
+.ack-table__mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  color: var(--color-slate);
+}
+
+.ack-table__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 12.5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+
+.ack-table__status--acked {
+  background: var(--color-teal-soft, #e2f5ef);
+  color: var(--color-teal, #0f8a6e);
+}
+
+.ack-table__status--pending {
+  background: var(--color-amber-soft);
+  color: var(--color-amber);
+}
+
+@media (max-width: 900px) {
+  .ack-overview-page {
+    padding: 24px 20px 48px;
+  }
+
+  .ack-overview-page__header {
+    flex-wrap: wrap;
+  }
+
+  .ack-overview-page__summary {
+    margin-left: 0;
+  }
+}
+
+/* ---------- Grouped-by-category dashboard sections ---------- */
+
+.ack-group-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.ack-group {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+  border-top: 4px solid transparent;
+}
+
+.ack-group--company_wide {
+  border-top-color: #4361ee;
+}
+
+.ack-group--team {
+  border-top-color: #14b8a6;
+}
+
+.ack-group--role {
+  border-top-color: #8b5cf6;
+}
+
+.ack-group__header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+.ack-group__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.ack-group--company_wide .ack-group__icon {
+  background: linear-gradient(135deg, #4361ee, #3a56d4);
+}
+
+.ack-group--team .ack-group__icon {
+  background: linear-gradient(135deg, #14b8a6, #0d9488);
+}
+
+.ack-group--role .ack-group__icon {
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+}
+
+.ack-group__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ack-group__heading h2 {
+  font-size: 15.5px;
+  font-weight: 800;
+  color: var(--color-ink);
+  margin: 0;
+}
+
+.ack-group__heading span {
+  font-size: 12.5px;
+  color: var(--color-slate);
+}
+
+.ack-group__table-wrap {
+  overflow-x: auto;
+}
+
+.ack-group__table-wrap .ack-table {
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.ack-group__table-wrap .ack-table thead th {
+  padding: 10px 22px;
+}
+
+.ack-group--company_wide .ack-table thead th {
+  color: #4361ee;
+  background: #4361ee0d;
+}
+
+.ack-group--team .ack-table thead th {
+  color: #0d9488;
+  background: #14b8a60d;
+}
+
+.ack-group--role .ack-table thead th {
+  color: #7c3aed;
+  background: #8b5cf60d;
+}
+
+.ack-group__table-wrap .ack-table tbody td {
+  padding: 10px 22px;
+}

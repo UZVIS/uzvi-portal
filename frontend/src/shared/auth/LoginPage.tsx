@@ -20,7 +20,7 @@ export function LoginPage() {
     setIsSubmitting(true);
     try {
       await login(employeeId.trim());
-      navigate("/announcements", { replace: true });
+      navigate("/dashboard", { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
