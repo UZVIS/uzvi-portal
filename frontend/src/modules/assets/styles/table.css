@@ -71,6 +71,8 @@ table{
 }
 
 /* Status pills */
+/* Status pills */
+
 .status{
     display:inline-block;
     padding:3px 10px;
@@ -79,11 +81,29 @@ table{
     font-weight:600;
 }
 
-.status.available{ background:#EDF9F1; color:#2EAF62; }
-.status.assigned{ background:#FFF7E8; color:#F4A300; }
-.status.retired{ background:#FCEDED; color:#C0392B; }
-.status.maintenance{ background:#EAF2FB; color:#2E7DBE; }
+/* In Stock */
+.status.in-stock{
+    background:#EDF9F1;
+    color:#2EAF62;
+}
 
+/* Assigned */
+.status.assigned{
+    background:#FFF7E8;
+    color:#F4A300;
+}
+
+/* Under Repair */
+.status.under-repair{
+    background:#EAF2FB;
+    color:#2E7DBE;
+}
+
+/* Retired */
+.status.retired{
+    background:#FCEDED;
+    color:#C0392B;
+}
 /* Action buttons */
 .actions{
     display:flex;

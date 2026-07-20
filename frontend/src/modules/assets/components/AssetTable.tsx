@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   Laptop,
   Monitor,
@@ -11,18 +12,59 @@ import {
 
 import "./../styles/table.css";
 
-const assets = [
-  { id: "AST001", tag: "LT001", type: "Laptop", purchaseDate: "12 Jan 2026", status: "Available", assigned: "-", icon: Laptop },
-  { id: "AST002", tag: "MN002", type: "Monitor", purchaseDate: "05 Feb 2026", status: "Assigned", assigned: "EMP001 - Revathi K.", icon: Monitor },
-  { id: "AST003", tag: "KB003", type: "Keyboard", purchaseDate: "17 Feb 2026", status: "Available", assigned: "-", icon: Keyboard },
-  { id: "AST004", tag: "MS004", type: "Mouse", purchaseDate: "20 Feb 2026", status: "Assigned", assigned: "EMP002 - Rahul S.", icon: Mouse },
-  { id: "AST005", tag: "CH005", type: "Chair", purchaseDate: "28 Feb 2026", status: "Retired", assigned: "-", icon: Armchair },
-];
+import { getAllAssets } from "../services/assetService";
+import type { Asset } from "../types/asset";
+import type { AssetFormData } from "./AssetForm";
+function getAssetIcon(type: string) {
+  switch (type) {
+    case "Laptop":
+      return Laptop;
 
-export default function AssetTable() {
+    case "Monitor":
+      return Monitor;
+
+    case "Keyboard":
+      return Keyboard;
+
+    case "Mouse":
+      return Mouse;
+
+    case "Chair":
+      return Armchair;
+
+    default:
+      return Laptop;
+  }
+}
+
+interface AssetTableProps {
+    reload: boolean;
+    onEdit: (asset: AssetFormData) => void;
+    onDelete: (assetId: string) => void;
+}
+
+export default function AssetTable({
+    reload,
+    onEdit,
+    onDelete,
+}: AssetTableProps) {
+  const [assets, setAssets] = useState<Asset[]>([]);
+
+  useEffect(() => {
+    loadAssets();
+  }, [reload]);
+
+  async function loadAssets() {
+    try {
+      const data = await getAllAssets();
+      setAssets(data);
+    } catch (error) {
+      console.error("Failed to load assets:", error);
+    }
+  }
+
   return (
     <div className="table-card">
-
       <table>
         <thead>
           <tr>
@@ -38,31 +80,62 @@ export default function AssetTable() {
 
         <tbody>
           {assets.map((asset) => {
-            const Icon = asset.icon;
+            const Icon = getAssetIcon(asset.asset_type);
+
             return (
-              <tr key={asset.id}>
-                <td>{asset.id}</td>
+              <tr key={asset.asset_id}>
+                <td>{asset.asset_id}</td>
+
                 <td>{asset.tag}</td>
+
                 <td>
                   <div className="asset-info">
                     <div className="asset-icon">
                       <Icon size={18} />
                     </div>
-                    <span>{asset.type}</span>
+
+                    <span>{asset.asset_type}</span>
                   </div>
                 </td>
-                <td>{asset.purchaseDate}</td>
+
+                <td>{asset.purchase_date}</td>
+
                 <td>
-                  <span className={`status ${asset.status.toLowerCase()}`}>
+                  <span
+                    className={`status ${asset.status
+                      .toLowerCase()
+                      .replace(/\s+/g, "-")}`}
+                  >
                     {asset.status}
                   </span>
                 </td>
-                <td>{asset.assigned}</td>
+
+                {/* We'll integrate this later */}
+                <td>-</td>
+
                 <td>
                   <div className="actions">
-                    <button><Eye size={12} /></button>
-                    <button><Pencil size={12} /></button>
-                    <button><Trash2 size={12} /></button>
+                    <button>
+                      <Eye size={12} />
+                    </button>
+
+                    <button
+    onClick={() =>
+        onEdit({
+            id: asset.asset_id,
+            tag: asset.tag,
+            type: asset.asset_type as AssetFormData["type"],
+            status: asset.status as AssetFormData["status"],
+            purchaseDate: asset.purchase_date,
+            
+        })
+    }
+>
+    <Pencil size={12} />
+</button>
+
+<button onClick={() => onDelete(asset.asset_id)}><Trash2 size={12} />
+</button>
                   </div>
                 </td>
               </tr>
@@ -72,23 +145,22 @@ export default function AssetTable() {
       </table>
 
       <div className="table-pagination">
-        <span>Showing 1 to 5 of 230 assets</span>
+        <span>
+          Showing {assets.length} of {assets.length} assets
+        </span>
+
         <div className="page-buttons">
           <button className="page-btn">‹</button>
           <button className="page-btn active">1</button>
-          <button className="page-btn">2</button>
-          <button className="page-btn">3</button>
-          <span>…</span>
-          <button className="page-btn">46</button>
           <button className="page-btn">›</button>
         </div>
+
         <select className="page-size-select">
           <option>5 / page</option>
           <option>10 / page</option>
           <option>25 / page</option>
         </select>
       </div>
-
     </div>
   );
 }

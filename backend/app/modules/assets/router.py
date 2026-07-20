@@ -49,7 +49,7 @@ def create_asset(
 )
 
     if existing_tag:
-     raise HTTPException(
+      raise HTTPException(
         status_code=400,
         detail="Asset tag already exists."
     )
@@ -66,25 +66,24 @@ def create_asset(
     return new_asset
 
 # ----------------------------
-# Get Available Assets
+# Get InStock Assets
 # ----------------------------
 @router.get(
-    "/available",
+    "/in-stock",
     response_model=list[AssetResponse]
 )
-def get_available_assets(
+def get_in_stock_assets(
     db: Session = Depends(get_db)
 ):
     assets = (
         db.query(Asset)
         .filter(
-            Asset.status == "Available"
+            Asset.status == "In Stock"
         )
         .all()
     )
 
     return assets
-
 
 # ----------------------------
 # Get Assigned Assets
@@ -180,9 +179,9 @@ def get_inventory_summary(
 ):
     total_assets = db.query(Asset).count()
 
-    available_assets = (
+    in_stock_assets = (
         db.query(Asset)
-        .filter(Asset.status == "Available")
+        .filter(Asset.status == "In Stock")
         .count()
     )
 
@@ -192,11 +191,26 @@ def get_inventory_summary(
         .count()
     )
 
+    under_repair_assets = (
+        db.query(Asset)
+        .filter(Asset.status == "Under Repair")
+        .count()
+    )
+
+    retired_assets = (
+        db.query(Asset)
+        .filter(Asset.status == "Retired")
+        .count()
+    )
+
     return InventorySummaryResponse(
         total_assets=total_assets,
-        available_assets=available_assets,
+        in_stock_assets=in_stock_assets,
         assigned_assets=assigned_assets,
+        under_repair_assets=under_repair_assets,
+        retired_assets=retired_assets,
     )
+
 # ----------------------------
 # Inventory Count By Asset Type
 # ----------------------------
@@ -246,6 +260,7 @@ def get_asset_by_id(
 # ----------------------------
 # Update Asset
 # ----------------------------
+
 @router.put("/{asset_id}", response_model=AssetResponse)
 def update_asset(
     asset_id: str,
@@ -264,6 +279,22 @@ def update_asset(
             detail="Asset not found."
         )
 
+    # Check if another asset already uses this tag
+    existing_tag = (
+        db.query(Asset)
+        .filter(
+            Asset.tag == asset_data.tag,
+            Asset.asset_id != asset_id
+        )
+        .first()
+    )
+
+    if existing_tag:
+        raise HTTPException(
+            status_code=400,
+            detail="Asset tag already exists."
+        )
+
     asset.tag = asset_data.tag
     asset.asset_type = asset_data.asset_type
     asset.purchase_date = asset_data.purchase_date
@@ -273,7 +304,6 @@ def update_asset(
     db.refresh(asset)
 
     return asset
-
 
 # ----------------------------
 # Delete Asset
@@ -371,11 +401,12 @@ def assign_asset(
         )
 
     # Check Asset Availability
-    if asset.status == "Assigned":
-        raise HTTPException(
-            status_code=400,
-            detail="Asset is already assigned."
-        )
+    # Asset must be available for assignment
+    if asset.status != "In Stock":
+      raise HTTPException(
+        status_code=400,
+        detail=f"Asset cannot be assigned because its status is '{asset.status}'."
+    )
 
     # Create Assignment
     new_assignment = AssetAssignment(
@@ -447,7 +478,7 @@ def return_asset(
     assignment.remarks = return_data.remarks
 
     # Update Asset Status
-    asset.status = "Available"
+    asset.status = "In Stock"
 
     db.commit()
     db.refresh(assignment)

@@ -78,5 +78,7 @@ class AssignmentDetailsResponse(BaseModel):
 # inventory report
 class InventorySummaryResponse(BaseModel):
     total_assets: int
-    available_assets: int
+    in_stock_assets: int
     assigned_assets: int
+    under_repair_assets: int
+    retired_assets: int

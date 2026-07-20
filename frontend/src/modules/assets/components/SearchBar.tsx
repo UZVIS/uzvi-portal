@@ -6,7 +6,13 @@ import {
 
 import "../styles/dashboard.css";
 
-export default function SearchBar() {
+interface SearchBarProps {
+    onAddAsset: () => void;
+}
+
+export default function SearchBar({
+    onAddAsset,
+}: SearchBarProps) {
 
     return (
 
@@ -16,7 +22,10 @@ export default function SearchBar() {
 
             <div className="search-box">
 
-                <Search size={18} className="search-icon"/>
+                <Search
+                    size={18}
+                    className="search-icon"
+                />
 
                 <input
                     className="search-input"
@@ -31,9 +40,9 @@ export default function SearchBar() {
             <select className="filter-select">
 
                 <option>Status</option>
-                <option>Available</option>
+                <option>In Stock</option>
                 <option>Assigned</option>
-                <option>Maintenance</option>
+                <option>Under Repair</option>
                 <option>Retired</option>
 
             </select>
@@ -55,17 +64,20 @@ export default function SearchBar() {
 
             <button className="filter-btn">
 
-                <Filter size={17}/>
+                <Filter size={17} />
 
                 Filters
 
             </button>
 
-            {/* Add */}
+            {/* Add Asset */}
 
-            <button className="add-btn">
+            <button
+                className="add-btn"
+                onClick={onAddAsset}
+            >
 
-                <Plus size={18}/>
+                <Plus size={18} />
 
                 Add Asset
 
