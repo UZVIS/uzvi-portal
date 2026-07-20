@@ -29,6 +29,10 @@ export default defineConfig({
         target: 'http://localhost:8000',
         changeOrigin: true,
       },
+      '/helpdesk': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
     },
   },
 });

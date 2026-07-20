@@ -10,6 +10,7 @@ import { AcknowledgmentsOverviewPage } from "./modules/announcements/Acknowledgm
 import { AnnouncementsDashboardPage } from "./modules/dashboard/AnnouncementsDashboardPage";
 import UtilizationModulePage from "./modules/consultant_utilization/UtilizationModulePage";
 import ExpenseClaimsModulePage from "./modules/expense_claims/ExpenseClaimsModulePage";
+import HelpdeskModulePage from "./modules/helpdesk/HelpdeskModulePage";
 
 function HomePage() {
   return (
@@ -19,6 +20,7 @@ function HomePage() {
         <li><Link to="/announcements">Announcements</Link></li>
         <li><Link to="/utilization">Consultant Utilization</Link></li>
         <li><Link to="/expenses">Expense Claims</Link></li>
+        <li><Link to="/helpdesk">Helpdesk</Link></li>
       </ul>
     </div>
   );
@@ -84,6 +86,15 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <ExpenseClaimsModulePage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/helpdesk"
+            element={
+              <ProtectedRoute>
+                <HelpdeskModulePage />
               </ProtectedRoute>
             }
           />
