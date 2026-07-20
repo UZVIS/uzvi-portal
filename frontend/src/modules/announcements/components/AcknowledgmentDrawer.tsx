@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getAcknowledgmentStatus } from "../api";
-import type {AcknowledgmentStatusRow} from "../types";
+import type { AcknowledgmentStatusRow } from "../types";
+import { IconCheckCircle, IconClose, IconUsers } from "./icons";
 
 interface Props {
   announcementId: string;
@@ -25,9 +26,11 @@ export function AcknowledgmentDrawer({ announcementId, onClose }: Props) {
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal modal--drawer" onClick={(e) => e.stopPropagation()}>
         <div className="modal__header">
-          <h2>Acknowledgments</h2>
+          <h2>
+            <IconUsers size={18} className="modal__title-icon" /> Acknowledgments
+          </h2>
           <button className="modal__close" onClick={onClose} aria-label="Close">
-            ×
+            <IconClose size={18} />
           </button>
         </div>
 
@@ -51,10 +54,12 @@ export function AcknowledgmentDrawer({ announcementId, onClose }: Props) {
           {(rows ?? []).map((row) => (
             <li key={row.employee_id} className="drawer__row">
               <span
-                className={`ledger__marker ${
-                  row.acknowledged ? "marker--teal" : "marker--amber-outline"
+                className={`drawer__marker ${
+                  row.acknowledged ? "drawer__marker--acked" : "drawer__marker--pending"
                 }`}
-              />
+              >
+                <IconCheckCircle size={14} />
+              </span>
               <span className="drawer__employee">{row.employee_id}</span>
               <span
                 className={`drawer__status ${

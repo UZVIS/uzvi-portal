@@ -1,6 +1,15 @@
-import { useEffect, useState } from "react";
-import type {Announcement, TargetType} from "../types";
+import { useEffect, useState, type ReactElement } from "react";
+import type { Announcement, TargetType } from "../types";
 import { getAcknowledgmentStatus } from "../api";
+import {
+  IconArchive,
+  IconBell,
+  IconCheckCircle,
+  IconClock,
+  IconMegaphone,
+  IconShield,
+  IconUsers,
+} from "./icons";
 
 interface Props {
   announcement: Announcement;
@@ -17,10 +26,17 @@ const TARGET_LABEL: Record<TargetType, (value: string | null) => string> = {
   role: (value) => `Role · ${value ?? "—"}`,
 };
 
-const TARGET_MARKER_CLASS: Record<TargetType, string> = {
-  company_wide: "marker--navy",
-  team: "marker--teal",
-  role: "marker--plum",
+// Color theme per audience: indigo (company-wide), teal (team), violet (role)
+const TARGET_THEME: Record<TargetType, string> = {
+  company_wide: "c-notice--indigo",
+  team: "c-notice--teal",
+  role: "c-notice--violet",
+};
+
+const TARGET_ICON: Record<TargetType, (size: number) => ReactElement> = {
+  company_wide: (size) => <IconMegaphone size={size} />,
+  team: (size) => <IconUsers size={size} />,
+  role: (size) => <IconShield size={size} />,
 };
 
 function formatPostedAt(iso: string): string {
@@ -41,8 +57,6 @@ export function AnnouncementCard({
   onAcknowledge,
   onViewAcknowledgments,
 }: Props) {
-  // requires_ack lives on the announcement, but whether *this* employee has
-  // acked it lives in the ack-status list — so we fetch it per card.
   const [acknowledged, setAcknowledged] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -65,53 +79,65 @@ export function AnnouncementCard({
     };
   }, [announcement.announcement_id, announcement.requires_ack, currentEmployeeId]);
 
+  const isArchived = announcement.status === "archived";
+  const theme = TARGET_THEME[announcement.target_type];
+
   return (
-    <li className="ledger__row">
-      <span
-        className={`ledger__marker ${TARGET_MARKER_CLASS[announcement.target_type]}`}
-      />
-      <article
-        className={`notice ${
-          announcement.status === "archived" ? "notice--archived" : ""
-        }`}
-      >
-        <div className="notice__meta">
-          <span className="notice__eyebrow">
-            {TARGET_LABEL[announcement.target_type](announcement.target_value)}
+    <li className="c-notice-item">
+      <article className={`c-notice ${theme} ${isArchived ? "c-notice--archived" : ""}`}>
+        <div className="c-notice__header">
+          <span className="c-notice__badge">
+            {TARGET_ICON[announcement.target_type](19)}
           </span>
-          {announcement.status === "archived" && (
-            <span className="notice__archived-tag">Archived</span>
-          )}
-          {announcement.requires_ack && (
-            <span className="notice__ack-flag">Needs ack</span>
-          )}
+
+          <div className="c-notice__headline">
+            <div className="c-notice__meta">
+              <span className="c-notice__eyebrow">
+                {TARGET_LABEL[announcement.target_type](announcement.target_value)}
+              </span>
+              {isArchived && (
+                <span className="c-chip c-chip--muted">
+                  <IconArchive size={12} /> Archived
+                </span>
+              )}
+              {announcement.requires_ack && (
+                <span className="c-chip c-chip--amber">
+                  <IconBell size={12} /> Needs ack
+                </span>
+              )}
+            </div>
+            <h2 className="c-notice__title">{announcement.title}</h2>
+          </div>
         </div>
 
-        <h2 className="notice__title">{announcement.title}</h2>
-        <p className="notice__body">{announcement.body}</p>
+        <p className="c-notice__body">{announcement.body}</p>
 
-        <div className="notice__footer">
-          <span className="notice__posted">
+        <div className="c-notice__footer">
+          <span className="c-notice__posted">
+            <IconClock size={12} />
             {announcement.posted_by} · {formatPostedAt(announcement.posted_at)}
           </span>
 
-          <div className="notice__actions">
+          <div className="c-notice__actions">
             {canManage && announcement.requires_ack && (
-              <button className="notice__link" onClick={onViewAcknowledgments}>
-                View acknowledgments
+              <button className="c-notice__link" onClick={onViewAcknowledgments}>
+                <IconUsers size={14} /> View acknowledgments
               </button>
             )}
             {announcement.requires_ack && acknowledged === false && (
               <button
-                className="notice__ack-button"
+                className="c-notice__ack-button"
                 onClick={onAcknowledge}
                 disabled={isAcking}
               >
+                <IconCheckCircle size={14} />
                 {isAcking ? "Acknowledging…" : "Acknowledge"}
               </button>
             )}
             {announcement.requires_ack && acknowledged === true && (
-              <span className="notice__acked-tag">Acknowledged ✓</span>
+              <span className="c-notice__acked-tag">
+                <IconCheckCircle size={14} /> Acknowledged
+              </span>
             )}
           </div>
         </div>

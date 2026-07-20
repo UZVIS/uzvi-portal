@@ -1,21 +1,48 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Link } from "react-router-dom";
+
 import { AuthProvider } from "./shared/auth/AuthContext";
 import { LoginPage } from "./shared/auth/LoginPage";
 import { ProtectedRoute } from "./shared/components/ProtectedRoute";
-import ModuleDirectoryPage from "./modules/directory_dashboard/ModuleDirectoryPage";
-import ModulePlaceholderPage from "./modules/directory_dashboard/ModulePlaceholderPage";
-import { allModules } from "./modules/directory_dashboard/modules.data";
+
 import { AnnouncementsPage } from "./modules/announcements/AnnouncementsPage";
+import { ComposeAnnouncementPage } from "./modules/announcements/ComposeAnnouncementPage";
+import { AcknowledgmentsOverviewPage } from "./modules/announcements/AcknowledgmentsOverviewPage";
+import { AnnouncementsDashboardPage } from "./modules/dashboard/AnnouncementsDashboardPage";
 import UtilizationModulePage from "./modules/consultant_utilization/UtilizationModulePage";
 import ExpenseClaimsModulePage from "./modules/expense_claims/ExpenseClaimsModulePage";
+
+function HomePage() {
+  return (
+    <div>
+      <h1>UZVI Employee Portal</h1>
+      <ul>
+        <li><Link to="/announcements">Announcements</Link></li>
+        <li><Link to="/utilization">Consultant Utilization</Link></li>
+        <li><Link to="/expenses">Expense Claims</Link></li>
+      </ul>
+    </div>
+  );
+}
 
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<ModuleDirectoryPage />} />
+
+          <Route path="/" element={<HomePage />} />
+
           <Route path="/login" element={<LoginPage />} />
+
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <AnnouncementsDashboardPage />
+              </ProtectedRoute>
+            }
+          />
+
           <Route
             path="/announcements"
             element={
@@ -24,6 +51,25 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+
+          <Route
+            path="/announcements/new"
+            element={
+              <ProtectedRoute>
+                <ComposeAnnouncementPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/announcements/acknowledgments"
+            element={
+              <ProtectedRoute>
+                <AcknowledgmentsOverviewPage />
+              </ProtectedRoute>
+            }
+          />
+
           <Route
             path="/utilization"
             element={
@@ -32,6 +78,7 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/expenses"
             element={
@@ -40,21 +87,9 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-          {allModules
-            .filter(
-              (module) =>
-                !["/announcements", "/utilization", "/expenses"].includes(
-                  module.prefix
-                )
-            )
-            .map((module) => (
-              <Route
-                key={module.id}
-                path={module.prefix}
-                element={<ModulePlaceholderPage module={module} />}
-              />
-            ))}
+
           <Route path="*" element={<Navigate to="/" replace />} />
+
         </Routes>
       </BrowserRouter>
     </AuthProvider>

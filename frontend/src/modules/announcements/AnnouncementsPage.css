@@ -2,6 +2,7 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background: var(--color-paper);
 }
 
 .topbar {
@@ -14,15 +15,29 @@
 }
 
 .topbar__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   font-family: var(--font-display);
   font-weight: 700;
   letter-spacing: 0.08em;
 }
 
+.topbar__brand-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--color-amber);
+}
+
 .topbar__user {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
 }
 
 .topbar__user-info {
@@ -45,7 +60,24 @@
   letter-spacing: 0.05em;
 }
 
+.topbar__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--color-amber);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
 .topbar__logout {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.3);
   color: #fff;
@@ -53,11 +85,117 @@
   border-radius: var(--radius-sm);
   font-size: 13px;
   cursor: pointer;
+  transition: background 0.15s ease;
 }
 
 .topbar__logout:hover {
   background: rgba(255, 255, 255, 0.08);
 }
+
+/* ---- Hero / stats strip ---- */
+
+.hero {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  max-width: 1080px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 28px 32px 4px;
+}
+
+.hero__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--color-navy), var(--color-navy-soft));
+  color: var(--color-amber);
+  box-shadow: var(--shadow-card);
+}
+
+.hero__text {
+  flex: 1;
+  min-width: 220px;
+}
+
+.hero__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 26px;
+}
+
+.hero__sparkle {
+  color: var(--color-amber);
+}
+
+.hero__sub {
+  color: var(--color-slate);
+  font-size: 13px;
+  margin: 6px 0 0;
+}
+
+.hero__stats {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.stat-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  padding: 10px 16px;
+  box-shadow: var(--shadow-card);
+  min-width: 132px;
+}
+
+.stat-chip__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-paper);
+  color: var(--color-navy);
+  flex-shrink: 0;
+}
+
+.stat-chip strong {
+  display: block;
+  font-size: 18px;
+  line-height: 1.2;
+  font-family: var(--font-display);
+}
+
+.stat-chip span {
+  display: block;
+  font-size: 11px;
+  color: var(--color-slate);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.stat-chip--amber .stat-chip__icon {
+  background: var(--color-amber-soft);
+  color: #94591a;
+}
+
+.stat-chip--navy .stat-chip__icon {
+  background: var(--color-navy);
+  color: #fff;
+}
+
+/* ---- Body layout ---- */
 
 .announcements-body {
   flex: 1;
@@ -67,10 +205,13 @@
   width: 100%;
   margin: 0 auto;
   gap: 32px;
-  padding: 32px;
+  padding: 24px 32px 32px;
 }
 
 @media (max-width: 760px) {
+  .hero {
+    padding: 20px 20px 4px;
+  }
   .announcements-body {
     grid-template-columns: 1fr;
     padding: 20px;
@@ -90,6 +231,9 @@
 }
 
 .rail__tab {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   text-align: left;
   padding: 10px 12px;
   border: none;
@@ -98,6 +242,11 @@
   font-size: 14px;
   color: var(--color-slate);
   cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.rail__tab:hover {
+  background: var(--color-surface);
 }
 
 .rail__tab--active {
@@ -108,104 +257,111 @@
 }
 
 .rail__compose {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   background: var(--color-navy);
   color: #fff;
   border: none;
-  padding: 10px 14px;
+  padding: 11px 14px;
   border-radius: var(--radius-sm);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
 }
 
 .rail__compose:hover {
   background: var(--color-navy-soft);
-}
-
-.feed__title {
-  font-size: 22px;
-}
-
-.feed__sub {
-  color: var(--color-slate);
-  font-size: 13px;
-  margin: 6px 0 24px;
+  transform: translateY(-1px);
 }
 
 .feed__state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
   color: var(--color-slate);
   font-size: 14px;
+  padding: 40px 0;
+  text-align: center;
 }
 
-/* ---- Ledger: the signature vertical timeline ---- */
+/* ---- Feed: card list ---- */
 
 .ledger {
   list-style: none;
   margin: 0;
   padding: 0;
-  position: relative;
-}
-
-.ledger::before {
-  content: "";
-  position: absolute;
-  left: 5px;
-  top: 6px;
-  bottom: 6px;
-  width: 1px;
-  background: var(--color-hairline);
-}
-
-.ledger__row {
   display: flex;
+  flex-direction: column;
   gap: 16px;
-  position: relative;
-  padding-bottom: 20px;
 }
 
-.ledger__marker {
-  width: 11px;
-  height: 11px;
-  border-radius: 50%;
-  margin-top: 6px;
-  flex-shrink: 0;
-  position: relative;
-  z-index: 1;
-  border: 2px solid var(--color-paper);
-}
-
-.marker--navy {
-  background: var(--color-navy);
-}
-.marker--teal {
-  background: var(--color-teal);
-}
-.marker--plum {
-  background: var(--color-plum);
-}
-.marker--amber-outline {
-  background: #fff;
-  border: 2px solid var(--color-amber);
+.notice-item {
+  display: block;
 }
 
 .notice {
-  flex: 1;
   background: var(--color-surface);
   border: 1px solid var(--color-hairline);
+  border-left: 4px solid var(--color-navy);
   border-radius: var(--radius-md);
   padding: 18px 20px;
   box-shadow: var(--shadow-card);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.notice:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(28, 36, 56, 0.08), 0 16px 32px -16px rgba(28, 36, 56, 0.22);
 }
 
 .notice--archived {
   opacity: 0.65;
 }
 
+.notice__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+.notice__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  color: #fff;
+}
+
+.notice__badge--navy {
+  background: var(--color-navy);
+}
+
+.notice__badge--teal {
+  background: var(--color-teal);
+}
+
+.notice__badge--plum {
+  background: var(--color-plum);
+}
+
+.notice__headline {
+  flex: 1;
+  min-width: 0;
+}
+
 .notice__meta {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
   flex-wrap: wrap;
 }
 
@@ -217,29 +373,31 @@
   color: var(--color-slate);
 }
 
-.notice__archived-tag,
-.notice__ack-flag {
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 10px;
-  padding: 2px 8px;
+  padding: 3px 9px;
   border-radius: 999px;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   font-weight: 600;
 }
 
-.notice__archived-tag {
+.chip--muted {
   background: #eee;
   color: #666;
 }
 
-.notice__ack-flag {
+.chip--amber {
   background: var(--color-amber-soft);
   color: #94591a;
 }
 
 .notice__title {
   font-size: 16px;
-  margin-bottom: 6px;
+  margin: 0;
 }
 
 .notice__body {
@@ -259,6 +417,9 @@
 }
 
 .notice__posted {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--color-slate);
@@ -271,6 +432,9 @@
 }
 
 .notice__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   background: none;
   border: none;
   color: var(--color-navy);
@@ -281,6 +445,9 @@
 }
 
 .notice__ack-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   background: var(--color-amber);
   color: #fff;
   border: none;
@@ -289,6 +456,7 @@
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
+  transition: background 0.15s ease;
 }
 
 .notice__ack-button:hover:not(:disabled) {
@@ -301,6 +469,9 @@
 }
 
 .notice__acked-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-size: 12px;
   font-weight: 600;
   color: var(--color-teal);
@@ -340,13 +511,31 @@
   margin-bottom: 16px;
 }
 
+.modal__header h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modal__title-icon {
+  color: var(--color-amber);
+}
+
 .modal__close {
+  display: inline-flex;
   background: none;
   border: none;
-  font-size: 22px;
   line-height: 1;
   cursor: pointer;
   color: var(--color-slate);
+  padding: 4px;
+  border-radius: 50%;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.modal__close:hover {
+  background: var(--color-paper);
+  color: var(--color-ink);
 }
 
 .modal__actions {
@@ -376,8 +565,24 @@
   border-bottom: 1px solid var(--color-hairline);
 }
 
-.drawer__row .ledger__marker {
-  margin-top: 0;
+.drawer__marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.drawer__marker--acked {
+  background: var(--color-teal-soft);
+  color: var(--color-teal);
+}
+
+.drawer__marker--pending {
+  background: var(--color-amber-soft);
+  color: #94591a;
 }
 
 .drawer__employee {
@@ -397,4 +602,476 @@
 
 .drawer__status--pending {
   color: var(--color-amber);
+}
+/* ---- Add this block to AnnouncementsPage.css, right after .rail__compose:hover ---- */
+
+.rail__ack-overview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: transparent;
+  color: var(--color-ink);
+  border: 1px solid var(--color-hairline);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.rail__ack-overview:hover {
+  background: var(--color-surface);
+  border-color: var(--color-navy);
+}
+/* ---- Add this block to AnnouncementsPage.css, right after .rail__compose:hover ---- */
+
+.rail__ack-overview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: transparent;
+  color: var(--color-ink);
+  border: 1px solid var(--color-hairline);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.rail__ack-overview:hover {
+  background: var(--color-surface);
+  border-color: var(--color-navy);
+}
+
+/* ---- Dashboard link next to the UZVI brand in the topbar ---- */
+
+.topbar__brand-group {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.topbar__dashboard-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.topbar__dashboard-link:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+/* =========================================================
+   Colorful feed redesign — append this whole file to the
+   end of AnnouncementsPage.css (keep the existing .topbar,
+   .modal-*, .drawer__* rules already in that file).
+   ========================================================= */
+
+.c-feed-screen {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #f3f0ff 0%, #f6f8ff 220px, var(--color-paper) 220px);
+  padding-bottom: 56px;
+}
+
+/* ---------- Slim colorful toolbar (replaces hero + rail) ---------- */
+
+.c-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 24px 32px 0;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 14px 20px;
+}
+
+.c-toolbar__pills {
+  display: flex;
+  gap: 8px;
+}
+
+.c-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: none;
+  background: var(--color-paper);
+  color: var(--color-slate);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 9px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.c-pill:hover {
+  transform: translateY(-1px);
+}
+
+.c-pill--active.c-pill--indigo {
+  background: linear-gradient(135deg, #4361ee, #3a56d4);
+  color: #fff;
+  box-shadow: 0 6px 16px -6px rgba(67, 97, 238, 0.55);
+}
+
+.c-pill--active.c-pill--violet {
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  color: #fff;
+  box-shadow: 0 6px 16px -6px rgba(139, 92, 246, 0.55);
+}
+
+.c-toolbar__stats {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.c-toolbar__stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+
+.c-toolbar__stat--blue {
+  background: #4361ee1a;
+  color: #3a56d4;
+}
+
+.c-toolbar__stat--amber {
+  background: var(--color-amber-soft);
+  color: var(--color-amber);
+}
+
+.c-toolbar__actions {
+  display: flex;
+  gap: 10px;
+}
+
+.c-toolbar__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: none;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 9px 16px;
+  border-radius: var(--radius-sm);
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  white-space: nowrap;
+}
+
+.c-toolbar__btn:hover {
+  transform: translateY(-1px);
+}
+
+.c-toolbar__btn--teal {
+  background: linear-gradient(135deg, #14b8a6, #0d9488);
+  box-shadow: 0 6px 16px -6px rgba(20, 184, 166, 0.5);
+}
+
+.c-toolbar__btn--amber {
+  background: linear-gradient(135deg, #ff9d42, #ff6f4f);
+  box-shadow: 0 6px 16px -6px rgba(255, 111, 79, 0.5);
+}
+
+@media (max-width: 900px) {
+  .c-toolbar {
+    margin: 20px 16px 0;
+  }
+}
+
+/* ---------- Feed list ---------- */
+
+.c-feed {
+  padding: 26px 32px 0;
+}
+
+.c-feed__state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: var(--color-slate);
+  padding: 48px 0;
+  text-align: center;
+}
+
+.c-ledger {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+@media (max-width: 900px) {
+  .c-feed {
+    padding: 22px 16px 0;
+  }
+}
+
+/* ---------- Colorful announcement cards ---------- */
+
+.c-notice-item {
+  list-style: none;
+}
+
+.c-notice {
+  position: relative;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 22px 24px 18px;
+  border-left: 6px solid transparent;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.c-notice:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px -16px rgba(20, 20, 60, 0.28);
+}
+
+.c-notice--indigo {
+  border-left-color: #4361ee;
+}
+
+.c-notice--teal {
+  border-left-color: #14b8a6;
+}
+
+.c-notice--violet {
+  border-left-color: #8b5cf6;
+}
+
+.c-notice--archived {
+  opacity: 0.65;
+}
+
+.c-notice__header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.c-notice__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+  color: #fff;
+}
+
+.c-notice--indigo .c-notice__badge {
+  background: linear-gradient(135deg, #4361ee, #3a56d4);
+}
+
+.c-notice--teal .c-notice__badge {
+  background: linear-gradient(135deg, #14b8a6, #0d9488);
+}
+
+.c-notice--violet .c-notice__badge {
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+}
+
+.c-notice__headline {
+  flex: 1;
+  min-width: 0;
+}
+
+.c-notice__meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.c-notice__eyebrow {
+  font-size: 11.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-slate);
+}
+
+.c-notice__title {
+  font-size: 17.5px;
+  font-weight: 800;
+  color: var(--color-ink);
+  margin: 2px 0 0;
+}
+
+.c-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.c-chip--amber {
+  background: var(--color-amber-soft);
+  color: var(--color-amber);
+}
+
+.c-chip--muted {
+  background: #e5e7eb;
+  color: #6b7280;
+}
+
+.c-notice__body {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--color-ink);
+  margin: 14px 0 16px;
+}
+
+.c-notice__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-hairline);
+}
+
+.c-notice__posted {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--color-slate);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.c-notice__actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.c-notice__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: var(--color-navy);
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.c-notice__ack-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: linear-gradient(135deg, #ff9d42, #ff6f4f);
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 800;
+  padding: 8px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 6px 14px -6px rgba(255, 111, 79, 0.55);
+}
+
+.c-notice__ack-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.c-notice__acked-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #0d9488;
+  background: #14b8a61a;
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+/* ---- Add this block to AnnouncementsPage.css, right after .rail__compose:hover ---- */
+
+.rail__ack-overview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: transparent;
+  color: var(--color-ink);
+  border: 1px solid var(--color-hairline);
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.rail__ack-overview:hover {
+  background: var(--color-surface);
+  border-color: var(--color-navy);
+}
+
+/* ---- Dashboard link next to the UZVI brand in the topbar ---- */
+
+.topbar__brand-group {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.topbar__back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.topbar__back-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
 }
