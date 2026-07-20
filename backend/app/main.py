@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 
-from app.database import Base, engine
+from app.database import Base, engine, init_db
 
 from app.modules.directory.router import router as employee_router
 from app.modules.attendance.router import router as attendance_router
@@ -21,7 +21,16 @@ from app.modules.expense_claims.router import (
     router as expenses_router,
 )
 
+
+# NEW: Import performance_goals router
+from app.modules.performance_goals.router import router as performance_router
+
+
 app = FastAPI(title="UZVI Services Employee Portal")
+
+@app.on_event("startup")
+def startup():
+    init_db()
 
 Base.metadata.create_all(bind=engine)
 
@@ -39,6 +48,9 @@ app.include_router(interview_stage_router)
 app.include_router(utilization_router)
 app.include_router(expenses_router)
 
+
+# NEW: Mount performance router
+app.include_router(performance_router, prefix="/api/v1")
 
 @app.get("/health")
 def health_check():
