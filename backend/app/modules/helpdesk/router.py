@@ -19,7 +19,7 @@ from app.modules.helpdesk.service import (
 )
 
 router = APIRouter(
-    prefix="/helpdesk",
+    prefix="/api/helpdesk",
     tags=["Helpdesk"],
 )
 

@@ -6,7 +6,7 @@ import type{
   TicketCommentCreate,
 } from "./types";
 
-const API_BASE = "/helpdesk";
+const API_BASE = "/api/helpdesk";
 
 async function request<T>(
   path: string,
