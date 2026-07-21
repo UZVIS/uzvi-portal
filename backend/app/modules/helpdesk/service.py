@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.modules.helpdesk.models import Ticket, TicketComment
 
@@ -22,10 +22,11 @@ def get_all_tickets(db: Session):
 
 def get_ticket(db: Session, ticket_id: int):
     """
-    Return a single helpdesk ticket.
+    Return a single helpdesk ticket with comments.
     """
     return (
         db.query(Ticket)
+        .options(joinedload(Ticket.comments))
         .filter(Ticket.ticket_id == ticket_id)
         .first()
     )
