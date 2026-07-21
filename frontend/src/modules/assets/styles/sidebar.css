@@ -218,3 +218,138 @@
 
     font-size:13px;
 }
+
+/* ===========================
+   ASSETS GROUP (parent + nested child)
+=========================== */
+
+.menu-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.menu-group-header {
+    display: flex;
+    align-items: center;
+    padding: 0;
+    border-radius: 8px;
+    transition: .25s;
+}
+
+.menu-group-header:hover {
+    background: #2a2523;
+}
+
+.menu-group-header.active {
+    background: #ef6c22;
+    box-shadow: 0 8px 18px rgba(239, 108, 34, .28);
+}
+
+.menu-group-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    height: 40px;
+    padding: 0 12px;
+    color: #d6d6d6;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.menu-group-header.active .menu-group-link {
+    color: #fff;
+}
+
+.menu-group-header:not(.active):hover .menu-group-link {
+    color: #ffffff;
+}
+
+.menu-chevron-btn {
+    background: none;
+    border: none;
+    color: #d6d6d6;
+    cursor: pointer;
+    height: 40px;
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
+    opacity: .55;
+}
+
+.menu-group-header.active .menu-chevron-btn {
+    color: #fff;
+    opacity: .85;
+}
+
+.menu-chevron-btn:hover {
+    opacity: 1;
+}
+
+/* Nested children — visually smaller, indented, tree line */
+.menu-subgroup {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    margin: 4px 0 4px 20px;
+    padding-left: 12px;
+
+    border-left: 1px solid rgba(255, 255, 255, .1);
+}
+
+.menu-subitem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    height: 34px;
+    padding: 0 10px;
+
+    border-radius: 6px;
+
+    color: #a8a8a8;
+    text-decoration: none;
+
+    font-size: 11.5px;
+    font-weight: 500;
+
+    transition: .25s;
+    margin-top:10px;
+}
+
+.menu-subitem svg {
+    flex-shrink: 0;
+    opacity: .85;
+}
+
+.menu-subitem:hover {
+    background: #2a2523;
+    color: #ffffff;
+}
+
+.menu-subitem.active {
+    background: rgba(239, 108, 34, .14);
+    color: #ef6c22;
+    font-weight: 600;
+    box-shadow: none;
+}
+
+.menu-badge {
+    margin-left: auto;
+    background: #ef6c22;
+    color: #fff;
+    font-size: 10.5px;
+    font-weight: 700;
+    line-height: 1;
+    padding: 3px 7px;
+    border-radius: 999px;
+    min-width: 18px;
+    text-align: center;
+}
+
+.menu-subitem.active .menu-badge {
+    background: #fff;
+    color: #ef6c22;
+}

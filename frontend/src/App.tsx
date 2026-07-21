@@ -10,6 +10,7 @@ import { allModules } from "./modules/directory/modules.data";
 
 import { AnnouncementsPage } from "./modules/announcements/AnnouncementsPage";
 import { assetRoutes } from "./modules/assets/routes";
+import PendingReturnsPage from "./modules/assets/pages/pendingReturnsPage";
 export default function App() {
   return (
     <AuthProvider>
@@ -28,6 +29,10 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+    path="/assets/pending-returns"
+    element={<PendingReturnsPage />}
+/>
 
           {assetRoutes}
 

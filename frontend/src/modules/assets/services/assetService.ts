@@ -12,6 +12,7 @@ import type {
   AssetReturn,
   InventorySummary,
   AssetHistory,
+  PendingReturn,
 } from "../types/asset";
 
 const BASE_URL = "/v1/assets";
@@ -117,4 +118,9 @@ export async function getAssetHistory(
         `${BASE_URL}/${assetId}/history`
     );
 
+}
+
+// for pending returns on employee exit
+export async function getPendingReturns(): Promise<PendingReturn[]> {
+    return apiGet(`${BASE_URL}/pending-returns`);
 }

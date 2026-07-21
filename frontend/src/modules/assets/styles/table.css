@@ -1,172 +1,391 @@
-.table-card{
-    width:100%;
-    background:#fff;
-    border:1px solid #ececec;
-    border-radius:12px;
-    overflow:hidden;
+/* ===========================
+   PAGE HEADER (used above the table)
+=========================== */
+
+.page-header {
+    margin-bottom: 20px;
 }
 
-table{
-    width:100%;
-    border-collapse:collapse;
-    border-spacing:0;
-    table-layout:auto;
+.page-header h2 {
+    margin: 0 0 4px;
+    font-size: 21px;
+    font-weight: 700;
+    color: #211d1b;
 }
 
-/* Header */
-.table-card thead tr{
-    background:#201c1a;
+.page-header p {
+    margin: 0;
+    font-size: 13px;
+    color: #8a8580;
 }
 
-.table-card th{
-    text-transform:uppercase;
-    font-size:11px;
-    font-weight:700;
-    color:#fff;
-    letter-spacing:.4px;
-    padding:12px 16px;
-    text-align:left;
-    white-space:nowrap;
-    border:none;
-    margin:0;
+
+/* ===========================
+   TABLE CONTAINER
+=========================== */
+
+.table-container {
+    background: #ffffff;
+
+    border: 1px solid #ece8e4;
+    border-radius: 12px;
+
+    overflow: hidden;
+
+    box-shadow: 0 1px 2px rgba(33, 29, 27, .04);
 }
 
-/* Body cells */
-.table-card td{
-    padding:12px 16px;
-    font-size:13.5px;
-    border:none;
-    border-bottom:1px solid #f2f2f2;
-    vertical-align:middle;
-    white-space:nowrap;
-    margin:0;
+
+/* ===========================
+   TABLE
+=========================== */
+
+.asset-table {
+    width: 100%;
+    border-collapse: collapse;
+
+    font-size: 13px;
 }
 
-.table-card tbody tr:last-child td{
-    border-bottom:none;
+.asset-table thead th {
+    text-align: left;
+
+    padding: 14px 18px;
+
+    background: #faf8f6;
+    border-bottom: 1px solid #ece8e4;
+
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: #948e88;
 }
 
-.table-card tbody tr:hover{
-    background:#fafafa;
+.asset-table tbody td {
+    padding: 14px 18px;
+
+    border-bottom: 1px solid #f1eeec;
+
+    color: #211d1b;
+    vertical-align: middle;
 }
 
-/* Type icon */
-.asset-info{
-    display:flex;
-    flex-direction:row;
-    align-items:center;
-    gap:8px;
+.asset-table tbody tr:last-child td {
+    border-bottom: none;
 }
 
-.asset-icon{
-    width:28px;
-    height:28px;
-    border-radius:50%;
-    background:#F3DFCF;
-    color:#8A5A3B;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    flex-shrink:0;
+.asset-table tbody tr {
+    transition: background .15s ease;
 }
 
-/* Status pills */
-/* Status pills */
-
-.status{
-    display:inline-block;
-    padding:3px 10px;
-    border-radius:20px;
-    font-size:11.5px;
-    font-weight:600;
+.asset-table tbody tr:hover {
+    background: #fbfaf9;
 }
 
-/* In Stock */
-.status.in-stock{
-    background:#EDF9F1;
-    color:#2EAF62;
+
+/* ===========================
+   ACTION BUTTON (Return)
+=========================== */
+
+.action-btn.return {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    padding: 7px 14px;
+
+    border: 1px solid #ef6c22;
+    border-radius: 8px;
+    background: rgba(239, 108, 34, .08);
+
+    color: #ef6c22;
+
+    font-size: 12.5px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition: .2s ease;
 }
 
-/* Assigned */
-.status.assigned{
-    background:#FFF7E8;
-    color:#F4A300;
+.action-btn.return:hover {
+    background: #ef6c22;
+    color: #ffffff;
 }
 
-/* Under Repair */
-.status.under-repair{
-    background:#EAF2FB;
-    color:#2E7DBE;
+.action-btn.return svg {
+    flex-shrink: 0;
 }
 
-/* Retired */
-.status.retired{
-    background:#FCEDED;
-    color:#C0392B;
-}
-/* Action buttons */
-.actions{
-    display:flex;
-    align-items:center;
-    gap:6px;
-}
 
-.actions button{
-    width:28px;
-    height:28px;
-    border:none;
-    border-radius:7px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    cursor:pointer;
+/* ===========================
+   EMPTY STATE
+=========================== */
+
+.asset-table tbody td[colSpan] {
+    text-align: center;
+    padding: 40px 20px !important;
+    color: #a39d97;
+    font-size: 13px;
 }
 
-.actions button:nth-child(1){ background:#F3DFCF; color:#8A5A3B; }
-.actions button:nth-child(2){ background:lab(93.92% -1.03 1.8); color:#B5651D; }
-.actions button:nth-child(3){ background:#FBE4E4; color:#C0392B; }
-.actions button:hover{ filter:brightness(0.95); }
 
-/* Pagination */
-.table-pagination{
-    display:flex;
-    flex-direction:row;
-    align-items:center;
-    justify-content:space-between;
-    padding:12px 16px;
-    font-size:12.5px;
-    color:#7b7b7b;
-    border-top:1px solid #ececec;
+/* ===========================
+   ASSET TABLE (inventory, with icons/status/actions)
+=========================== */
+
+.table-card {
+    width: 100%;
+    background: #ffffff;
+    border: 1px solid #ece8e4;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(33, 29, 27, .04);
 }
 
-.page-buttons{
-    display:flex;
-    flex-direction:row;
-    align-items:center;
-    gap:5px;
+.table-card table {
+    width: 100%;
+    border-collapse: collapse;
+    border-spacing: 0;
+    table-layout: auto;
 }
 
-.page-btn{
-    width:28px;
-    height:28px;
-    border:1px solid #e4e4e4;
-    background:#fff;
-    border-radius:50%;
-    cursor:pointer;
-    font-size:12px;
-    color:#444;
+.table-card thead tr {
+    background: #faf8f6;
 }
 
-.page-btn.active{
-    background:#201c1a;
-    color:#fff;
-    border-color:#201c1a;
+.table-card th {
+    text-align: left;
+    padding: 13px 16px;
+
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    color: #948e88;
+
+    border-bottom: 1px solid #ece8e4;
+    white-space: nowrap;
 }
 
-.page-size-select{
-    height:30px;
-    border-radius:20px;
-    border:1px solid #e4e4e4;
-    padding:0 12px;
-    font-size:12.5px;
+.table-card td {
+    padding: 12px 16px;
+    font-size: 13px;
+    color: #211d1b;
+
+    border-bottom: 1px solid #f1eeec;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.table-card tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.table-card tbody tr {
+    transition: background .15s ease;
+}
+
+.table-card tbody tr:hover {
+    background: #fbfaf9;
+}
+
+/* Asset type + icon */
+.asset-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.asset-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+
+    background: rgba(239, 108, 34, .1);
+    color: #ef6c22;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Status pills — tied to the same semantic colors used for actions below */
+.status {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 11px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.status.in-stock {
+    background: #eafaf0;
+    color: #1f9d55;
+}
+
+.status.assigned {
+    background: #fff6e6;
+    color: #b8790a;
+}
+
+.status.under-repair {
+    background: #eaf2fb;
+    color: #2e7dbe;
+}
+
+.status.retired {
+    background: #fceded;
+    color: #c0392b;
+}
+
+/* ===========================
+   ACTION BUTTONS (view / edit / assign / return / delete)
+=========================== */
+
+.actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.actions button {
+    width: 30px;
+    height: 30px;
+
+    border: none;
+    border-radius: 8px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    cursor: pointer;
+    transition: filter .15s ease, background .15s ease;
+}
+
+/* View — neutral, quiet */
+.actions button:nth-child(1) {
+    background: #f2f0ee;
+    color: #6b6560;
+}
+
+/* Edit — same family as "Under Repair" pill, reads as "modify" */
+.actions button:nth-child(2) {
+    background: #eaf2fb;
+    color: #2e7dbe;
+}
+
+/* Delete — always last child, same family as "Retired" pill */
+.actions button:nth-child(4) {
+    background: #fceded;
+    color: #c0392b;
+}
+
+.actions button:hover {
+    filter: brightness(0.95);
+}
+
+/* Assign — positive/outbound action, same family as "In Stock" pill */
+.action-btn.assign {
+    background: #eafaf0 !important;
+    color: #1f9d55 !important;
+}
+
+/* Return — brand orange, consistent with Pending Returns page */
+.action-btn.return {
+    background: rgba(239, 108, 34, .12) !important;
+    color: #ef6c22 !important;
+    border: none !important;
+    padding: 0 !important;
+    font-size: inherit !important;
+    font-weight: normal !important;
+    gap: 0 !important;
+}
+
+.action-btn.return:hover,
+.action-btn.assign:hover {
+    filter: brightness(0.95);
+}
+
+/* Empty state */
+.table-card td[colSpan] {
+    text-align: center;
+    padding: 40px 20px !important;
+    color: #a39d97;
+    font-size: 13px;
+    white-space: normal;
+}
+
+
+/* ===========================
+   PAGINATION
+=========================== */
+
+.table-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding: 12px 16px;
+
+    font-size: 12.5px;
+    color: #948e88;
+
+    border-top: 1px solid #ece8e4;
+}
+
+.page-buttons {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.page-btn {
+    width: 28px;
+    height: 28px;
+
+    border: 1px solid #ece8e4;
+    background: #ffffff;
+    border-radius: 50%;
+
+    font-size: 12px;
+    color: #6b6560;
+
+    cursor: pointer;
+    transition: .15s ease;
+}
+
+.page-btn:disabled {
+    opacity: .4;
+    cursor: not-allowed;
+}
+
+.page-btn:not(:disabled):hover {
+    background: #faf8f6;
+}
+
+.page-btn.active {
+    background: #211d1b;
+    color: #ffffff;
+    border-color: #211d1b;
+}
+
+.page-size-select {
+    height: 30px;
+
+    border-radius: 999px;
+    border: 1px solid #ece8e4;
+
+    padding: 0 12px;
+
+    font-size: 12.5px;
+    color: #6b6560;
+
+    background: #ffffff;
+    cursor: pointer;
 }

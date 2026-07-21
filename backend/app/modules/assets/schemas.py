@@ -109,3 +109,32 @@ class InventorySummaryResponse(BaseModel):
     assigned_assets: int
     under_repair_assets: int
     retired_assets: int
+
+class PendingReturnResponse(BaseModel):
+    assignment_id: str
+
+    asset_id: str
+    tag: str
+    asset_type: str
+
+    employee_id: str
+    employee_name: str
+
+    assigned_date: date
+
+    model_config = {
+        "from_attributes": True
+    }
+    assignment_id: str
+    asset_id: str
+    tag: str
+    asset_type: str
+
+    employee_id: str
+    employee_name: str
+
+    assigned_date: date
+
+    model_config = {
+        "from_attributes": True
+    }

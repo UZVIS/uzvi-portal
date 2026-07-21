@@ -62,3 +62,13 @@ export interface AssetHistory {
     returned_date: string | null;
     remarks: string | null;
 }
+
+export interface PendingReturn {
+    assignment_id: string;
+    asset_id: string;
+    tag: string;
+    asset_type: string;
+    employee_id: string;
+    employee_name: string;
+    assigned_date: string;
+}

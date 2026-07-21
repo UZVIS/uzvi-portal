@@ -14,6 +14,7 @@ from app.modules.assets.schemas import (
     AssignmentDetailsResponse,
     InventorySummaryResponse,
     AssetHistoryResponse,
+    PendingReturnResponse
 )
 from app.modules.directory.models import Employee
 
@@ -285,6 +286,65 @@ def get_inventory_by_type(
         for asset_type, count in results
     }
 
+# pending returns
+@router.get(
+    "/pending-returns",
+    response_model=list[PendingReturnResponse]
+)
+def get_pending_returns(
+    db: Session = Depends(get_db)
+):
+
+    assignments = (
+        db.query(AssetAssignment)
+        .filter(
+            AssetAssignment.returned_date == None
+        )
+        .all()
+    )
+
+    pending_returns = []
+
+    for assignment in assignments:
+
+        employee = (
+            db.query(Employee)
+            .filter(
+                Employee.employee_id == assignment.employee_id
+            )
+            .first()
+        )
+
+        if (
+            not employee
+            or employee.employment_status.lower() != "exited"
+        ):
+            continue
+
+        asset = (
+            db.query(Asset)
+            .filter(
+                Asset.asset_id == assignment.asset_id
+            )
+            .first()
+        )
+
+        if not asset:
+            continue
+
+        pending_returns.append(
+            PendingReturnResponse(
+                assignment_id=assignment.assignment_id,
+                asset_id=asset.asset_id,
+                tag=asset.tag,
+                asset_type=asset.asset_type,
+                employee_id=employee.employee_id,
+                employee_name=employee.name,
+                assigned_date=assignment.assigned_date,
+            )
+        )
+
+    return pending_returns
 # ----------------------------
 # Get Asset By ID
 # ----------------------------
@@ -650,4 +710,6 @@ def get_employee_assets(
             assets.append(asset)
 
     return assets
+
+
 
