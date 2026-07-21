@@ -268,22 +268,29 @@
     transition: filter .15s ease, background .15s ease;
 }
 
-/* View — neutral, quiet */
-.actions button:nth-child(1) {
+.action-btn.view {
     background: #f2f0ee;
     color: #6b6560;
 }
 
-/* Edit — same family as "Under Repair" pill, reads as "modify" */
-.actions button:nth-child(2) {
+.action-btn.edit {
     background: #eaf2fb;
     color: #2e7dbe;
 }
 
-/* Delete — always last child, same family as "Retired" pill */
-.actions button:nth-child(4) {
+.action-btn.delete {
     background: #fceded;
     color: #c0392b;
+}
+
+.action-btn.assign {
+    background: #eafaf0;
+    color: #1f9d55;
+}
+
+.action-btn.return {
+    background: rgba(239, 108, 34, .12);
+    color: #ef6c22;
 }
 
 .actions button:hover {

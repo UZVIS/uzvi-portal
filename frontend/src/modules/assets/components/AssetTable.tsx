@@ -233,6 +233,7 @@ export default function AssetTable({
                                         <div className="actions">
 
                                             <button
+                                                className="action-btn view"
                                                 onClick={() =>
                                                     onView({
                                                         id: asset.asset_id,
@@ -247,6 +248,7 @@ export default function AssetTable({
                                             </button>
 
                                             <button
+                                                className="action-btn edit"
                                                 onClick={() =>
                                                     onEdit({
                                                         id: asset.asset_id,
@@ -260,37 +262,38 @@ export default function AssetTable({
                                                 <Pencil size={12} />
                                             </button>
 
-{
-    asset.status === "In Stock" ? (
+{asset.status === "In Stock" && (
 
-        <button
-            className="action-btn assign"
-            onClick={() => onAssign(asset.asset_id)}
-            title="Assign Asset"
-        >
-            <UserPlus size={18} />
-        </button>
+    <button
+        className="action-btn assign"
+        onClick={() => onAssign(asset.asset_id)}
+        title="Assign Asset"
+    >
+        <UserPlus size={18} />
+    </button>
 
-    ) : (
+)}
 
-        <button
-            className="action-btn return"
-            onClick={() =>
-                onReturn(
-                    asset.assignment_id!,
-                    asset.asset_id,
-                    asset.employee_name!
-                )
-            }
-            title="Return Asset"
-        >
-            <RotateCcw size={18} />
-        </button>
+{asset.status === "Assigned" && (
 
-    )
-}
+    <button
+        className="action-btn return"
+        onClick={() =>
+            onReturn(
+                asset.assignment_id!,
+                asset.asset_id,
+                asset.employee_name!
+            )
+        }
+        title="Return Asset"
+    >
+        <RotateCcw size={18} />
+    </button>
+
+)}
 
                                             <button
+                                                className="action-btn delete"
                                                 onClick={() =>
                                                     onDelete(asset.asset_id)
                                                 }
