@@ -26,6 +26,12 @@ import "../styles/dashboard.css";
 
 import { toast } from "sonner";
 import { assignAsset } from "../services/assetService";
+import AssetHistoryDialog from "../components/AssetHistoryDialog";
+
+import ReturnDialog from "../components/ReturnDialog";
+
+import { returnAsset } from "../services/assetService";
+
 export default function Dashboard() {
 
     const [showAssetForm, setShowAssetForm] = useState(false);
@@ -56,6 +62,16 @@ export default function Dashboard() {
 
     const [assignAssetId, setAssignAssetId] = useState("");
 
+    const [showHistoryDialog, setShowHistoryDialog] = useState(false);
+    const [historyAssetId, setHistoryAssetId] = useState("");
+    
+    const [showReturnDialog, setShowReturnDialog] = useState(false);
+
+const [returnAssignmentId, setReturnAssignmentId] = useState("");
+
+const [returnAssetId, setReturnAssetId] = useState("");
+
+const [returnEmployeeName, setReturnEmployeeName] = useState("");
     async function handleSave(data: AssetFormData) {
 
         const payload: AssetCreate = {
@@ -149,17 +165,13 @@ export default function Dashboard() {
                         status={statusFilter}
                         type={typeFilter}
 
-                        onView={(asset) => {
+                   onView={(asset) => {
 
-                            setSelectedAsset(asset);
+    setHistoryAssetId(asset.id);
 
-                            setFormMode("edit");
+    setShowHistoryDialog(true);
 
-                            setViewMode(true);
-
-                            setShowAssetForm(true);
-
-                        }}
+}}
 
                         onEdit={(asset) => {
 
@@ -179,6 +191,17 @@ export default function Dashboard() {
                        setShowAssignDialog(true);
 
                       }}
+                      onReturn={(assignmentId, assetId, employeeName) => {
+
+    setReturnAssignmentId(assignmentId);
+
+    setReturnAssetId(assetId);
+
+    setReturnEmployeeName(employeeName);
+
+    setShowReturnDialog(true);
+
+}}
 
                         onDelete={(assetId) => {
 
@@ -287,7 +310,47 @@ export default function Dashboard() {
 
 }}
 />
+<AssetHistoryDialog
+    isOpen={showHistoryDialog}
+    assetId={historyAssetId}
+    onClose={() => setShowHistoryDialog(false)}
+/>
+<ReturnDialog
+    isOpen={showReturnDialog}
+    assignmentId={returnAssignmentId}
+    assetId={returnAssetId}
+    employeeName={returnEmployeeName}
+    onClose={() => setShowReturnDialog(false)}
+    onReturn={async (data) => {
 
+        try {
+
+            await returnAsset(
+                returnAssignmentId,
+                {
+                    returned_date: data.returnDate,
+                    remarks: data.remarks,
+                }
+            );
+
+            toast.success("Asset returned successfully.");
+
+            setShowReturnDialog(false);
+
+            setReloadAssets(prev => !prev);
+
+        } catch (error) {
+
+            if (error instanceof Error) {
+                toast.error(error.message);
+            } else {
+                toast.error("Failed to return asset.");
+            }
+
+        }
+
+    }}
+/>
                 </main>
 
             </div>

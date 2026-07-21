@@ -13,6 +13,7 @@ from app.modules.assets.schemas import (
     EmployeeAssetsResponse,
     AssignmentDetailsResponse,
     InventorySummaryResponse,
+    AssetHistoryResponse,
 )
 from app.modules.directory.models import Employee
 
@@ -160,6 +161,7 @@ def get_all_assets(
                 asset_type=asset.asset_type,
                 purchase_date=asset.purchase_date,
                 status=asset.status,
+                assignment_id=assignment.assignment_id if assignment else None,
                 employee_id=employee_id,
                 employee_name=employee_name,
             )
@@ -540,7 +542,7 @@ def return_asset(
 # ----------------------------
 @router.get(
     "/{asset_id}/history",
-    response_model=list[AssetAssignmentResponse]
+    response_model=list[AssetHistoryResponse]
 )
 def get_asset_history(
     asset_id: str,
@@ -571,9 +573,30 @@ def get_asset_history(
         .all()
     )
 
-    return history
+    result = []
 
+    for assignment in history:
 
+        employee = (
+            db.query(Employee)
+            .filter(
+                Employee.employee_id == assignment.employee_id
+            )
+            .first()
+        )
+
+        result.append(
+            AssetHistoryResponse(
+                assignment_id=assignment.assignment_id,
+                employee_id=assignment.employee_id,
+                employee_name=employee.name if employee else None,
+                assigned_date=assignment.assigned_date,
+                returned_date=assignment.returned_date,
+                remarks=assignment.remarks,
+            )
+        )
+
+    return result
 # ----------------------------
 # Get Assets Assigned to Employee FR-AST-04
 

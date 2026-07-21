@@ -12,6 +12,7 @@ export interface Asset {
   status: AssetStatus;
   employee_id?: string | null;
   employee_name?: string | null;
+  assignment_id?: string;    
 }
 
 export interface AssetCreate {
@@ -51,4 +52,13 @@ export interface AssetAssignmentCreate {
     assigned_date: string;
     returned_date: string | null;
     remarks: string;
+}
+
+export interface AssetHistory {
+    assignment_id: string;
+    employee_id: string;
+    employee_name: string;
+    assigned_date: string;
+    returned_date: string | null;
+    remarks: string | null;
 }

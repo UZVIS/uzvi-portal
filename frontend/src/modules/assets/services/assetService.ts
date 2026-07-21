@@ -11,6 +11,7 @@ import type {
   AssetAssignment,
   AssetReturn,
   InventorySummary,
+  AssetHistory,
 } from "../types/asset";
 
 const BASE_URL = "/v1/assets";
@@ -109,9 +110,11 @@ export async function getEmployeeAssets(
 // ====================================
 
 export async function getAssetHistory(
-  assetId: string
-): Promise<AssetAssignment[]> {
-  return apiGet(
-    `${BASE_URL}/${assetId}/history`
-  );
+    assetId: string
+): Promise<AssetHistory[]> {
+
+    return apiGet(
+        `${BASE_URL}/${assetId}/history`
+    );
+
 }

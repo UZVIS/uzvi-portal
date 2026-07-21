@@ -30,7 +30,8 @@ class AssetListResponse(BaseModel):
     asset_type: str
     purchase_date: date
     status: str
-
+    
+    assignment_id: Optional[str] = None
     employee_id: Optional[str] = None
     employee_name: Optional[str] = None
 
@@ -51,6 +52,18 @@ class AssetAssignmentResponse(BaseModel):
     assignment_id: str
     asset_id: str
     employee_id: str
+    assigned_date: date
+    returned_date: Optional[date] = None
+    remarks: Optional[str] = None
+
+    model_config = {
+        "from_attributes": True
+    }
+
+class AssetHistoryResponse(BaseModel):
+    assignment_id: str
+    employee_id: str
+    employee_name: Optional[str] = None
     assigned_date: date
     returned_date: Optional[date] = None
     remarks: Optional[str] = None

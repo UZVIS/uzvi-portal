@@ -8,7 +8,8 @@ import {
     Eye,
     Pencil,
     Trash2,
-    UserPlus
+    UserPlus,
+    RotateCcw,
 } from "lucide-react";
 
 import "./../styles/table.css";
@@ -48,7 +49,16 @@ interface AssetTableProps {
     onDelete: (assetId: string) => void;
     onView: (asset: AssetFormData) => void;
     onAssign: (assetId: string) => void;
+    onReturn: (
+        assignmentId: string,
+        assetId: string,
+        employeeName: string
+    ) => void;
+
+    
+
 }
+
 
 export default function AssetTable({
     reload,
@@ -59,6 +69,7 @@ export default function AssetTable({
     onDelete,
     onView,
     onAssign,
+    onReturn,
 }: AssetTableProps) {
 
     const [assets, setAssets] = useState<Asset[]>([]);
@@ -249,14 +260,35 @@ export default function AssetTable({
                                                 <Pencil size={12} />
                                             </button>
 
-                                            {asset.status === "In Stock" && (
-    <button
-        title="Assign Asset"
-        onClick={() => onAssign(asset.asset_id)}
-    >
-        <UserPlus size={12} />
-    </button>
-)}
+{
+    asset.status === "In Stock" ? (
+
+        <button
+            className="action-btn assign"
+            onClick={() => onAssign(asset.asset_id)}
+            title="Assign Asset"
+        >
+            <UserPlus size={18} />
+        </button>
+
+    ) : (
+
+        <button
+            className="action-btn return"
+            onClick={() =>
+                onReturn(
+                    asset.assignment_id!,
+                    asset.asset_id,
+                    asset.employee_name!
+                )
+            }
+            title="Return Asset"
+        >
+            <RotateCcw size={18} />
+        </button>
+
+    )
+}
 
                                             <button
                                                 onClick={() =>
