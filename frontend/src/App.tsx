@@ -11,6 +11,7 @@ import { AnnouncementsDashboardPage } from "./modules/dashboard/AnnouncementsDas
 import UtilizationModulePage from "./modules/consultant_utilization/UtilizationModulePage";
 import ExpenseClaimsModulePage from "./modules/expense_claims/ExpenseClaimsModulePage";
 import HelpdeskModulePage from "./modules/helpdesk/HelpdeskModulePage";
+import TicketDetailsPage from "./modules/helpdesk/TicketDetailsPage";
 
 function HomePage() {
   return (
@@ -95,6 +96,15 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <HelpdeskModulePage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/helpdesk/tickets/:ticketId"
+            element={
+              <ProtectedRoute>
+                <TicketDetailsPage />
               </ProtectedRoute>
             }
           />

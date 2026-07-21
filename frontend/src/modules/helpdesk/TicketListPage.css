@@ -247,4 +247,12 @@
     padding: 18px;
   }
 
+  .ticket-item {
+  cursor : pointer;
+  }
+
+  .ticket-item:hover {
+    background: #f8fafc;
+  }
+
 }

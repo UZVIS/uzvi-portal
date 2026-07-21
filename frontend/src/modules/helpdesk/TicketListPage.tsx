@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { helpdeskApi } from "./api";
 import type { Ticket } from "./types";
 import "./TicketListPage.css";
@@ -8,6 +9,7 @@ export default function TicketListPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function loadTickets() {
@@ -186,6 +188,7 @@ export default function TicketListPage() {
             <div
               className="ticket-item"
               key={ticket.ticket_id}
+              onClick={() => navigate(`/helpdesk/tickets/${ticket.ticket_id}`)}
             >
 
               <div className="ticket-id">
