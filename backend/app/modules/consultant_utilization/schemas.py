@@ -25,7 +25,7 @@ class TimeEntryCreate(BaseModel):
     employee_id: str
     project_id: str
     date: date
-    hours: float = Field(gt=0)
+    hours: float = Field(gt=0,le=24)
     billable_flag: bool = False
     source: str = "manual"  # manual | import
 
