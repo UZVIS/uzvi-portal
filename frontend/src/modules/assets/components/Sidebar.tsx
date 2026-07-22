@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import {
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   Boxes,
   LayoutDashboard,
   RotateCcw,
@@ -63,8 +64,38 @@ const menu: MenuEntry[] = [
   },
 ];
 
+const SIDEBAR_WIDTH_EXPANDED = "220px";
+const SIDEBAR_WIDTH_COLLAPSED = "72px";
+const STORAGE_KEY = "uzvi-sidebar-collapsed";
+
+function applySidebarWidth(isCollapsed: boolean) {
+  document.documentElement.style.setProperty(
+    "--sidebar-width",
+    isCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED
+  );
+}
+
 export default function Sidebar({ pendingReturnsCount = 0 }: SidebarProps) {
   const location = useLocation();
+
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored === "true";
+  });
+
+  // Keep the shared CSS variable (read by dashboard.css for the page's
+  // margin/width) in sync with this component's state, on mount and toggle.
+  useEffect(() => {
+    applySidebarWidth(isCollapsed);
+  }, [isCollapsed]);
+
+  function handleToggleCollapse() {
+    setIsCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem(STORAGE_KEY, String(next));
+      return next;
+    });
+  }
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
@@ -84,7 +115,16 @@ export default function Sidebar({ pendingReturnsCount = 0 }: SidebarProps) {
   }
 
   return (
-    <aside className="sidebar">
+    <aside className={`sidebar ${isCollapsed ? "collapsed" : ""}`}>
+
+      <button
+        type="button"
+        className="sidebar-collapse-btn"
+        onClick={handleToggleCollapse}
+        aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+      >
+        {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+      </button>
 
       <div className="sidebar-logo">
 
@@ -92,7 +132,7 @@ export default function Sidebar({ pendingReturnsCount = 0 }: SidebarProps) {
           U
         </div>
 
-        <div>
+        <div className="sidebar-logo-text">
           <h2>UZVI PORTAL</h2>
           <span>Asset Management</span>
         </div>
@@ -112,6 +152,7 @@ export default function Sidebar({ pendingReturnsCount = 0 }: SidebarProps) {
               <NavLink
                 key={entry.label}
                 to={entry.path}
+                title={isCollapsed ? entry.label : undefined}
                 className={({ isActive }) =>
                   `menu-item ${isActive ? "active" : ""}`
                 }
@@ -119,7 +160,7 @@ export default function Sidebar({ pendingReturnsCount = 0 }: SidebarProps) {
 
                 <ItemIcon size={18} />
 
-                <span>{entry.label}</span>
+                <span className="menu-label">{entry.label}</span>
 
               </NavLink>
 
@@ -142,34 +183,45 @@ export default function Sidebar({ pendingReturnsCount = 0 }: SidebarProps) {
                 }`}
               >
 
-                <NavLink to={group.path} end className="menu-group-link">
+                <NavLink
+                  to={group.path}
+                  end
+                  title={isCollapsed ? group.label : undefined}
+                  className="menu-group-link"
+                >
 
                   <GroupIcon size={18} />
 
-                  <span>{group.label}</span>
+                  <span className="menu-label">{group.label}</span>
 
                 </NavLink>
 
-                <button
-                  type="button"
-                  className="menu-chevron-btn"
-                  aria-label={
-                    isOpen ? `Collapse ${group.label}` : `Expand ${group.label}`
-                  }
-                  onClick={() => toggleGroup(group.label)}
-                >
+                {!isCollapsed && (
 
-                  {isOpen ? (
-                    <ChevronDown size={14} />
-                  ) : (
-                    <ChevronRight size={14} />
-                  )}
+                  <button
+                    type="button"
+                    className="menu-chevron-btn"
+                    aria-label={
+                      isOpen
+                        ? `Collapse ${group.label}`
+                        : `Expand ${group.label}`
+                    }
+                    onClick={() => toggleGroup(group.label)}
+                  >
 
-                </button>
+                    {isOpen ? (
+                      <ChevronDown size={14} />
+                    ) : (
+                      <ChevronRight size={14} />
+                    )}
+
+                  </button>
+
+                )}
 
               </div>
 
-              {isOpen && (
+              {isOpen && !isCollapsed && (
 
                 <div className="menu-subgroup">
 
@@ -194,7 +246,7 @@ export default function Sidebar({ pendingReturnsCount = 0 }: SidebarProps) {
 
                         <Icon size={16} />
 
-                        <span>{item.label}</span>
+                        <span className="menu-label">{item.label}</span>
 
                         {badgeCount > 0 && (
                           <span className="menu-badge">
@@ -231,7 +283,7 @@ export default function Sidebar({ pendingReturnsCount = 0 }: SidebarProps) {
           <small>Administrator</small>
         </div>
 
-        <ChevronDown size={16} />
+        <ChevronDown size={16} className="menu-label" />
 
       </div>
 

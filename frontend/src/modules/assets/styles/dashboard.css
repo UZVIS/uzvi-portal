@@ -66,8 +66,8 @@ body,
 }
 
 .dashboard-page {
-    margin-left: 220px;
-    width: calc(100% - 220px);
+    margin-left: var(--sidebar-width, 220px);
+    width: calc(100% - var(--sidebar-width, 220px));
 
     display: flex;
     flex-direction: column;
@@ -76,6 +76,8 @@ body,
     overflow: hidden;
 
     background: var(--uz-bg);
+
+    transition: margin-left .2s ease, width .2s ease;
 }
 
 
@@ -213,7 +215,30 @@ body,
 .date-picker-chevron.flipped {
     transform: rotate(180deg);
 }
+.logout-inline-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 
+    height: 36px;
+    padding: 0 16px;
+
+    border: 1px solid rgba(255, 255, 255, .18);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .06);
+
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease;
+}
+
+.logout-inline-btn:hover {
+    background: var(--uz-orange);
+    border-color: var(--uz-orange);
+}
 /* Calendar popover */
 
 .date-picker-wrap {
@@ -729,4 +754,53 @@ body,
     .search-box {
         min-width: 100%;
     }
+}
+.profile-wrapper {
+    position: relative;
+}
+
+.profile {
+    cursor: pointer;
+    border: none;
+    background: transparent;
+}
+
+.profile-dropdown {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+
+    width: 160px;
+
+    background: #fff;
+    border: 1px solid #ece7e2;
+    border-radius: 12px;
+
+    box-shadow: 0 10px 30px rgba(0,0,0,.08);
+
+    overflow: hidden;
+
+    z-index: 100;
+}
+
+.profile-dropdown-item {
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 12px 16px;
+
+    border: none;
+    background: transparent;
+
+    cursor: pointer;
+
+    font-size: 14px;
+    color: #444;
+}
+
+.profile-dropdown-item:hover {
+    background: #f7f7f7;
 }

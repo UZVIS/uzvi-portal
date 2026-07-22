@@ -19,8 +19,13 @@ export function LoginPage() {
     setError(null);
     setIsSubmitting(true);
     try {
-      await login(employeeId.trim());
-      navigate("/announcements", { replace: true });
+      const emp = await login(employeeId.trim());
+
+if (emp.access_tier === "Administrator") {
+    navigate("/dashboard", { replace: true });
+} else {
+    navigate("/employee-dashboard", { replace: true });
+}
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {

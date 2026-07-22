@@ -5,8 +5,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
+  LogOut,
 } from "lucide-react";
 
+import { useNavigate } from "react-router-dom";
 import "../styles/dashboard.css";
 
 const MONTH_NAMES = [
@@ -65,6 +67,7 @@ function getCalendarDays(viewYear: number, viewMonth: number) {
       inCurrentMonth: false,
       date: new Date(viewYear, viewMonth + 1, nextDay),
     });
+
     if (cells.length >= 42) break;
   }
 
@@ -72,9 +75,11 @@ function getCalendarDays(viewYear: number, viewMonth: number) {
 }
 
 export default function Header() {
+  const navigate = useNavigate();
+
   const today = new Date();
 
-  const [selectedDate, setSelectedDate] = useState<Date>(today);
+  const [selectedDate, setSelectedDate] = useState(today);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
@@ -92,7 +97,9 @@ export default function Header() {
     }
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   function openCalendar() {
@@ -124,6 +131,10 @@ export default function Header() {
     setIsCalendarOpen(false);
   }
 
+  function handleLogout() {
+    navigate("/login");
+  }
+
   const calendarDays = getCalendarDays(viewYear, viewMonth);
 
   return (
@@ -147,15 +158,18 @@ export default function Header() {
             type="button"
           >
             <CalendarDays size={18} />
+
             <span>{formatDisplayDate(selectedDate)}</span>
+
             <ChevronDown
               size={16}
-              className={`date-picker-chevron ${isCalendarOpen ? "flipped" : ""}`}
+              className={`date-picker-chevron ${
+                isCalendarOpen ? "flipped" : ""
+              }`}
             />
           </button>
 
           {isCalendarOpen && (
-
             <div className="calendar-popover">
 
               <div className="calendar-popover-header">
@@ -196,8 +210,8 @@ export default function Header() {
 
                   return (
                     <button
-                      type="button"
                       key={index}
+                      type="button"
                       className={[
                         "calendar-day",
                         !cell.inCurrentMonth ? "muted" : "",
@@ -209,7 +223,6 @@ export default function Header() {
                       {cell.day}
                     </button>
                   );
-
                 })}
               </div>
 
@@ -224,7 +237,6 @@ export default function Header() {
               </div>
 
             </div>
-
           )}
 
         </div>
@@ -240,9 +252,15 @@ export default function Header() {
             <small>Administrator</small>
           </div>
 
-          <ChevronDown size={18} />
-
         </div>
+
+        <button
+          className="logout-inline-btn"
+          onClick={handleLogout}
+        >
+          <LogOut size={16} />
+          <span>Sign out</span>
+        </button>
 
       </div>
 

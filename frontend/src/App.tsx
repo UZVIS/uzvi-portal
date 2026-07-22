@@ -11,6 +11,7 @@ import { allModules } from "./modules/directory/modules.data";
 import { AnnouncementsPage } from "./modules/announcements/AnnouncementsPage";
 import { assetRoutes } from "./modules/assets/routes";
 import PendingReturnsPage from "./modules/assets/pages/pendingReturnsPage";
+import EmployeeDashboard from "./modules/assets/pages/EmployeeDashboard";
 export default function App() {
   return (
     <AuthProvider>
@@ -32,6 +33,11 @@ export default function App() {
           <Route
     path="/assets/pending-returns"
     element={<PendingReturnsPage />}
+/>
+     
+      <Route
+    path="/employee-dashboard"
+    element={<EmployeeDashboard />}
 />
 
           {assetRoutes}

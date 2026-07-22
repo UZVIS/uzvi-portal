@@ -3,7 +3,7 @@
 =========================== */
 
 .sidebar{
-    width:220px;
+    width: var(--sidebar-width, 220px);
     height:100vh;
 
     position:fixed;
@@ -20,6 +20,63 @@
     border-right:1px solid #2f2926;
 
     overflow:hidden;
+
+    transition: width .2s ease;
+}
+
+
+/* ===========================
+   COLLAPSE TOGGLE
+=========================== */
+
+.sidebar-collapse-btn {
+    position: absolute;
+    top: 20px;
+    right: 12px;
+
+    width: 24px;
+    height: 24px;
+
+    border-radius: 50%;
+    border: 1px solid #2f2926;
+    background: #2a2523;
+    color: #d6d6d6;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    cursor: pointer;
+    z-index: 10;
+
+    transition: background .15s ease;
+}
+
+.sidebar-collapse-btn:hover {
+    background: #3a332f;
+    color: #ffffff;
+}
+
+.sidebar-collapse-btn:hover {
+    background: #2a2523;
+    color: #ffffff;
+}
+
+.sidebar.collapsed .menu-label,
+.sidebar.collapsed .sidebar-logo-text,
+.sidebar.collapsed .user-info {
+    display: none;
+}
+
+.sidebar.collapsed .sidebar-logo,
+.sidebar.collapsed .menu-item,
+.sidebar.collapsed .menu-group-link,
+.sidebar.collapsed .sidebar-user {
+    justify-content: center;
+}
+
+.sidebar.collapsed .menu-subgroup {
+    display: none;
 }
 
 

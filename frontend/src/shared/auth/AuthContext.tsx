@@ -10,7 +10,7 @@ import { fetchEmployee, type Employee } from "./api";
 interface AuthContextValue {
   employee: Employee | null;
   isLoading: boolean;
-  login: (employeeId: string) => Promise<void>;
+  login: (employeeId: string) => Promise<Employee>;
   logout: () => void;
 }
 
@@ -37,6 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const emp = await fetchEmployee(employeeId);
     localStorage.setItem(STORAGE_KEY, emp.employee_id);
     setEmployee(emp);
+    return emp;
   }
 
   function logout() {
