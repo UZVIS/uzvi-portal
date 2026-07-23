@@ -4,7 +4,7 @@ import {
   apiPut,
   apiDelete,
 } from "../../../api/client";
-import type { AssetAssignmentCreate } from "../types/asset";
+import type { AssetAssignmentCreate, AssetUpdate } from "../types/asset";
 import type {
   Asset,
   AssetCreate,
@@ -39,7 +39,7 @@ export async function createAsset(
 
 export async function updateAsset(
   assetId: string,
-  asset: AssetCreate
+  asset: AssetUpdate
 ): Promise<Asset> {
   return apiPut(`${BASE_URL}/${assetId}`, asset);
 }

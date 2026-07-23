@@ -5,6 +5,7 @@ from sqlalchemy import func
 from app.modules.assets.models import Asset, AssetAssignment
 from app.modules.assets.schemas import (
     AssetCreate,
+    AssetUpdate,
     AssetListResponse,
     AssetAssignmentCreate,
     AssetReturn,
@@ -312,7 +313,7 @@ def get_asset_by_id(asset_id: str, db: Session):
 # ----------------------------
 # Update Asset
 # ----------------------------
-def update_asset(asset_id: str, asset_data: AssetCreate, db: Session):
+def update_asset(asset_id: str, asset_data: AssetUpdate, db: Session):
     asset = (
         db.query(Asset)
         .filter(Asset.asset_id == asset_id)
@@ -340,6 +341,26 @@ def update_asset(asset_id: str, asset_data: AssetCreate, db: Session):
             status_code=400,
             detail="Asset tag already exists."
         )
+    # Assigned assets cannot have their status changed
+    # Block changing to Assigned through Edit
+    if (
+       asset.status != "Assigned"
+       and asset_data.status == "Assigned"
+    ):
+     raise HTTPException(
+        status_code=400,
+        detail="Assets can only be assigned using the Assign Asset action."
+    )
+
+# Block changing from Assigned through Edit
+    if (
+    asset.status == "Assigned"
+    and asset_data.status != "Assigned"
+):
+     raise HTTPException(
+        status_code=400,
+        detail="Assigned assets must be returned using the Return Asset action."
+    )
 
     asset.tag = asset_data.tag
     asset.asset_type = asset_data.asset_type

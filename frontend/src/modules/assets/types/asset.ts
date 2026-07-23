@@ -72,3 +72,9 @@ export interface PendingReturn {
     employee_name: string;
     assigned_date: string;
 }
+
+export interface AssetUpdate {
+    tag: string;
+    asset_type: string;
+    purchase_date: string;
+}

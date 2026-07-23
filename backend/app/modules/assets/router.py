@@ -5,6 +5,7 @@ from app.database import get_db
 from app.modules.assets import service
 from app.modules.assets.schemas import (
     AssetCreate,
+    AssetUpdate,
     AssetResponse,
     AssetListResponse,
     AssetAssignmentCreate,
@@ -14,7 +15,8 @@ from app.modules.assets.schemas import (
     AssignmentDetailsResponse,
     InventorySummaryResponse,
     AssetHistoryResponse,
-    PendingReturnResponse
+    PendingReturnResponse,
+    
 )
 
 
@@ -152,7 +154,7 @@ def get_asset_by_id(
 @router.put("/{asset_id}", response_model=AssetResponse)
 def update_asset(
     asset_id: str,
-    asset_data: AssetCreate,
+    asset_data: AssetUpdate,
     db: Session = Depends(get_db)
 ):
     return service.update_asset(asset_id, asset_data, db)

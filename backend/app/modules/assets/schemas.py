@@ -11,6 +11,11 @@ class AssetCreate(BaseModel):
     purchase_date: date
     status: str
 
+class AssetUpdate(BaseModel):
+    tag: str
+    asset_type: str
+    purchase_date: date
+    status: str
 
 class AssetResponse(BaseModel):
     asset_id: str
