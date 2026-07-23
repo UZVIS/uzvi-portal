@@ -3,11 +3,10 @@
  * frontend/src/modules/expense_claims/components/ExpenseClaimForm.tsx
  *
  * FR-EXP-01, FR-EXP-02: submit a claim with category, amount, date,
- * description, and receipt. NOTE: description/receipt_attached are
- * collected here and sent to the API, but the backend does not persist
- * them yet - see the schema-gap note in api.ts and models.py. They're
- * still shown here so the gap is visible rather than hidden by leaving
- * the fields out of the UI entirely.
+ * description, and receipt. Description is persisted directly on claim
+ * creation. Receipt is a real file, uploaded in a second step after the
+ * claim exists (multipart/form-data can't be mixed into the same JSON
+ * body as the rest of the claim fields).
  */
 import { useState } from "react";
 import type { ExpenseCategory } from "../api";
@@ -20,7 +19,7 @@ interface Props {
     amount: number;
     date: string;
     description: string;
-    receiptAttached: boolean;
+    receiptFile: File | null;
   }) => Promise<void>;
 }
 
@@ -29,7 +28,7 @@ export function ExpenseClaimForm({ categories, onSubmit }: Props) {
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [description, setDescription] = useState("");
-  const [receiptAttached, setReceiptAttached] = useState(false);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -45,10 +44,10 @@ export function ExpenseClaimForm({ categories, onSubmit }: Props) {
     }
     setStatus("saving");
     try {
-      await onSubmit({ categoryId, amount: parsedAmount, date, description, receiptAttached });
+      await onSubmit({ categoryId, amount: parsedAmount, date, description, receiptFile });
       setAmount("");
       setDescription("");
-      setReceiptAttached(false);
+      setReceiptFile(null);
       setStatus("saved");
     } catch (err) {
       setStatus("error");
@@ -100,14 +99,15 @@ export function ExpenseClaimForm({ categories, onSubmit }: Props) {
         />
       </label>
 
-      <label className="claim-form__checkbox">
-        <input type="checkbox" checked={receiptAttached} onChange={(e) => setReceiptAttached(e.target.checked)} />
-        Receipt attached
+      <label className="claim-form__field">
+        Receipt
+        <input
+          type="file"
+          accept=".pdf,.png,.jpg,.jpeg"
+          onChange={(e) => setReceiptFile(e.target.files?.[0] ?? null)}
+        />
       </label>
-      <p className="claim-form__hint claim-form__hint--warn">
-        Description and receipt aren't saved by the backend yet (pending a schema decision) - they're collected here
-        so the gap stays visible.
-      </p>
+      {receiptFile && <p className="claim-form__hint">Selected: {receiptFile.name}</p>}
 
       {selectedCategory?.cap_amount != null && (
         <p className="claim-form__hint">Cap for this category: ₹{selectedCategory.cap_amount.toLocaleString()}</p>

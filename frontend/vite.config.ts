@@ -8,6 +8,10 @@ import react from "@vitejs/plugin-react";
 // and go through the existing /api rule + apiGet/apiPost in src/api/client.ts.
 // Worth a team decision on whether M1/M4 should move under /api too for
 // consistency - flagging rather than changing router.py unilaterally.
+//
+// /receipts is also added below - this serves uploaded expense receipt
+// files (FR-EXP-01), mounted via StaticFiles in main.py, separate from
+// the /expenses API router itself.
 export default defineConfig({
   plugins: [react()],
   server: {
@@ -26,6 +30,10 @@ export default defineConfig({
         changeOrigin: true,
       },
       '/expenses': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/receipts': {
         target: 'http://localhost:8000',
         changeOrigin: true,
       },

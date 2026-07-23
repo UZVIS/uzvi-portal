@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 from app.database import Base, engine, init_db
 
@@ -20,9 +21,8 @@ from app.modules.consultant_utilization.router import (
 from app.modules.expense_claims.router import (
     router as expenses_router,
 )
+from app.modules.expense_claims.service import RECEIPT_STORAGE_DIR
 
-
-# NEW: Import performance_goals router
 from app.modules.performance_goals.router import router as performance_router
 
 
@@ -51,6 +51,10 @@ app.include_router(expenses_router)
 
 # NEW: Mount performance router
 app.include_router(performance_router, prefix="/api/v1")
+
+# Serve uploaded expense receipts (FR-EXP-01)
+app.mount("/receipts", StaticFiles(directory=RECEIPT_STORAGE_DIR), name="receipts")
+
 
 @app.get("/health")
 def health_check():
