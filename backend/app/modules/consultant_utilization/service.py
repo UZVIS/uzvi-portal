@@ -72,7 +72,7 @@ def list_time_entries(
 
 
 def _weeks_in_period(start_date: date, end_date: date) -> float:
-    days = (end_date - start_date).days + 1
+    days = (end_date - start_date).days
     return max(days / 7.0, 1 / 7.0)
 
 
