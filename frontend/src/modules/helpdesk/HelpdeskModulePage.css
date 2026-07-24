@@ -1,0 +1,84 @@
+.helpdesk-page {
+    padding: 32px;
+    background: #f7f5f2;
+    min-height: 100vh;
+}
+
+.helpdesk-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 28px;
+}
+
+.helpdesk-header h1 {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 700;
+    color: #222;
+}
+
+.helpdesk-header p {
+    margin-top: 8px;
+    color: #777;
+    font-size: 15px;
+}
+
+.helpdesk-tabs {
+    display: flex;
+    gap: 14px;
+    margin-bottom: 28px;
+}
+
+.helpdesk-tabs button {
+    border: none;
+    outline: none;
+    background: #ffffff;
+    color: #555;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid #e6ddd3;
+}
+
+.helpdesk-tabs button:hover {
+    background: #f4ede7;
+}
+
+.helpdesk-tabs button.active {
+    background: #E2622E;
+    color: white;
+    border-color: #E2622E;
+}
+
+.helpdesk-content {
+    margin-top: 8px;
+}
+
+@media (max-width: 768px) {
+    .helpdesk-page {
+        padding: 20px;
+    }
+
+    .helpdesk-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .helpdesk-header h1 {
+        font-size: 28px;
+    }
+
+    .helpdesk-tabs {
+        width: 100%;
+        flex-direction: column;
+    }
+
+    .helpdesk-tabs button {
+        width: 100%;
+    }
+}
