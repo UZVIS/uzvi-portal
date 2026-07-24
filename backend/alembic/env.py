@@ -27,6 +27,8 @@ from app.database import Base
 import app.modules.directory.models
 import app.modules.onboarding.models
 import app.modules.documents.models
+import app.modules.leave.models
+import app.modules.calendar.models
 
 target_metadata = Base.metadata
 

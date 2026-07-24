@@ -1,160 +1,113 @@
-from datetime import date, datetime
+"""
+Leave Management (M2) Pydantic Schemas
+======================================
+This module defines the Pydantic models used for data validation, 
+request payload parsing, and response serialization in the API layer.
+"""
+
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional
-
-from pydantic import BaseModel, ConfigDict, Field
-
-
-# -----------------------------
-# Leave Application Schemas
-# -----------------------------
-
-class LeaveApplicationBase(BaseModel):
-    employee_id: str = Field(
-        ...,
-        description="Employee ID of the applicant"
-    )
-
-    leave_type_id: str = Field(
-        ...,
-        description="Selected leave type"
-    )
-
-    start_date: date = Field(
-        ...,
-        description="Leave start date"
-    )
-
-    end_date: date = Field(
-        ...,
-        description="Leave end date"
-    )
-
-    reason: str = Field(
-        ...,
-        description="Reason for leave application"
-    )
+from datetime import date, datetime
+from enum import Enum
 
 
-class LeaveApplicationCreate(LeaveApplicationBase):
-    pass
+class LeaveStatusEnum(str, Enum):
+    """
+    Enumeration for leave application statuses.
+    """
+    PENDING = "pending"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
 
 
-class LeaveApplicationUpdate(BaseModel):
-    start_date: Optional[date] = None
-    end_date: Optional[date] = None
-    reason: Optional[str] = None
-
-
-class LeaveApplicationResponse(LeaveApplicationBase):
-    application_id: str
-    status: str
-    approver_id: Optional[str]
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-# -----------------------------
+# ==========================================
 # Leave Type Schemas
-# -----------------------------
+# ==========================================
 
-class LeaveTypeBase(BaseModel):
-    name: str = Field(
-        ...,
-        description="Leave type name"
-    )
+class LeaveTypeCreate(BaseModel):
+    """
+    Schema for creating a new leave type.
+    """
+    name: str = Field(..., description="Name of the leave (e.g., Casual Leave, Sick Leave)")
+    accrual_method: str
+    carry_forward_limit: int
+    doc_required_threshold: Optional[int] = None
 
-    accrual_method: str = Field(
-        ...,
-        description="Leave accrual method"
-    )
-
-    carry_forward_limit: int = Field(
-        ...,
-        description="Maximum carry forward limit"
-    )
-
-    doc_required_threshold: Optional[int] = Field(
-        None,
-        description="Document required threshold"
-    )
-
-
-class LeaveTypeCreate(LeaveTypeBase):
-    pass
-
-
-class LeaveTypeResponse(LeaveTypeBase):
+class LeaveTypeResponse(LeaveTypeCreate):
+    """
+    Schema for returning leave type details.
+    """
     leave_type_id: str
 
     model_config = ConfigDict(from_attributes=True)
 
 
-# -----------------------------
+# ==========================================
+# Leave Application Schemas
+# ==========================================
+
+class LeaveApplicationCreate(BaseModel):
+    """
+    Schema for an employee applying for a new leave.
+    """
+    employee_id: str
+    leave_type_id: str
+    start_date: date
+    end_date: date
+    reason: str
+
+class LeaveApplicationResponse(LeaveApplicationCreate):
+    """
+    Schema for returning leave application details, including its current status.
+    """
+    application_id: str
+    status: LeaveStatusEnum
+    approver_id: Optional[str] = None
+    
+    model_config = ConfigDict(from_attributes=True)
+
+class LeaveStatusUpdate(BaseModel):
+    """
+    Schema for managers to approve or reject a leave application.
+    """
+    status: LeaveStatusEnum = Field(..., description="Leave status (APPROVED or REJECTED)")
+    approver_id: str = Field(..., description="Employee ID of the manager taking action")
+
+
+# ==========================================
 # Leave Balance Schemas
-# -----------------------------
+# ==========================================
 
-class LeaveBalanceBase(BaseModel):
-    employee_id: str = Field(
-        ...,
-        description="Employee ID"
-    )
+class LeaveBalanceCreate(BaseModel):
+    """
+    Schema for initializing or adding to an employee's leave balance wallet.
+    """
+    employee_id: str
+    leave_type_id: str
+    year: int
+    balance: int
 
-    leave_type_id: str = Field(
-        ...,
-        description="Leave Type ID"
-    )
-
-    year: int = Field(
-        ...,
-        description="Balance year"
-    )
-
-    balance: int = Field(
-        ...,
-        description="Available leave balance"
-    )
-
-class LeaveBalanceCreate(LeaveBalanceBase):
-    pass
-
-
-class LeaveBalanceResponse(LeaveBalanceBase):
-    id: str
+class LeaveBalanceResponse(LeaveBalanceCreate):
+    """
+    Schema for returning an employee's leave balance details.
+    """
+    balance_id: str
 
     model_config = ConfigDict(from_attributes=True)
 
 
-# -----------------------------
+# ==========================================
 # Leave Audit Log Schemas
-# -----------------------------
+# ==========================================
 
-class LeaveAuditLogBase(BaseModel):
-    application_id: str = Field(
-        ...,
-        description="Leave Application ID"
-    )
-
-    actor_id: str = Field(
-        ...,
-        description="Employee performing the action"
-    )
-
-    action: str = Field(
-        ...,
-        description="Audit action"
-    )
-
-    timestamp: datetime = Field(
-        ...,
-        description="Action timestamp"
-    )
-
-
-class LeaveAuditLogCreate(LeaveAuditLogBase):
-    pass
-
-
-class LeaveAuditLogResponse(LeaveAuditLogBase):
+class LeaveAuditLogResponse(BaseModel):
+    """
+    Schema for returning audit log entries to track the history of leave actions.
+    """
     log_id: str
+    application_id: str
+    actor_id: str
+    action: str
+    timestamp: datetime
 
     model_config = ConfigDict(from_attributes=True)
