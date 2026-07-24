@@ -51,7 +51,7 @@ class LeaveType(Base):
 class LeaveApplication(Base):
     """
     Records an employee's request for time off.
-    Tracks the dates, reason, requested leave type, and the current approval status.
+    Tracks the dates, requested leave type, and the current approval status.
     """
     __tablename__ = "leave_applications"
 
@@ -73,14 +73,13 @@ class LeaveApplication(Base):
     )
     start_date = Column(Date, nullable=False)
     end_date = Column(Date, nullable=False)
-    reason = Column(String, nullable=False)
-    
+
     status = Column(
         Enum(LeaveStatus),
         default=LeaveStatus.PENDING,
         nullable=False
     )
-    
+
     approver_id = Column(
         String,
         ForeignKey("employees.employee_id"),
@@ -99,7 +98,7 @@ class LeaveBalance(Base):
     """
     __tablename__ = "leave_balances"
 
-    balance_id = Column(
+    id = Column(
         String,
         primary_key=True,
         index=True,
@@ -146,7 +145,7 @@ class LeaveAuditLog(Base):
         nullable=False
     )
     action = Column(String, nullable=False)
-    
+
     timestamp = Column(
         DateTime,
         default=datetime.utcnow,

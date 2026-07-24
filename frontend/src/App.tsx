@@ -1,11 +1,11 @@
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from "react-router-dom";
 import { useState } from "react";
-// 🌟 Premium Icons
-import { LayoutDashboard, CalendarDays, LogOut, Menu, ChevronDown, ChevronLeft, Calendar as CalendarIcon, Briefcase, UserCog } from "lucide-react";
+// Premium Icons
+import { LayoutDashboard, LogOut, Menu, ChevronDown, ChevronLeft, Calendar as CalendarIcon, Briefcase, UserCog } from "lucide-react";
 
 import { LeaveDashboard, ManagerDashboard, HRDashboard, AdminDashboard } from "./modules/leave";
-import { CalendarPage } from "./modules/calendar";
 
+// Reusable Navigation Link Component
 const NavLink = ({ to, icon: Icon, label, isSubItem = false }: { to: string, icon: any, label: string, isSubItem?: boolean }) => {
   const location = useLocation();
   const isActive = location.pathname === to;
@@ -32,12 +32,13 @@ const NavLink = ({ to, icon: Icon, label, isSubItem = false }: { to: string, ico
 };
 
 function AppLayout() {
+  // Local state for role switching (Temporary until Global Context is implemented)
   const [activeRole, setActiveRole] = useState("Employee");
 
   return (
     <div className="flex h-screen bg-[#F4F6F8] font-sans overflow-hidden">
 
-      {/* 🌟 1. PREMIUM DARK SIDEBAR */}
+      {/* 1. PREMIUM DARK SIDEBAR */}
       <aside className="w-[280px] bg-[#1A1614] flex flex-col justify-between shrink-0 transition-all">
         <div className="p-5 flex items-center justify-between border-b border-white/5">
           <div className="flex items-center space-x-3">
@@ -46,7 +47,7 @@ function AppLayout() {
             </div>
             <div>
               <h1 className="font-extrabold text-white text-[15px] tracking-wide leading-tight">UZVI PORTAL</h1>
-              <p className="text-[11px] text-[#F37021] font-bold tracking-wide">Leave & Calendar</p>
+              <p className="text-[11px] text-[#F37021] font-bold tracking-wide">Leave Management</p>
             </div>
           </div>
           <button className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition">
@@ -54,6 +55,7 @@ function AppLayout() {
           </button>
         </div>
 
+        {/* Sidebar Navigation Links */}
         <div className="flex-1 overflow-y-auto px-4 py-6 custom-scrollbar">
           <div className="mb-6">
             <NavLink to="/dashboard" icon={LayoutDashboard} label="Dashboard" />
@@ -62,12 +64,9 @@ function AppLayout() {
           <div className="mb-2">
             <NavLink to="/" icon={Briefcase} label="Leave Management" />
           </div>
-
-          <div className="mt-4">
-            <NavLink to="/calendar" icon={CalendarDays} label="Company Calendar" />
-          </div>
         </div>
 
+        {/* Sidebar Footer Profile */}
         <div className="p-4 border-t border-white/5 flex items-center justify-between hover:bg-white/5 cursor-pointer transition">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-[#F37021] text-white rounded-full flex items-center justify-center font-bold text-sm shadow-md">
@@ -82,10 +81,10 @@ function AppLayout() {
         </div>
       </aside>
 
-      {/* 🌟 2. MAIN CONTENT WRAPPER */}
+      {/* 2. MAIN CONTENT WRAPPER */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
 
-        {/* 🌟 3. HEADER */}
+        {/* 3. HEADER */}
         <header className="h-[72px] bg-[#1A1614] border-b border-white/5 flex items-center justify-between px-6 shrink-0">
           <div className="flex items-center space-x-4">
             <button className="text-gray-400 hover:text-white transition">
@@ -94,7 +93,6 @@ function AppLayout() {
             <h2 className="text-lg font-bold text-white tracking-wide">
               <Routes>
                 <Route path="/" element="Leave Dashboard" />
-                <Route path="/calendar" element="Company Calendar" />
                 <Route path="*" element="UZVI Workspace" />
               </Routes>
             </h2>
@@ -102,7 +100,7 @@ function AppLayout() {
 
           <div className="flex items-center space-x-4">
 
-            {/* 🛠️ ROLE SWITCHER (నీకు కావాల్సిన విధంగా హెడర్ లోకి తెచ్చాను) */}
+            {/* ROLE SWITCHER - Temporary UI for testing roles */}
             <div className="flex items-center space-x-2 bg-[#2A2421] border border-white/10 rounded-xl px-3 py-1.5 hover:bg-white/5 transition">
               <UserCog size={16} className="text-[#F37021]" />
               <select
@@ -144,16 +142,18 @@ function AppLayout() {
           </div>
         </header>
 
-        {/* 🌟 4. DASHBOARD CONTENT */}
+        {/* 4. DASHBOARD CONTENT */}
         <div className="flex-1 overflow-y-auto p-6 md:p-8">
           <Routes>
+            {/* Dynamic rendering based on selected role */}
             <Route path="/" element={
               activeRole === "Employee" ? <LeaveDashboard /> :
                 activeRole === "Manager" ? <ManagerDashboard /> :
                   activeRole === "Admin" ? <AdminDashboard /> :
                     activeRole === "HR" ? <HRDashboard /> : null
             } />
-            <Route path="/calendar" element={<CalendarPage role={activeRole} />} />
+
+            {/* Fallback route for unknown paths */}
             <Route path="*" element={
               <div className="flex flex-col items-center justify-center h-64 bg-white rounded-2xl border border-gray-200 shadow-sm p-8 text-center">
                 <span className="text-4xl mb-4">🚧</span>

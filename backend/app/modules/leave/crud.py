@@ -89,8 +89,8 @@ def create_leave_balance(db: Session, leave_balance: LeaveBalance):
     Initializes a new leave balance record for an employee.
     Automatically generates a prefixed ID (e.g., 'LB001').
     """
-    new_id = generate_prefixed_id(db, LeaveBalance, "balance_id", "LB")
-    leave_balance.balance_id = new_id
+    new_id = generate_prefixed_id(db, LeaveBalance, "id", "LB")
+    leave_balance.id = new_id
 
     db.add(leave_balance)
     db.commit()

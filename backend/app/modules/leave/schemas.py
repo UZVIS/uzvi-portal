@@ -3,6 +3,7 @@ Leave Management (M2) Pydantic Schemas
 ======================================
 This module defines the Pydantic models used for data validation, 
 request payload parsing, and response serialization in the API layer.
+
 """
 
 from pydantic import BaseModel, Field, ConfigDict
@@ -54,7 +55,6 @@ class LeaveApplicationCreate(BaseModel):
     leave_type_id: str
     start_date: date
     end_date: date
-    reason: str
 
 class LeaveApplicationResponse(LeaveApplicationCreate):
     """
@@ -91,7 +91,7 @@ class LeaveBalanceResponse(LeaveBalanceCreate):
     """
     Schema for returning an employee's leave balance details.
     """
-    balance_id: str
+    id: str
 
     model_config = ConfigDict(from_attributes=True)
 

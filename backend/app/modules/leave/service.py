@@ -4,6 +4,7 @@ Leave Management (M2) Business Logic (Services)
 This module contains the core business logic for handling leave types,
 balances, applications, and the approval workflow. It acts as a bridge 
 between the API routers and the database CRUD operations.
+
 """
 
 from datetime import datetime
@@ -58,6 +59,11 @@ def create_leave_balance(db: Session, leave_balance: LeaveBalanceCreate):
     """
     Instantiates a new LeaveBalance model (wallet) for an employee.
     """
+    # Validate employee exists in the shared Employee Directory (M0)
+    employee = crud.get_employee_by_id(db=db, employee_id=leave_balance.employee_id)
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found in Employee Directory")
+
     new_leave_balance = LeaveBalance(
         employee_id=leave_balance.employee_id,
         leave_type_id=leave_balance.leave_type_id,
@@ -82,12 +88,16 @@ def create_leave_application(db: Session, application_data: LeaveApplicationCrea
     Processes a new leave request from an employee.
     Defaults the status to PENDING before saving.
     """
+    # Validate employee exists in the shared Employee Directory (M0)
+    employee = crud.get_employee_by_id(db=db, employee_id=application_data.employee_id)
+    if not employee:
+        raise HTTPException(status_code=404, detail="Employee not found in Employee Directory")
+
     new_app = LeaveApplication(
         employee_id=application_data.employee_id,
         leave_type_id=application_data.leave_type_id,
         start_date=application_data.start_date,
         end_date=application_data.end_date,
-        reason=application_data.reason,
         status=LeaveStatusEnum.PENDING 
     )
     return crud.create_leave_application(db=db, application=new_app)

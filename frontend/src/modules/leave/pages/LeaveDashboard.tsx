@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { apiPost, apiGet } from "../../../api/client";
-// 🌟 Premium Icons imported
-import { CalendarPlus, Paperclip, Lock, Check, X, Clock, AlertCircle } from "lucide-react";
+// Premium Icons imported
+import { CalendarPlus, Paperclip, Lock, Check, X, Clock } from "lucide-react";
 
 export default function LeaveDashboard() {
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -12,10 +12,10 @@ export default function LeaveDashboard() {
 
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
-    const [reason, setReason] = useState("");
     const [attachment, setAttachment] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Hardcoded for now until Global Context/Auth is integrated
     const employeeId = "EMP123";
 
     useEffect(() => {
@@ -91,7 +91,6 @@ export default function LeaveDashboard() {
         setIsFormOpen(false);
         setStartDate("");
         setEndDate("");
-        setReason("");
         setAttachment(null);
     };
 
@@ -113,11 +112,6 @@ export default function LeaveDashboard() {
             return;
         }
 
-        if (reason.trim().length < 5) {
-            alert("Please enter a valid reason (at least 5 characters).");
-            return;
-        }
-
         if (isDocumentMandatory && !attachment) {
             alert("Please upload the required medical/proof document to proceed.");
             return;
@@ -125,18 +119,19 @@ export default function LeaveDashboard() {
 
         setIsSubmitting(true);
 
+        // Reason field removed to align with backend schema
         const leaveData = {
             employee_id: employeeId,
             leave_type_id: leaveTypeId,
             start_date: startDate,
-            end_date: endDate,
-            reason: reason
+            end_date: endDate
         };
 
         try {
             await apiPost('/v1/leave/applications', leaveData);
             alert("Leave request submitted successfully!");
 
+            // Refresh leave history after successful submission
             const updatedAllApps = await apiGet('/v1/leave/applications');
             if (Array.isArray(updatedAllApps)) {
                 setLeaveHistory(updatedAllApps.filter(app => app.employee_id === employeeId));
@@ -326,7 +321,7 @@ export default function LeaveDashboard() {
                         )}
                     </div>
 
-                    {/* 🌟 Premium Privacy Box */}
+                    {/* Premium Privacy Box */}
                     <div className="bg-slate-900 rounded-xl p-4 flex gap-3 items-start shadow-md border border-slate-800">
                         <Lock className="text-slate-400 shrink-0 mt-0.5" size={20} />
                         <div>
@@ -373,10 +368,6 @@ export default function LeaveDashboard() {
                                     <label className="block text-xs font-semibold text-gray-700 mb-1">To</label>
                                     <input type="date" className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
                                 </div>
-                            </div>
-                            <div>
-                                <label className="block text-xs font-semibold text-gray-700 mb-1">Reason</label>
-                                <textarea rows={2} className="w-full border border-gray-200 rounded-xl px-3.5 py-2 text-sm resize-none outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900" placeholder="A short note for your manager..." value={reason} onChange={(e) => setReason(e.target.value)}></textarea>
                             </div>
 
                             {isDocumentMandatory && (
