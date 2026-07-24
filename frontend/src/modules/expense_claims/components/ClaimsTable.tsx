@@ -27,21 +27,43 @@ export function ClaimsTable({ claims, categories }: Props) {
           <th>Category</th>
           <th>Amount</th>
           <th>Status</th>
+          <th>Receipt</th>
         </tr>
       </thead>
       <tbody>
-        {sorted.map((claim) => (
-          <tr key={claim.claim_id}>
-            <td>{claim.date}</td>
-            <td>{categories.find((c) => c.category_id === claim.category_id)?.name ?? claim.category_id}</td>
-            <td>₹{claim.amount.toLocaleString()}</td>
-            <td>
-              <span className={`claims-table__badge claims-table__badge--${claim.status.toLowerCase()}`}>
-                {claim.status}
-              </span>
-            </td>
-          </tr>
-        ))}
+        {sorted.map((claim) => {
+          const filename = claim.receipt_file_path
+            ? claim.receipt_file_path.split("/").pop()
+            : null;
+          const receiptUrl = filename ? "/receipts/" + filename : null;
+
+          return (
+            <tr key={claim.claim_id} title={claim.description ?? undefined}>
+              <td>{claim.date}</td>
+              <td>{categories.find((c) => c.category_id === claim.category_id)?.name ?? claim.category_id}</td>
+              <td>₹{claim.amount.toLocaleString()}</td>
+              <td>
+                <span className={"claims-table__badge claims-table__badge--" + claim.status.toLowerCase()}>
+                  {claim.status}
+                </span>
+              </td>
+              <td>
+                {receiptUrl ? (
+                  
+                  <a  href={receiptUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="claims-table__receipt-link"
+                  >
+                    View
+                  </a>
+                ) : (
+                  <span className="claims-table__receipt-none">—</span>
+                )}
+              </td>
+            </tr>
+          );
+        })}
       </tbody>
     </table>
   );

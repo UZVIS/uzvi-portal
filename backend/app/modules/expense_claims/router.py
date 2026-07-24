@@ -1,12 +1,6 @@
-"""
-M4 - Expense Claims
-backend/app/modules/expense_claims/router.py
-
-Mounted at /expenses per the integration contract (FRD Section 7).
-"""
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -14,8 +8,6 @@ from app.modules.expense_claims import schemas, service
 
 router = APIRouter(prefix="/expenses", tags=["expense-claims"])
 
-
-# --- Categories ---
 
 @router.post("/categories", response_model=schemas.ExpenseCategoryRead)
 def create_category(data: schemas.ExpenseCategoryCreate, db: Session = Depends(get_db)):
@@ -27,8 +19,6 @@ def list_categories(db: Session = Depends(get_db)):
     return service.list_categories(db)
 
 
-# --- Claims ---
-
 @router.post("/claims", response_model=schemas.ExpenseClaimRead)
 def create_claim(data: schemas.ExpenseClaimCreate, db: Session = Depends(get_db)):
     try:
@@ -36,6 +26,17 @@ def create_claim(data: schemas.ExpenseClaimCreate, db: Session = Depends(get_db)
     except service.NotFoundError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
     except service.CapExceededError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+
+@router.post("/claims/{claim_id}/receipt", response_model=schemas.ExpenseClaimRead)
+def upload_receipt(claim_id: str, file: UploadFile = File(...), db: Session = Depends(get_db)):
+    """FR-EXP-01: attach a receipt file to an existing claim."""
+    try:
+        return service.upload_receipt(db, claim_id, file)
+    except service.NotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except service.InvalidReceiptError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
 
 

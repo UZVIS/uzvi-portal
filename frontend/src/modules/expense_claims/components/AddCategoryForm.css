@@ -1,0 +1,69 @@
+/**
+ * M4 - Expense Claims
+ * frontend/src/modules/expense_claims/components/AddCategoryForm.css
+ */
+
+.add-category-form {
+  margin-top: 24px;
+  padding: 16px;
+  border: 1px solid #e2e2e2;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.add-category-form__title {
+  margin: 0 0 12px 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+
+.add-category-form__row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.add-category-form__row label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: #666;
+  flex: 1;
+}
+
+.add-category-form__row input {
+  padding: 8px 10px;
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.add-category-form button {
+  padding: 8px 16px;
+  background: #1a1a2e;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.add-category-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.add-category-form__error {
+  margin-top: 8px;
+  color: #c0392b;
+  font-size: 13px;
+}
+
+.add-category-form__success {
+  margin-top: 8px;
+  color: #2e7d32;
+  font-size: 13px;
+}

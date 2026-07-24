@@ -24,10 +24,19 @@ if config.config_file_name is not None:
 # import to this list.
 from app.database import Base
 
+from app.database import Base
 import app.modules.directory.models
 import app.modules.onboarding.models
 import app.modules.documents.models
 import app.modules.attendance.models
+import app.modules.consultant_utilization.models
+import app.modules.expense_claims.models
+import app.modules.assets.models
+import app.modules.announcements.models
+import app.modules.helpdesk.models
+import app.modules.training.models
+import app.modules.recruiting.models
+import app.modules.performance_goals.models
 
 target_metadata = Base.metadata
 
