@@ -68,6 +68,18 @@ class CandidateStageUpdate(BaseModel):
     )
 
 
+class CandidateUpdate(BaseModel):
+    name: Optional[str] = Field(None, description="Candidate full name")
+    resume_details: Optional[str] = Field(
+        None, description="Resume details/summary used for FR-REC-03/04"
+    )
+    applied_role: Optional[str] = Field(None, description="Role applied for")
+    source: Optional[str] = Field(None, description="Sourcing channel")
+    stage: Optional[str] = Field(
+        None, description="Applied | Screened | Interview | Offer | Hired | Rejected"
+    )
+
+
 class CandidateResponse(CandidateBase):
     candidate_id: str
     stage: str

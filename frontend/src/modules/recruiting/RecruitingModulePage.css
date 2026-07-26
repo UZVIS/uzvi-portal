@@ -1,0 +1,147 @@
+.rec-screen {
+  min-height: 100vh;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  background: linear-gradient(160deg, #eef1ff 0%, #f3ecff 35%, #fdeef5 65%, #eafbf5 100%);
+}
+
+.rec-screen--scrolls {
+  height: auto;
+  overflow-y: auto;
+  padding-bottom: 60px;
+}
+
+/* ---------- Topbar (shared look with rest of portal) ---------- */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 32px;
+  background: linear-gradient(135deg, #1c2444 0%, #2a3563 55%, #3a2f66 100%);
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.topbar__brand-group {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.topbar__back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.topbar__back-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.topbar__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.topbar__brand-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ff9d42;
+}
+
+.topbar__user {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.topbar__user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.3;
+}
+
+.topbar__user-name {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.topbar__user-role {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.65);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.topbar__avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ff9d42, #ff6f4f);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.topbar__logout {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.topbar__logout:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.rec-main {
+  padding: 20px 32px 20px;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.rec-screen--scrolls .rec-main {
+  display: block;
+}
+
+@media (max-width: 900px) {
+  .rec-main {
+    padding: 20px 16px 0;
+  }
+}

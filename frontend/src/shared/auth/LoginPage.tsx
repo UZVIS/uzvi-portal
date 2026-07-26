@@ -1,5 +1,5 @@
 import {type FormEvent, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import "./LoginPage.css";
 
@@ -9,6 +9,10 @@ export function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from =
+    (location.state as { from?: { pathname: string } } | null)?.from
+      ?.pathname ?? "/dashboard";
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -20,7 +24,7 @@ export function LoginPage() {
     setIsSubmitting(true);
     try {
       await login(employeeId.trim());
-      navigate("/dashboard", { replace: true });
+      navigate(from, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {

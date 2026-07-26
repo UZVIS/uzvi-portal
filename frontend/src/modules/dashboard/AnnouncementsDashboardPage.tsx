@@ -164,6 +164,30 @@ export function AnnouncementsDashboardPage() {
           </span>
         </button>
 
+        {!canManage && (
+          <button
+            className="dash-card dash-card--amber"
+            onClick={() => navigate("/announcements")}
+          >
+            <span className="dash-card__icon">
+              <IconBell size={26} />
+            </span>
+            <div className="dash-card__text">
+              <h3>Needs Acknowledgment</h3>
+              <p>
+                {isLoading
+                  ? "Checking your feed…"
+                  : stats.needsAck > 0
+                  ? `${stats.needsAck} notice${stats.needsAck === 1 ? "" : "s"} waiting on your acknowledgment.`
+                  : "You're all caught up — nothing pending right now."}
+              </p>
+            </div>
+            <span className="dash-card__go">
+              {stats.needsAck > 0 ? "Review" : "Open"} <IconArrowRight size={15} />
+            </span>
+          </button>
+        )}
+
         {canManage && (
           <button
             className="dash-card dash-card--violet"

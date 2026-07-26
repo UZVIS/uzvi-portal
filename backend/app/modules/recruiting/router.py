@@ -5,11 +5,13 @@ from typing import List, Optional
 from app.database import get_db
 from app.modules.directory import service as directory_service
 from app.modules.recruiting import service
+from app.modules.recruiting.dependencies import require_recruiting_access
 from app.modules.recruiting.schemas import (
     CandidateCreate,
     CandidateResponse,
     CandidateDetailResponse,
     CandidateStageUpdate,
+    CandidateUpdate,
     InterviewStageCreate,
     InterviewStageResponse,
     ScorecardCreate,
@@ -20,11 +22,15 @@ from app.modules.recruiting.schemas import (
 )
 
 router = APIRouter(
-    prefix="/api/v1/candidates", tags=["M12 Recruiting / Candidate Pipeline"]
+    prefix="/api/v1/candidates",
+    tags=["M12 Recruiting / Candidate Pipeline"],
+    dependencies=[Depends(require_recruiting_access)],
 )
 
 interview_stage_router = APIRouter(
-    prefix="/api/v1/interview-stages", tags=["M12 Recruiting / Candidate Pipeline"]
+    prefix="/api/v1/interview-stages",
+    tags=["M12 Recruiting / Candidate Pipeline"],
+    dependencies=[Depends(require_recruiting_access)],
 )
 
 
@@ -78,6 +84,31 @@ def advance_candidate_stage(
             status_code=422,
             detail=f"Invalid stage. Must be one of {service.VALID_STAGES}.",
         )
+
+
+@router.put("/{candidate_id}", response_model=CandidateResponse)
+def edit_candidate(
+    candidate_id: str, candidate_in: CandidateUpdate, db: Session = Depends(get_db)
+):
+    try:
+        return service.update_candidate(
+            db, candidate_id, candidate_in.model_dump(exclude_unset=True)
+        )
+    except service.CandidateNotFound:
+        raise HTTPException(status_code=404, detail="Candidate not found.")
+    except service.InvalidStage:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid stage. Must be one of {service.VALID_STAGES}.",
+        )
+
+
+@router.delete("/{candidate_id}", status_code=204)
+def remove_candidate(candidate_id: str, db: Session = Depends(get_db)):
+    try:
+        service.delete_candidate(db, candidate_id)
+    except service.CandidateNotFound:
+        raise HTTPException(status_code=404, detail="Candidate not found.")
 
 
 @router.post(
