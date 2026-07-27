@@ -106,3 +106,32 @@ def test_view_document_by_unrelated_employee_raises(db):
 def test_view_missing_document_raises(db):
     with pytest.raises(service.DocumentNotFound):
         service.view_document(db, "NOPE", requester_id="E001")
+
+
+def test_expired_document_is_flagged(db):
+    service.create_document(
+        db,
+        DocumentCreate(
+            document_id="D_OLD", employee_id="E001", uploaded_by="E001",
+            doc_type="id_proof", retention_expiry="2020-01-01",
+        ),
+    )
+    expired = service.list_expired_documents(db, "HR1")
+    assert len(expired) == 1
+    assert expired[0].document_id == "D_OLD"
+
+
+def test_document_with_no_expiry_is_never_flagged(db):
+    service.create_document(
+        db,
+        DocumentCreate(
+            document_id="D_FOREVER", employee_id="E001", uploaded_by="E001", doc_type="id_proof"
+        ),
+    )
+    expired = service.list_expired_documents(db, "HR1")
+    assert expired == []
+
+
+def test_list_expired_documents_by_non_hr_raises(db):
+    with pytest.raises(service.NotAuthorized):
+        service.list_expired_documents(db, "E001")

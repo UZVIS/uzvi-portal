@@ -58,7 +58,7 @@ export function DocumentLookup({ requesterId, onLookup, onGetLogs }: DocumentLoo
         </button>
       </div>
       {!requesterId && (
-        <p className="directory-row__muted">Log in to view documents — access is logged per FR-DOC-04.</p>
+        <p className="directory-row__muted">Log in to view documents.</p>
       )}
 
       {record && (

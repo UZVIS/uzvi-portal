@@ -28,7 +28,7 @@ export interface DocumentAccessLog {
   timestamp: string;
 }
 
-/** POST /api/v1/documents/ — FR-DOC-01, HR-Restricted uploads on an employee's behalf */
+/** POST /api/v1/documents/ — HR-Restricted uploads on an employee's behalf */
 export function registerDocument(input: {
   document_id: string;
   employee_id: string;
@@ -43,16 +43,23 @@ export function registerDocument(input: {
   }).then((r) => handle(r, "Could not register the document."));
 }
 
-/** GET /api/v1/documents/{id}?requester_id=... — FR-DOC-02, logs every view (NFR-AUD-02) */
+/** GET /api/v1/documents/{id}?requester_id=... — logs every view (NFR-AUD-02) */
 export function viewDocument(documentId: string, requesterId: string): Promise<DocumentRecord> {
   return fetch(
     `${BASE_PATH}/${encodeURIComponent(documentId)}?requester_id=${encodeURIComponent(requesterId)}`
   ).then((r) => handle(r, "That document wasn't found, or you don't have access to it."));
 }
 
-/** GET /api/v1/documents/{id}/logs — FR-DOC-04, the audit trail */
+/** GET /api/v1/documents/{id}/logs — the audit trail */
 export function getAccessLogs(documentId: string): Promise<DocumentAccessLog[]> {
   return fetch(`${BASE_PATH}/${encodeURIComponent(documentId)}/logs`).then((r) =>
     handle(r, "That document wasn't found.")
+  );
+}
+
+/** GET /api/v1/documents/expired/list?requester_id=... — HR-Restricted only */
+export function getExpiredDocuments(requesterId: string): Promise<DocumentRecord[]> {
+  return fetch(`${BASE_PATH}/expired/list?requester_id=${encodeURIComponent(requesterId)}`).then(
+    (r) => handle(r, "Could not load expired documents.")
   );
 }

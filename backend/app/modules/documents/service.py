@@ -1,3 +1,5 @@
+import datetime
+
 from sqlalchemy.orm import Session
 
 from app.modules.directory.models import Employee
@@ -22,8 +24,6 @@ def _get_requester(db: Session, requester_id: str) -> Employee | None:
 
 
 def create_document(db: Session, doc_in: DocumentCreate) -> EmployeeDocument:
-    # HR-Restricted uploads on an employee's behalf.
-    # an employee may self-upload their own onboarding documents.
     uploader = _get_requester(db, doc_in.uploaded_by)
     is_hr = uploader is not None and uploader.access_tier == "HR-Restricted"
     is_self_upload = doc_in.uploaded_by == doc_in.employee_id
@@ -56,8 +56,6 @@ def view_document(db: Session, document_id: str, requester_id: str) -> EmployeeD
     if not doc:
         raise DocumentNotFound(document_id)
 
-    # only the HR-Restricted tier and the document's owner
-    # may read a record — not even Admin or Manager tiers.
     requester = _get_requester(db, requester_id)
     is_owner = requester_id == doc.employee_id
     is_hr = requester is not None and requester.access_tier == "HR-Restricted"
@@ -77,3 +75,22 @@ def get_access_logs(db: Session, document_id: str) -> list[DocumentAccessLog]:
         .filter(DocumentAccessLog.document_id == document_id)
         .all()
     )
+
+
+def is_document_expired(doc: EmployeeDocument) -> bool:
+    if doc.retention_expiry is None:
+        return False
+    return datetime.date.today() > doc.retention_expiry
+
+
+def list_expired_documents(db: Session, requester_id: str) -> list[EmployeeDocument]:
+    requester = _get_requester(db, requester_id)
+    if requester is None or requester.access_tier != "HR-Restricted":
+        raise NotAuthorized("Only HR-Restricted staff may view expired documents.")
+
+    all_docs = (
+        db.query(EmployeeDocument)
+        .filter(EmployeeDocument.retention_expiry.isnot(None))
+        .all()
+    )
+    return [doc for doc in all_docs if is_document_expired(doc)]
