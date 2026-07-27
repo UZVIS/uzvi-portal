@@ -163,43 +163,47 @@
   }
 }
 
-/* ---------- Grouped-by-category dashboard sections ---------- */
+/* ---------- Announcement list (step 1) ---------- */
 
-.ack-group-grid {
+.ack-announcement-list {
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 10px;
 }
 
-.ack-group {
-  background: var(--color-surface);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-  overflow: hidden;
-  border-top: 4px solid transparent;
-}
-
-.ack-group--company_wide {
-  border-top-color: #4361ee;
-}
-
-.ack-group--team {
-  border-top-color: #14b8a6;
-}
-
-.ack-group--role {
-  border-top-color: #8b5cf6;
-}
-
-.ack-group__header {
+.ack-announcement-item {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 18px 22px;
-  border-bottom: 1px solid var(--color-hairline);
+  gap: 16px;
+  text-align: left;
+  background: var(--color-surface);
+  border: none;
+  border-left: 4px solid transparent;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 14px 20px;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-.ack-group__icon {
+.ack-announcement-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px -12px rgba(20, 20, 50, 0.25);
+}
+
+.ack-announcement-item--company_wide {
+  border-left-color: #4361ee;
+}
+
+.ack-announcement-item--team {
+  border-left-color: #14b8a6;
+}
+
+.ack-announcement-item--role {
+  border-left-color: #8b5cf6;
+}
+
+.ack-announcement-item__icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -210,64 +214,96 @@
   flex-shrink: 0;
 }
 
-.ack-group--company_wide .ack-group__icon {
+.ack-announcement-item--company_wide .ack-announcement-item__icon {
   background: linear-gradient(135deg, #4361ee, #3a56d4);
 }
 
-.ack-group--team .ack-group__icon {
+.ack-announcement-item--team .ack-announcement-item__icon {
   background: linear-gradient(135deg, #14b8a6, #0d9488);
 }
 
-.ack-group--role .ack-group__icon {
+.ack-announcement-item--role .ack-announcement-item__icon {
   background: linear-gradient(135deg, #8b5cf6, #6d28d9);
 }
 
-.ack-group__heading {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+.ack-announcement-item__text {
+  flex: 1;
+  min-width: 0;
 }
 
-.ack-group__heading h2 {
-  font-size: 15.5px;
+.ack-announcement-item__text h3 {
+  margin: 0 0 3px;
+  font-size: 14.5px;
   font-weight: 800;
   color: var(--color-ink);
-  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.ack-group__heading span {
-  font-size: 12.5px;
+.ack-announcement-item__meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 12px;
   color: var(--color-slate);
 }
 
-.ack-group__table-wrap {
-  overflow-x: auto;
+.ack-announcement-item__meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.ack-group__table-wrap .ack-table {
-  box-shadow: none;
-  border-radius: 0;
+.ack-announcement-item__stats {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
-.ack-group__table-wrap .ack-table thead th {
-  padding: 10px 22px;
+.ack-announcement-item__count {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--color-ink);
+  white-space: nowrap;
 }
 
-.ack-group--company_wide .ack-table thead th {
-  color: #4361ee;
-  background: #4361ee0d;
+.ack-announcement-item__pending {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-amber);
+  background: var(--color-amber-soft);
+  padding: 2px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
 }
 
-.ack-group--team .ack-table thead th {
-  color: #0d9488;
-  background: #14b8a60d;
+.ack-announcement-item__done {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-teal, #0f8a6e);
+  background: var(--color-teal-soft, #e2f5ef);
+  padding: 2px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
 }
 
-.ack-group--role .ack-table thead th {
-  color: #7c3aed;
-  background: #8b5cf60d;
+.ack-announcement-item__go {
+  color: var(--color-slate);
+  flex-shrink: 0;
 }
 
-.ack-group__table-wrap .ack-table tbody td {
-  padding: 10px 22px;
+@media (max-width: 700px) {
+  .ack-announcement-item {
+    flex-wrap: wrap;
+  }
+  .ack-announcement-item__stats {
+    align-items: flex-start;
+    margin-left: 54px;
+  }
 }

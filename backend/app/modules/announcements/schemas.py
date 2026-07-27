@@ -28,6 +28,32 @@ class AnnouncementCreate(AnnouncementBase):
     )
 
 
+class AnnouncementUpdate(BaseModel):
+    """Partial edit of an existing announcement. All content fields are
+    optional (only send what changed); edited_by is required so the same
+    RBAC check used on create can be enforced here too, at the service
+    layer rather than just hidden in the UI (NFR-SEC-01)."""
+
+    title: Optional[str] = Field(None, description="Announcement headline")
+    body: Optional[str] = Field(None, description="Full announcement content")
+    target_type: Optional[str] = Field(
+        None, description="Audience scope: company_wide | team | role"
+    )
+    target_value: Optional[str] = Field(
+        None,
+        description="team_id or access_tier name; required when target_type is team/role",
+    )
+    requires_ack: Optional[bool] = Field(
+        None, description="Whether employees must acknowledge reading this announcement"
+    )
+    expiry_date: Optional[date] = Field(
+        None, description="Date after which the announcement is auto-archived"
+    )
+    edited_by: str = Field(
+        ..., description="Employee ID performing the edit (must be Admin/Leadership or Manager)"
+    )
+
+
 class AnnouncementResponse(AnnouncementBase):
     announcement_id: str
     posted_by: str

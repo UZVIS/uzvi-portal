@@ -6,6 +6,7 @@ from app.database import get_db
 from app.modules.announcements import service
 from app.modules.announcements.schemas import (
     AnnouncementCreate,
+    AnnouncementUpdate,
     AnnouncementResponse,
     AnnouncementAckCreate,
     AnnouncementAckResponse,
@@ -61,6 +62,34 @@ def retrieve_announcement_by_id(announcement_id: str, db: Session = Depends(get_
     if not announcement:
         raise HTTPException(status_code=404, detail="Announcement not found.")
     return announcement
+
+
+@router.put("/{announcement_id}", response_model=AnnouncementResponse)
+def edit_announcement(
+    announcement_id: str, announcement_in: AnnouncementUpdate, db: Session = Depends(get_db)
+):
+    try:
+        return service.update_announcement(db, announcement_id, announcement_in)
+    except service.AnnouncementNotFound:
+        raise HTTPException(status_code=404, detail="Announcement not found.")
+    except service.PosterNotFound:
+        raise HTTPException(status_code=404, detail="Editing employee not found.")
+    except service.UnauthorizedPoster:
+        raise HTTPException(
+            status_code=403,
+            detail="Only Admin/Leadership or Manager tiers may edit announcements.",
+        )
+    except service.InvalidTargetType:
+        raise HTTPException(
+            status_code=422,
+            detail="target_type must be one of: company_wide, team, role.",
+        )
+    except service.TargetValueRequired:
+        raise HTTPException(
+            status_code=422,
+            detail="target_value is required when target_type is 'team' or 'role'.",
+        )
+
 
 @router.delete("/{announcement_id}", status_code=204)
 def delete_announcement(announcement_id: str, db: Session = Depends(get_db)):

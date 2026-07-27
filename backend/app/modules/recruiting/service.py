@@ -84,6 +84,43 @@ def update_candidate_stage(db: Session, candidate_id: str, new_stage: str) -> Ca
     return candidate
 
 
+def update_candidate(db: Session, candidate_id: str, updates: dict) -> Candidate:
+    candidate = get_candidate(db, candidate_id)
+    if not candidate:
+        raise CandidateNotFound(candidate_id)
+
+    if "stage" in updates and updates["stage"] is not None and updates["stage"] not in VALID_STAGES:
+        raise InvalidStage(updates["stage"])
+
+    for field, value in updates.items():
+        if value is not None:
+            setattr(candidate, field, value)
+
+    db.commit()
+    db.refresh(candidate)
+    return candidate
+
+
+def delete_candidate(db: Session, candidate_id: str) -> None:
+    candidate = get_candidate(db, candidate_id)
+    if not candidate:
+        raise CandidateNotFound(candidate_id)
+
+    db.query(Scorecard).filter(
+        Scorecard.stage_id.in_(
+            db.query(InterviewStage.stage_id).filter(
+                InterviewStage.candidate_id == candidate_id
+            )
+        )
+    ).delete(synchronize_session=False)
+    db.query(InterviewStage).filter(
+        InterviewStage.candidate_id == candidate_id
+    ).delete(synchronize_session=False)
+
+    db.delete(candidate)
+    db.commit()
+
+
 # ---------- Interview stages & scorecards: FR-REC-02, FR-REC-03 ----------
 
 def add_interview_stage(
@@ -189,7 +226,9 @@ def convert_candidate_to_employee(
         manager_id=conversion_in.manager_id,
         join_date=conversion_in.join_date,
     )
-    new_employee = directory_service.create_employee(db, employee_in)
+    new_employee = directory_service.create_employee(
+        db, employee_in, requester_id=conversion_in.requester_id
+    )
 
     candidate.converted_emp_id = new_employee.employee_id
     candidate.stage = "Hired"
@@ -201,14 +240,46 @@ def convert_candidate_to_employee(
 # ---------- FR-REC-06: pipeline-wide funnel stats ----------
 
 def get_funnel_stats(db: Session) -> dict:
+    """
+    Builds a true *cumulative* funnel: each stage's count reflects every
+    candidate who reached that stage or further, not just who is currently
+    sitting there. This assumes the pipeline stages are strictly ordered
+    (Applied -> Screened -> Interview -> Offer -> Hired) and that a
+    candidate currently at a later stage necessarily passed through every
+    earlier one. This is what makes the funnel visualization make sense —
+    each stage's bar/count is less than or equal to the one before it,
+    showing real drop-off rather than an arbitrary current-day snapshot.
+
+    Rejected candidates are counted toward "Applied" (everyone necessarily
+    applied first) but are not credited toward Screened/Interview/Offer/
+    Hired, since this data model only stores a candidate's current stage
+    and not a history of stages they passed through before being rejected.
+    Rejected is reported separately as pipeline exits.
+    """
     candidates = db.query(Candidate).all()
+    total = len(candidates)
+
+    stage_order = ["Applied", "Screened", "Interview", "Offer", "Hired"]
+    stage_index = {stage: i for i, stage in enumerate(stage_order)}
 
     by_stage: dict[str, int] = {}
+    for i, stage in enumerate(stage_order):
+        if stage == "Applied":
+            by_stage[stage] = total
+        else:
+            by_stage[stage] = sum(
+                1
+                for c in candidates
+                if c.stage in stage_index and stage_index[c.stage] >= i
+            )
+
+    rejected_count = sum(1 for c in candidates if c.stage == "Rejected")
+    by_stage["Rejected"] = rejected_count
+
     by_role: dict[str, int] = {}
     by_source: dict[str, int] = {}
 
     for c in candidates:
-        by_stage[c.stage] = by_stage.get(c.stage, 0) + 1
         by_role[c.applied_role] = by_role.get(c.applied_role, 0) + 1
         source_key = c.source or "Unknown"
         by_source[source_key] = by_source.get(source_key, 0) + 1

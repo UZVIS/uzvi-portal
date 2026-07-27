@@ -12,16 +12,25 @@ import UtilizationModulePage from "./modules/consultant_utilization/UtilizationM
 import ExpenseClaimsModulePage from "./modules/expense_claims/ExpenseClaimsModulePage";
 import HelpdeskModulePage from "./modules/helpdesk/HelpdeskModulePage";
 import TicketDetailsPage from "./modules/helpdesk/TicketDetailsPage";
+import RecruitingModulePage from "./modules/recruiting/RecruitingModulePage";
+import { RecruitingHomePage } from "./modules/recruiting/RecruitingHomePage";
+import { PipelineFunnelPage } from "./modules/recruiting/PipelineFunnelPage";
+import { SourcingPage } from "./modules/recruiting/SourcingPage";
+import { CandidatePipelinePage } from "./modules/recruiting/CandidatePipelinePage";
+import { DuplicatesPage } from "./modules/recruiting/DuplicatesPage";
+import { CandidateDetailPage } from "./modules/recruiting/CandidateDetailPage";
 
 function HomePage() {
   return (
     <div>
       <h1>UZVI Employee Portal</h1>
       <ul>
-        <li><Link to="/announcements">Announcements</Link></li>
+        <li><Link to="/dashboard">Announcements</Link></li>
         <li><Link to="/utilization">Consultant Utilization</Link></li>
         <li><Link to="/expenses">Expense Claims</Link></li>
         <li><Link to="/helpdesk">Helpdesk</Link></li>
+        <li><Link to="/recruiting">Recruiting / Candidate Pipeline </Link></li>
+
       </ul>
     </div>
   );
@@ -108,6 +117,21 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/recruiting"
+            element={
+              <ProtectedRoute allowedTiers={["Admin/Leadership", "HR-Restricted"]}>
+                <RecruitingModulePage />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<RecruitingHomePage />} />
+            <Route path="funnel" element={<PipelineFunnelPage />} />
+            <Route path="sourcing" element={<SourcingPage />} />
+            <Route path="pipeline" element={<CandidatePipelinePage />} />
+            <Route path="duplicates" element={<DuplicatesPage />} />
+            <Route path="candidates/:candidateId" element={<CandidateDetailPage />} />
+          </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
 

@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactElement } from "react";
 import type { Announcement, TargetType } from "../types";
 import { getAcknowledgmentStatus } from "../api";
+import { parseServerDate } from "../../../shared/utils/date";
 import {
   IconArchive,
   IconBell,
@@ -40,7 +41,7 @@ const TARGET_ICON: Record<TargetType, (size: number) => ReactElement> = {
 };
 
 function formatPostedAt(iso: string): string {
-  return new Date(iso).toLocaleString("en-IN", {
+  return parseServerDate(iso).toLocaleString("en-IN", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -77,7 +78,9 @@ export function AnnouncementCard({
     return () => {
       cancelled = true;
     };
-  }, [announcement.announcement_id, announcement.requires_ack, currentEmployeeId]);
+    // Re-runs when isAcking flips back to false (acknowledgment finished saving),
+    // so the button/tag reflects the new status immediately instead of only after a refresh.
+  }, [announcement.announcement_id, announcement.requires_ack, currentEmployeeId, isAcking]);
 
   const isArchived = announcement.status === "archived";
   const theme = TARGET_THEME[announcement.target_type];

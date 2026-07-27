@@ -182,7 +182,9 @@ def test_funnel_stats(db):
 
     stats = service.get_funnel_stats(db)
     stage_counts = {s["stage"]: s["count"] for s in stats["by_stage"]}
-    assert stage_counts["Applied"] == 2
+    # Applied is now cumulative: everyone who ever entered the pipeline,
+    # including the candidate who has since moved on to Screened.
+    assert stage_counts["Applied"] == 3
     assert stage_counts["Screened"] == 1
     assert stats["by_role"]["Backend Engineer"] == 2
     assert stats["by_source"]["LinkedIn"] == 2
