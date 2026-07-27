@@ -126,5 +126,10 @@ def complete_onboarding_task(task_in: TaskCompletionCreate, db: Session = Depend
         raise HTTPException(status_code=404, detail="Parent onboarding instance not found.")
     except service.TaskNotFound:
         raise HTTPException(status_code=404, detail="Referenced template task not found.")
+    except service.RequiredDocumentMissing as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Cannot complete this task: no {e.doc_type} document found for this employee. Please upload it first.",
+        )
     except service.NotAuthorized as e:
         raise HTTPException(status_code=403, detail=str(e))

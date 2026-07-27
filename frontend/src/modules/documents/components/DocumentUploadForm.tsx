@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 
 interface DocumentUploadFormProps {
   uploaderId: string;
+  restrictToSelf?: boolean;
   onSubmit: (input: {
     document_id: string;
     employee_id: string;
@@ -13,9 +14,9 @@ interface DocumentUploadFormProps {
 
 const DOC_TYPES = ["offer_letter", "payslip", "experience_letter", "id_proof", "address_proof"];
 
-export function DocumentUploadForm({ uploaderId, onSubmit }: DocumentUploadFormProps) {
+export function DocumentUploadForm({ uploaderId, restrictToSelf, onSubmit }: DocumentUploadFormProps) {
   const [documentId, setDocumentId] = useState("");
-  const [employeeId, setEmployeeId] = useState("");
+  const [employeeId, setEmployeeId] = useState(restrictToSelf ? uploaderId : "");
   const [docType, setDocType] = useState(DOC_TYPES[0]);
   const [retentionExpiry, setRetentionExpiry] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -24,20 +25,21 @@ export function DocumentUploadForm({ uploaderId, onSubmit }: DocumentUploadFormP
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!documentId.trim() || !employeeId.trim()) return;
+    const ownerId = restrictToSelf ? uploaderId : employeeId.trim();
+    if (!documentId.trim() || !ownerId) return;
     setIsSubmitting(true);
     setError(null);
     setSuccess(false);
     try {
       await onSubmit({
         document_id: documentId.trim(),
-        employee_id: employeeId.trim(),
+        employee_id: ownerId,
         uploaded_by: uploaderId,
         doc_type: docType,
         retention_expiry: retentionExpiry || undefined,
       });
       setDocumentId("");
-      setEmployeeId("");
+      if (!restrictToSelf) setEmployeeId("");
       setRetentionExpiry("");
       setSuccess(true);
     } catch (err) {
@@ -49,7 +51,9 @@ export function DocumentUploadForm({ uploaderId, onSubmit }: DocumentUploadFormP
 
   return (
     <form className="directory-form" onSubmit={handleSubmit}>
-      <h3 className="directory-form__title">Register a document</h3>
+      <h3 className="directory-form__title">
+        {restrictToSelf ? "Upload your document" : "Register a document"}
+      </h3>
       {error && <div className="error-banner">{error}</div>}
       {success && <div className="success-banner">Document registered.</div>}
       <div className="field-row">
@@ -63,16 +67,18 @@ export function DocumentUploadForm({ uploaderId, onSubmit }: DocumentUploadFormP
             required
           />
         </label>
-        <label className="field">
-          <span className="field__label">Employee ID (owner)</span>
-          <input
-            className="field__input"
-            value={employeeId}
-            onChange={(e) => setEmployeeId(e.target.value)}
-            placeholder="E001"
-            required
-          />
-        </label>
+        {!restrictToSelf && (
+          <label className="field">
+            <span className="field__label">Employee ID (owner)</span>
+            <input
+              className="field__input"
+              value={employeeId}
+              onChange={(e) => setEmployeeId(e.target.value)}
+              placeholder="E001"
+              required
+            />
+          </label>
+        )}
       </div>
       <div className="field-row">
         <label className="field">

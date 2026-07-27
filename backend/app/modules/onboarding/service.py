@@ -4,6 +4,7 @@ import datetime
 from sqlalchemy.orm import Session
 
 from app.modules.directory.models import Employee
+from app.modules.documents.models import EmployeeDocument
 from app.modules.onboarding.models import (
     OnboardingTemplate,
     OnboardingTask,
@@ -44,6 +45,12 @@ class TaskNotFound(Exception):
 
 class NotAuthorized(Exception):
     pass
+
+
+class RequiredDocumentMissing(Exception):
+    def __init__(self, doc_type: str):
+        self.doc_type = doc_type
+        super().__init__(f"Missing required document: {doc_type}")
 
 
 def _get_employee(db: Session, employee_id: str) -> Employee | None:
@@ -107,6 +114,7 @@ def add_task_to_template(db: Session, task_in: OnboardingTaskCreate) -> Onboardi
         seq=task_in.seq,
         responsible_role=task_in.responsible_role,
         expected_days=task_in.expected_days,
+        required_doc_type=task_in.required_doc_type,
     )
     db.add(new_task)
     db.commit()
@@ -205,6 +213,18 @@ def complete_task(db: Session, task_in: TaskCompletionCreate) -> TaskCompletion:
         raise TaskNotFound(task_in.task_id)
 
     _authorize_completion(db, instance, task, task_in.completed_by)
+
+    if task.required_doc_type:
+        doc_exists = (
+            db.query(EmployeeDocument)
+            .filter(
+                EmployeeDocument.employee_id == instance.employee_id,
+                EmployeeDocument.doc_type == task.required_doc_type,
+            )
+            .first()
+        )
+        if not doc_exists:
+            raise RequiredDocumentMissing(task.required_doc_type)
 
     new_completion = TaskCompletion(
         **task_in.model_dump(),

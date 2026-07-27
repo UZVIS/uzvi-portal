@@ -85,6 +85,7 @@ export function OnboardingPage() {
     seq: number;
     responsible_role: string;
     expected_days?: number;
+    required_doc_type?: string;
   }) {
     if (!employee) return;
     const task = await addTask({ ...input, requester_id: employee.employee_id });

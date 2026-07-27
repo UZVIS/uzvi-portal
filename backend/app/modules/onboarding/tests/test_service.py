@@ -8,6 +8,7 @@ from app.database import Base
 from app.modules.directory.models import Employee
 from app.modules.onboarding import service
 from app.modules.onboarding.models import OnboardingInstance
+from app.modules.documents.models import EmployeeDocument
 from app.modules.onboarding.schemas import (
     OnboardingTemplateCreate,
     OnboardingTaskCreate,
@@ -311,3 +312,48 @@ def test_completion_details_includes_timestamp(db):
     assert details[0].task_id == "T_HR"
     assert details[0].completed_by == "E003"
     assert details[0].completed_at is not None
+
+
+def test_task_requiring_document_blocks_completion_without_it(db):
+    service.create_template(
+        db, OnboardingTemplateCreate(template_id="TPL_DOC", name="Doc Required", requester_id="E002")
+    )
+    service.add_task_to_template(
+        db,
+        OnboardingTaskCreate(
+            task_id="T_DOC", template_id="TPL_DOC", name="Upload ID proof", seq=1,
+            responsible_role="new_joiner", required_doc_type="id_proof", requester_id="E002",
+        ),
+    )
+    service.create_instance(
+        db, OnboardingInstanceCreate(instance_id="OI_DOC", employee_id="E001", template_id="TPL_DOC", requester_id="E002")
+    )
+    with pytest.raises(service.RequiredDocumentMissing):
+        service.complete_task(
+            db, TaskCompletionCreate(instance_id="OI_DOC", task_id="T_DOC", completed_by="E001")
+        )
+
+
+def test_task_requiring_document_succeeds_once_uploaded(db):
+    service.create_template(
+        db, OnboardingTemplateCreate(template_id="TPL_DOC2", name="Doc Required 2", requester_id="E002")
+    )
+    service.add_task_to_template(
+        db,
+        OnboardingTaskCreate(
+            task_id="T_DOC2", template_id="TPL_DOC2", name="Upload ID proof", seq=1,
+            responsible_role="new_joiner", required_doc_type="id_proof", requester_id="E002",
+        ),
+    )
+    service.create_instance(
+        db, OnboardingInstanceCreate(instance_id="OI_DOC2", employee_id="E001", template_id="TPL_DOC2", requester_id="E002")
+    )
+    db.add(EmployeeDocument(
+        document_id="D_TEST", employee_id="E001", uploaded_by="E001", doc_type="id_proof",
+    ))
+    db.commit()
+
+    completion = service.complete_task(
+        db, TaskCompletionCreate(instance_id="OI_DOC2", task_id="T_DOC2", completed_by="E001")
+    )
+    assert completion.task_id == "T_DOC2"

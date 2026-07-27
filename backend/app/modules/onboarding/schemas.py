@@ -30,6 +30,9 @@ class OnboardingTaskBase(BaseModel):
     expected_days: Optional[int] = Field(
         None, description="Days from instance start_date this task is expected done by"
     )
+    required_doc_type: Optional[str] = Field(
+        None, description="If set, this task can't complete until a matching document exists"
+    )
 
 
 class OnboardingTaskCreate(OnboardingTaskBase):

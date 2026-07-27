@@ -82,6 +82,8 @@ export function addTask(input: {
   seq: number;
   responsible_role: string;
   requester_id: string;
+  expected_days?: number;
+  required_doc_type?: string;
 }): Promise<OnboardingTask> {
   return fetch(`${BASE_PATH}/tasks`, {
     method: "POST",

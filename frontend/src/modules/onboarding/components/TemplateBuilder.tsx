@@ -12,6 +12,7 @@ interface TemplateBuilderProps {
     seq: number;
     responsible_role: string;
     expected_days?: number;
+    required_doc_type?: string;
   }) => Promise<void>;
 }
 
@@ -30,6 +31,7 @@ export function TemplateBuilder({
   const [taskName, setTaskName] = useState("");
   const [role, setRole] = useState(ROLES[0]);
   const [expectedDays, setExpectedDays] = useState("");
+  const [requiredDocType, setRequiredDocType] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -63,10 +65,12 @@ export function TemplateBuilder({
         seq: existing.length + 1,
         responsible_role: role,
         expected_days: expectedDays.trim() ? Number(expectedDays.trim()) : undefined,
+        required_doc_type: requiredDocType || undefined,
       });
       setTaskId("");
       setTaskName("");
       setExpectedDays("");
+      setRequiredDocType("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not add the task.");
     } finally {
@@ -159,6 +163,19 @@ export function TemplateBuilder({
           placeholder="Days (optional)"
           style={{ maxWidth: 130 }}
         />
+        <select
+          className="field__input"
+          value={requiredDocType}
+          onChange={(e) => setRequiredDocType(e.target.value)}
+          style={{ maxWidth: 170 }}
+        >
+          <option value="">No document required</option>
+          <option value="offer_letter">Requires: offer letter</option>
+          <option value="payslip">Requires: payslip</option>
+          <option value="experience_letter">Requires: experience letter</option>
+          <option value="id_proof">Requires: id proof</option>
+          <option value="address_proof">Requires: address proof</option>
+        </select>
         <button className="button-secondary" type="submit" disabled={isSubmitting || !taskTemplateId}>
           Add task
         </button>

@@ -46,12 +46,14 @@ export function DocumentsPage() {
       </header>
 
       <section className="directory-page__manage">
-        {canUpload && (
+        {employee && (
           <DocumentUploadForm
-            uploaderId={employee!.employee_id}
+            uploaderId={employee.employee_id}
+            restrictToSelf={!canUpload}
             onSubmit={(input) => registerDocument(input).then(() => undefined)}
           />
         )}
+
         <DocumentLookup
           requesterId={employee?.employee_id ?? ""}
           onLookup={(id) => viewDocument(id, employee!.employee_id)}
