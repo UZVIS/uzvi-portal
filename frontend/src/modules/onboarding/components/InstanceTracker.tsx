@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import type { OnboardingInstance, OnboardingProgress, OnboardingTask, OnboardingTemplate } from "../api";
+import type { OnboardingInstance, OnboardingProgress, OnboardingTask, OnboardingTemplate, TaskCompletionDetail } from "../api";
 import { ProgressBar } from "./ProgressBar";
 
 interface InstanceTrackerProps {
@@ -9,6 +9,7 @@ interface InstanceTrackerProps {
   instance: OnboardingInstance | null;
   progress: OnboardingProgress | null;
   completedTaskIds: Set<string>;
+  completionDetails: Record<string, TaskCompletionDetail>;
   overdueTaskIds: Set<string>;
   isTaskStateKnown: boolean;
   canManage: boolean;
@@ -25,6 +26,7 @@ export function InstanceTracker({
   instance,
   progress,
   completedTaskIds,
+  completionDetails,
   overdueTaskIds,
   isTaskStateKnown,
   canManage,
@@ -135,17 +137,25 @@ export function InstanceTracker({
                 return (
                   <li key={task.task_id} className="instance-tracker__task">
                     {isTaskStateKnown ? (
-                      <label>
-                        <input
-                          type="checkbox"
-                          checked={done}
-                          disabled={done}
-                          onChange={() => onCompleteTask(task.task_id)}
-                        />
-                        <span className={done ? "instance-tracker__task-done" : ""}>{task.name}</span>
-                        <span className="directory-row__muted"> · {task.responsible_role}</span>
-                        {overdue && !done && (
-                          <span className="instance-tracker__overdue-badge">Overdue</span>
+                      <label className="instance-tracker__task-label">
+                        <div className="instance-tracker__task-row">
+                          <input
+                            type="checkbox"
+                            checked={done}
+                            disabled={done}
+                            onChange={() => onCompleteTask(task.task_id)}
+                          />
+                          <span className={done ? "instance-tracker__task-done" : ""}>{task.name}</span>
+                          <span className="directory-row__muted"> · {task.responsible_role}</span>
+                          {overdue && !done && (
+                            <span className="instance-tracker__overdue-badge">Overdue</span>
+                          )}
+                        </div>
+                        {done && completionDetails[task.task_id]?.completed_at && (
+                          <div className="instance-tracker__task-meta">
+                            Completed {new Date(completionDetails[task.task_id].completed_at! + "Z").toLocaleString()}
+                            {completionDetails[task.task_id]?.completed_by && ` by ${completionDetails[task.task_id].completed_by}`}
+                          </div>
                         )}
                       </label>
                     ) : (

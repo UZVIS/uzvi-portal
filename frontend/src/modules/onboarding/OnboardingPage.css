@@ -141,3 +141,23 @@
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
+
+.instance-tracker__task-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+.instance-tracker__task-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.instance-tracker__task-meta {
+  font-size: 11px;
+  color: var(--color-slate);
+  padding-left: 25px;
+}

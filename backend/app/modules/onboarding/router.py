@@ -93,6 +93,14 @@ def get_onboarding_completions(instance_id: str, db: Session = Depends(get_db)):
     return {"instance_id": instance_id, "completed_task_ids": task_ids}
 
 
+@router.get("/instances/{instance_id}/completion-details", response_model=List[TaskCompletionResponse])
+def get_onboarding_completion_details(instance_id: str, db: Session = Depends(get_db)):
+    try:
+        return service.get_completion_details(db, instance_id)
+    except service.InstanceNotFound:
+        raise HTTPException(status_code=404, detail="Onboarding instance not found.")
+
+
 @router.get("/instances/{instance_id}/overdue")
 def get_onboarding_overdue(instance_id: str, db: Session = Depends(get_db)):
     try:

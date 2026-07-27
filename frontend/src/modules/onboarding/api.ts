@@ -137,6 +137,21 @@ export function getOverdueTaskIds(instanceId: string): Promise<string[]> {
     .then((data) => data.overdue_task_ids);
 }
 
+export interface TaskCompletionDetail {
+  id: number;
+  instance_id: string;
+  task_id: string;
+  completed_by: string | null;
+  completed_at: string | null;
+}
+
+/** GET /api/v1/onboarding/instances/{id}/completion-details - real timestamps */
+export function getCompletionDetails(instanceId: string): Promise<TaskCompletionDetail[]> {
+  return fetch(`${BASE_PATH}/instances/${encodeURIComponent(instanceId)}/completion-details`).then(
+    (r) => handle(r, "That onboarding instance wasn't found.")
+  );
+}
+
 export interface CohortRow {
   instance_id: string;
   employee_id: string;

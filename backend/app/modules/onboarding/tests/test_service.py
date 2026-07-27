@@ -296,3 +296,18 @@ def test_cohort_view_by_non_admin_raises(db):
     _make_template_with_tasks(db)
     with pytest.raises(service.NotAuthorized):
         service.list_instances_for_cohort(db, "E001")
+
+
+def test_completion_details_includes_timestamp(db):
+    _make_template_with_tasks(db)
+    service.create_instance(
+        db, OnboardingInstanceCreate(instance_id="OI_TS", employee_id="E001", template_id="TPL1", requester_id="E002")
+    )
+    service.complete_task(
+        db, TaskCompletionCreate(instance_id="OI_TS", task_id="T_HR", completed_by="E003")
+    )
+    details = service.get_completion_details(db, "OI_TS")
+    assert len(details) == 1
+    assert details[0].task_id == "T_HR"
+    assert details[0].completed_by == "E003"
+    assert details[0].completed_at is not None

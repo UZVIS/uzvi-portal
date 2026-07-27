@@ -256,6 +256,18 @@ def get_completed_task_ids(db: Session, instance_id: str) -> list[str]:
     return [row[0] for row in rows]
 
 
+def get_completion_details(db: Session, instance_id: str) -> list[TaskCompletion]:
+    instance = get_instance(db, instance_id)
+    if not instance:
+        raise InstanceNotFound(instance_id)
+
+    return (
+        db.query(TaskCompletion)
+        .filter(TaskCompletion.instance_id == instance_id)
+        .all()
+    )
+
+
 def get_overdue_task_ids(db: Session, instance_id: str) -> list[str]:
     # "flag overdue tasks past an expected completion window."
     # A task is overdue if it has an expected_days value, that many days

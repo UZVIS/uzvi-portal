@@ -12,7 +12,9 @@ import {
   getProgress,
   getCompletedTaskIds,
   getOverdueTaskIds,
+  getCompletionDetails,
   completeTask,
+  type TaskCompletionDetail,
   type OnboardingTemplate,
   type OnboardingTask,
   type OnboardingInstance,
@@ -40,6 +42,7 @@ export function OnboardingPage() {
   const [progress, setProgress] = useState<OnboardingProgress | null>(null);
   const [completedTaskIds, setCompletedTaskIds] = useState<Set<string>>(new Set());
   const [overdueTaskIds, setOverdueTaskIds] = useState<Set<string>>(new Set());
+  const [completionDetails, setCompletionDetails] = useState<Record<string, TaskCompletionDetail>>({});
   const [isTaskStateKnown, setIsTaskStateKnown] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -97,6 +100,7 @@ export function OnboardingPage() {
     setProgress(null);
     setCompletedTaskIds(new Set());
     setOverdueTaskIds(new Set());
+    setCompletionDetails({});
     setIsTaskStateKnown(true);
     setError(null);
   }
@@ -106,12 +110,14 @@ export function OnboardingPage() {
     const created = await startOnboarding(instanceId, employeeId, templateId, employee.employee_id);
     setInstance(created);
     setIsTaskStateKnown(true);
-    const [prog, overdueIds] = await Promise.all([
+    const [prog, overdueIds, details] = await Promise.all([
       getProgress(created.instance_id),
       getOverdueTaskIds(created.instance_id),
+      getCompletionDetails(created.instance_id),
     ]);
     setProgress(prog);
     setOverdueTaskIds(new Set(overdueIds));
+    setCompletionDetails(Object.fromEntries(details.map((d) => [d.task_id, d])));
   }
 
   async function handleCompleteTask(taskId: string) {
@@ -120,12 +126,14 @@ export function OnboardingPage() {
     try {
       await completeTask(instance.instance_id, taskId, employee.employee_id);
       setCompletedTaskIds((prev) => new Set(prev).add(taskId));
-      const [prog, overdueIds] = await Promise.all([
+      const [prog, overdueIds, details] = await Promise.all([
         getProgress(instance.instance_id),
         getOverdueTaskIds(instance.instance_id),
+        getCompletionDetails(instance.instance_id),
       ]);
       setProgress(prog);
       setOverdueTaskIds(new Set(overdueIds));
+      setCompletionDetails(Object.fromEntries(details.map((d) => [d.task_id, d])));
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not mark the task complete.");
     }
@@ -136,14 +144,16 @@ export function OnboardingPage() {
     try {
       const found = await getInstance(instanceId);
       setInstance(found);
-      const [prog, doneIds, overdueIds] = await Promise.all([
+      const [prog, doneIds, overdueIds, details] = await Promise.all([
         getProgress(instanceId),
         getCompletedTaskIds(instanceId),
         getOverdueTaskIds(instanceId),
+        getCompletionDetails(instanceId),
       ]);
       setProgress(prog);
       setCompletedTaskIds(new Set(doneIds));
       setOverdueTaskIds(new Set(overdueIds));
+      setCompletionDetails(Object.fromEntries(details.map((d) => [d.task_id, d])));
       setIsTaskStateKnown(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "That onboarding instance wasn't found.");
@@ -196,6 +206,7 @@ export function OnboardingPage() {
           instance={instance}
           progress={progress}
           completedTaskIds={completedTaskIds}
+          completionDetails={completionDetails}
           overdueTaskIds={overdueTaskIds}
           isTaskStateKnown={isTaskStateKnown}
           currentEmployeeId={selectedEmployeeId}
