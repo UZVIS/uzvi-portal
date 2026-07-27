@@ -16,7 +16,7 @@ export default function LeaveDashboard() {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Hardcoded for now until Global Context/Auth is integrated
-    const employeeId = "EMP123";
+    const employeeId = "EMP001";
 
     useEffect(() => {
         async function fetchDashboardData() {

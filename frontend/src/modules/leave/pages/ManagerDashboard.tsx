@@ -8,7 +8,7 @@ export default function ManagerDashboard() {
     const [leaveTypes, setLeaveTypes] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    const managerId = "MGR123";
+    const managerId = "EMP001";
 
     useEffect(() => {
         fetchManagerData();
@@ -115,7 +115,6 @@ export default function ManagerDashboard() {
                                 <tr className="text-xs font-bold text-gray-400 uppercase tracking-wider">
                                     <th className="py-4 px-6">Employee</th>
                                     <th className="py-4 px-6">Leave Details</th>
-                                    <th className="py-4 px-6">Reason</th>
                                     <th className="py-4 px-6 text-right">Actions</th>
                                 </tr>
                             </thead>
@@ -146,11 +145,6 @@ export default function ManagerDashboard() {
                                                     </span>
                                                     <span className="text-xs text-gray-500">{totalDays} Days</span>
                                                 </div>
-                                            </td>
-                                            <td className="py-4 px-6 max-w-sm">
-                                                <p className="text-sm text-gray-800 font-medium">
-                                                    {req.reason || "No reason provided."}
-                                                </p>
                                             </td>
                                             <td className="py-4 px-6 text-right">
                                                 <div className="flex justify-end space-x-2">

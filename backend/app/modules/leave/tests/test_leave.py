@@ -312,7 +312,7 @@ def test_update_leave_status_already_processed(db):
     application = schemas.LeaveApplicationCreate(
         employee_id=employee.employee_id,
         leave_type_id=leave.leave_type_id,
-        start_date=date(2026, 7, 25),
+        start_date=date(2026, 7, 25),up
         end_date=date(2026, 7, 26)
     )
 
