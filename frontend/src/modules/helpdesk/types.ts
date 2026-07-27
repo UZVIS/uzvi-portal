@@ -1,11 +1,3 @@
-export interface TicketComment {
-  comment_id: number;
-  ticket_id: number;
-  author_id: string;
-  comment: string;
-  created_at: string;
-}
-
 export interface Ticket {
   ticket_id: number;
   raised_by: string;
@@ -27,8 +19,9 @@ export interface TicketCreate {
   assigned_to?: string | null;
 }
 
-export interface TicketStatusUpdate {
+export interface TicketUpdate {
   status: string;
+  assigned_to?: string | null;
 }
 
 export interface TicketComment {

@@ -1,7 +1,7 @@
 import type{
   Ticket,
   TicketCreate,
-  TicketStatusUpdate,
+  TicketUpdate,
   TicketComment,
   TicketCommentCreate,
 } from "./types";
@@ -42,9 +42,9 @@ export const helpdeskApi = {
       body: JSON.stringify(data),
     }),
 
-  updateStatus: (
+  updateTicket: (
     ticketId: number,
-    data: TicketStatusUpdate
+    data: TicketUpdate
   ) =>
     request<Ticket>(`/tickets/${ticketId}/status`, {
       method: "PATCH",

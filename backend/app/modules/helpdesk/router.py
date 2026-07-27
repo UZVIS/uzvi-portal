@@ -8,14 +8,14 @@ from app.modules.helpdesk.schemas import (
     TicketCommentResponse,
     TicketCreate,
     TicketResponse,
-    TicketStatusUpdate,
+    TicketUpdate,
 )
 from app.modules.helpdesk.service import (
     add_comment,
     create_ticket,
     get_all_tickets,
     get_ticket,
-    update_ticket_status,
+    update_ticket,
 )
 
 router = APIRouter(
@@ -72,7 +72,7 @@ def get_helpdesk_ticket(
 )
 def change_ticket_status(
     ticket_id: int,
-    status_in: TicketStatusUpdate,
+    ticket_in: TicketUpdate,
     db: Session = Depends(get_db),
 ):
     ticket = get_ticket(db, ticket_id)
@@ -83,10 +83,11 @@ def change_ticket_status(
             detail="Ticket not found.",
         )
 
-    return update_ticket_status(
+    return update_ticket(
         db,
         ticket,
-        status_in.status,
+        ticket_in.status,
+        ticket_in.assigned_to,
     )
 
 
