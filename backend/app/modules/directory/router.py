@@ -31,11 +31,15 @@ def list_all_teams(db: Session = Depends(get_db)):
 
 
 @router.post("/", response_model=EmployeeResponse, status_code=201)
-def register_new_employee(employee_in: EmployeeCreate, db: Session = Depends(get_db)):
+def register_new_employee(
+    employee_in: EmployeeCreate, requester_id: str, db: Session = Depends(get_db)
+):
     try:
-        return service.create_employee(db, employee_in)
+        return service.create_employee(db, employee_in, requester_id)
     except service.EmployeeAlreadyExists:
         raise HTTPException(status_code=400, detail="Employee code already exists.")
+    except service.NotAuthorized as e:
+        raise HTTPException(status_code=403, detail=str(e))
 
 
 @router.get("/", response_model=List[EmployeeResponse])
@@ -53,17 +57,26 @@ def retrieve_profile_by_id(employee_id: str, db: Session = Depends(get_db)):
 
 @router.patch("/{employee_id}", response_model=EmployeeResponse)
 def edit_employee_profile(
-    employee_id: str, update_in: EmployeeUpdate, db: Session = Depends(get_db)
+    employee_id: str,
+    update_in: EmployeeUpdate,
+    requester_id: str,
+    db: Session = Depends(get_db),
 ):
     try:
-        return service.update_employee(db, employee_id, update_in)
+        return service.update_employee(db, employee_id, update_in, requester_id)
     except service.EmployeeNotFound:
         raise HTTPException(status_code=404, detail="Employee not found.")
+    except service.NotAuthorized as e:
+        raise HTTPException(status_code=403, detail=str(e))
 
 
 @router.post("/{employee_id}/exit", response_model=EmployeeResponse)
-def mark_employee_as_exited(employee_id: str, db: Session = Depends(get_db)):
+def mark_employee_as_exited(
+    employee_id: str, requester_id: str, db: Session = Depends(get_db)
+):
     try:
-        return service.mark_employee_exited(db, employee_id)
+        return service.mark_employee_exited(db, employee_id, requester_id)
     except service.EmployeeNotFound:
         raise HTTPException(status_code=404, detail="Employee not found.")
+    except service.NotAuthorized as e:
+        raise HTTPException(status_code=403, detail=str(e))

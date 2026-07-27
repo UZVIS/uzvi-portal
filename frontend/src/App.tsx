@@ -2,20 +2,51 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./shared/auth/AuthContext";
 import { LoginPage } from "./shared/auth/LoginPage";
 import { ProtectedRoute } from "./shared/components/ProtectedRoute";
-import ModuleDirectoryPage from "./modules/directory_dashboard/ModuleDirectoryPage";
-import ModulePlaceholderPage from "./modules/directory_dashboard/ModulePlaceholderPage";
-import { allModules } from "./modules/directory_dashboard/modules.data";
 import { AnnouncementsPage } from "./modules/announcements/AnnouncementsPage";
 import UtilizationModulePage from "./modules/consultant_utilization/UtilizationModulePage";
 import ExpenseClaimsModulePage from "./modules/expense_claims/ExpenseClaimsModulePage";
+import { DirectoryPage } from "./modules/directory/DirectoryPage";
+import { OnboardingPage } from "./modules/onboarding/OnboardingPage";
+import { DocumentsPage } from "./modules/documents/DocumentsPage";
 
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<ModuleDirectoryPage />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <DirectoryPage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/login" element={<LoginPage />} />
+          <Route
+            path="/directory"
+            element={
+              <ProtectedRoute>
+                <DirectoryPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/onboarding"
+            element={
+              <ProtectedRoute>
+                <OnboardingPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/documents"
+            element={
+              <ProtectedRoute>
+                <DocumentsPage />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/announcements"
             element={
@@ -40,20 +71,6 @@ export default function App() {
               </ProtectedRoute>
             }
           />
-          {allModules
-            .filter(
-              (module) =>
-                !["/announcements", "/utilization", "/expenses"].includes(
-                  module.prefix
-                )
-            )
-            .map((module) => (
-              <Route
-                key={module.id}
-                path={module.prefix}
-                element={<ModulePlaceholderPage module={module} />}
-              />
-            ))}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

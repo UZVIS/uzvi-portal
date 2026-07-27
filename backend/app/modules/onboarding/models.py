@@ -27,6 +27,7 @@ class OnboardingTask(Base):
     name = Column(String, nullable=False)
     seq = Column(Integer, nullable=False)
     responsible_role = Column(String, nullable=False)
+    expected_days = Column(Integer, nullable=True)
 
     template = relationship("OnboardingTemplate", back_populates="tasks")
 

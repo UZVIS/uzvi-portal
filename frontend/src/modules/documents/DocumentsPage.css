@@ -1,0 +1,46 @@
+.success-banner {
+  color: #1e6b4f;
+  background: var(--color-teal-soft);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 13px;
+  margin: 0 0 16px;
+}
+
+.document-record {
+  margin-top: 18px;
+  border-top: 1px solid var(--color-hairline);
+  padding-top: 16px;
+}
+
+.document-record dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 12px;
+  margin: 0 0 16px;
+  font-size: 13px;
+}
+
+.document-record dt {
+  color: var(--color-slate);
+  font-weight: 600;
+}
+
+.document-record dd {
+  margin: 0;
+}
+
+.document-record__logs-title {
+  font-size: 13px;
+  margin: 0 0 8px;
+}
+
+.document-record__logs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+}

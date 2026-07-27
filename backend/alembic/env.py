@@ -27,14 +27,12 @@ from app.database import Base
 import app.modules.directory.models
 import app.modules.onboarding.models
 import app.modules.documents.models
-from app.database import Base
-
-
-import app.modules.assets.models
-import app.modules.announcements.models
-
-# M6 Training Module: Register models for Alembic autogeneration.
 import app.modules.training.models
+import app.modules.expense_claims.models
+import app.modules.assets.models
+import app.modules.consultant_utilization.models
+import app.modules.recruiting.models
+import app.modules.announcements.models
 
 target_metadata = Base.metadata
 

@@ -32,7 +32,11 @@ class DocumentAccessLog(Base):
 
     accessed_by = Column(String, ForeignKey("employees.employee_id"), nullable=False)
     action = Column(String, nullable=False)
-    timestamp = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+    timestamp = Column(
+        DateTime(timezone=True),
+        default=lambda: datetime.datetime.now(datetime.timezone.utc),
+        nullable=False,
+    )
 
     document = relationship("EmployeeDocument", back_populates="access_logs")
     accessor = relationship("Employee", foreign_keys=[accessed_by])

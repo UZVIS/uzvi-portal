@@ -9,6 +9,9 @@ class OnboardingTemplateBase(BaseModel):
 
 class OnboardingTemplateCreate(OnboardingTemplateBase):
     template_id: str = Field(..., description="Primary unique template identifier")
+    requester_id: str = Field(
+        ..., description="Employee ID of whoever is creating this template"
+    )
 
 
 class OnboardingTemplateResponse(OnboardingTemplateBase):
@@ -24,10 +27,16 @@ class OnboardingTaskBase(BaseModel):
     responsible_role: str = Field(
         ..., description="Who completes this task: new_joiner / hr / it / manager"
     )
+    expected_days: Optional[int] = Field(
+        None, description="Days from instance start_date this task is expected done by"
+    )
 
 
 class OnboardingTaskCreate(OnboardingTaskBase):
     task_id: str = Field(..., description="Primary unique task identifier")
+    requester_id: str = Field(
+        ..., description="Employee ID of whoever is adding this task"
+    )
 
 
 class OnboardingTaskResponse(OnboardingTaskBase):
@@ -43,6 +52,7 @@ class OnboardingInstanceBase(BaseModel):
 
 class OnboardingInstanceCreate(OnboardingInstanceBase):
     instance_id: str = Field(..., description="Primary unique instance identifier")
+    requester_id: str = Field(..., description="Employee ID of whoever is starting this instance")
 
 
 class OnboardingInstanceResponse(OnboardingInstanceBase):
@@ -60,8 +70,8 @@ class OnboardingProgressResponse(BaseModel):
 class TaskCompletionCreate(BaseModel):
     instance_id: str = Field(..., description="The parent onboarding instance ID")
     task_id: str = Field(..., description="Which template task was completed")
-    completed_by: Optional[str] = Field(
-        None, description="Employee ID of whoever completed the task"
+    completed_by: str = Field(
+        ..., description="Employee ID of whoever completed the task"
     )
 
 
