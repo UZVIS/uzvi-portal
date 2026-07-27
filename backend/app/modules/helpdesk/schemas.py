@@ -40,8 +40,9 @@ class TicketResponse(BaseModel):
         from_attributes = True
 
 
-class TicketStatusUpdate(BaseModel):
+class TicketUpdate(BaseModel):
     status: str
+    assigned_to: Optional[str] = None
 
 
 class TicketCommentCreate(BaseModel):

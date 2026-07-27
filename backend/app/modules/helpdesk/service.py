@@ -32,15 +32,14 @@ def get_ticket(db: Session, ticket_id: int):
     )
 
 
-def update_ticket_status(
+def update_ticket(
     db: Session,
     ticket: Ticket,
     status: str,
+    assigned_to: str | None,
 ):
-    """
-    Update ticket status.
-    """
     ticket.status = status
+    ticket.assigned_to = assigned_to
 
     db.commit()
     db.refresh(ticket)

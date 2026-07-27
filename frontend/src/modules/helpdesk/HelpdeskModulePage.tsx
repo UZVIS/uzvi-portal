@@ -6,6 +6,12 @@ import CreateTicketPage from "./CreateTicketPage";
 
 export default function HelpdeskModulePage() {
   const [activeTab, setActiveTab] = useState<"tickets" | "create">("tickets");
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleTicketCreated = () => {
+    setRefreshKey((prev) => prev + 1);
+    setActiveTab("tickets");
+  };
 
   return (
     <div className="helpdesk-page">
@@ -34,9 +40,12 @@ export default function HelpdeskModulePage() {
 
       <div className="helpdesk-content">
         {activeTab === "tickets" ? (
-          <TicketListPage />
+          <TicketListPage key={refreshKey} />
         ) : (
-          <CreateTicketPage />
+          <CreateTicketPage
+            onTicketCreated={handleTicketCreated}
+            onCancel={() => setActiveTab("tickets")}
+          />
         )}
       </div>
     </div>
