@@ -27,12 +27,14 @@ import "../shared-theme.css";
 import "./OnboardingPage.css";
 
 // only these tiers define templates and track cohorts.
-const MANAGE_TIERS = new Set(["Admin/Leadership"]);
+const TEMPLATE_MANAGE_TIERS = new Set(["Admin/Leadership"]);
+const COHORT_VIEW_TIERS = new Set(["Admin/Leadership", "HR-Restricted"]);
 
 export function OnboardingPage() {
   const { employee, logout } = useAuth();
   const navigate = useNavigate();
-  const canManage = employee ? MANAGE_TIERS.has(employee.access_tier) : false;
+  const canManageTemplates = employee ? TEMPLATE_MANAGE_TIERS.has(employee.access_tier) : false;
+  const canManageInstances = employee ? COHORT_VIEW_TIERS.has(employee.access_tier) : false;
 
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [templates, setTemplates] = useState<OnboardingTemplate[]>([]);
@@ -192,7 +194,7 @@ export function OnboardingPage() {
       {error && <div className="error-banner">{error}</div>}
 
       <section className="directory-page__manage">
-        {canManage && (
+        {canManageTemplates && (
           <TemplateBuilder
             templates={templates}
             tasksByTemplate={tasksByTemplate}
@@ -214,7 +216,7 @@ export function OnboardingPage() {
           onEmployeeChange={handleEmployeeChange}
           onStart={handleStart}
           onCompleteTask={handleCompleteTask}
-          canManage={canManage}
+          canManage={canManageInstances}
         />
       </section>
 
@@ -226,7 +228,7 @@ export function OnboardingPage() {
         {isLoading && <p className="directory-row__muted">Loading…</p>}
       </section>
 
-      {canManage && employee && (
+      {canManageInstances && employee && (
         <section className="directory-page__list">
           <h2 style={{ fontSize: 16, fontFamily: "var(--font-display)", marginBottom: 12 }}>
             Cohort view — all current joiners
