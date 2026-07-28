@@ -118,7 +118,7 @@ export function InstanceTracker({
         </>
       ) : (
         <p className="directory-row__muted">
-          Only Admin/Leadership or HR-Restricted may start a new onboarding instance. Use "Look up
+          Only Admin/Leadership may start a new onboarding instance. Use "Look up
           an existing instance" below to view or complete tasks on one already started.
         </p>
       )}

@@ -125,8 +125,8 @@ def add_task_to_template(db: Session, task_in: OnboardingTaskCreate) -> Onboardi
 def create_instance(db: Session, instance_in: OnboardingInstanceCreate) -> OnboardingInstance:
    
     requester = _get_employee(db, instance_in.requester_id)
-    if requester is None or requester.access_tier not in ("Admin/Leadership", "HR-Restricted"):
-        raise NotAuthorized("Only Admin/Leadership or HR-Restricted may start an onboarding instance.")
+    if requester is None or requester.access_tier != "Admin/Leadership":
+        raise NotAuthorized("Only Admin/Leadership may start an onboarding instance.")
 
     existing = get_instance(db, instance_in.instance_id)
     if existing:
