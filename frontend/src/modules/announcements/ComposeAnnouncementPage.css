@@ -1,0 +1,92 @@
+.compose-screen {
+  min-height: 100vh;
+  background: var(--color-paper);
+}
+
+.compose-topbar {
+  background: var(--color-navy);
+  padding: 16px 32px;
+}
+
+.compose-topbar__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s ease;
+}
+
+.compose-topbar__back:hover {
+  background: var(--color-navy-soft);
+}
+
+.compose-page {
+  width: 100%;
+  margin: 0;
+  padding: 40px 48px 64px;
+}
+
+.compose-page__header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.compose-page__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: var(--color-amber-soft);
+  color: var(--color-amber);
+  flex-shrink: 0;
+}
+
+.compose-page__header h1 {
+  font-size: 22px;
+}
+
+.compose-page__header p {
+  margin: 4px 0 0;
+  color: var(--color-slate);
+  font-size: 14px;
+}
+
+.compose-page__form {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 32px 40px 36px;
+  max-width: 1100px;
+}
+
+.compose-page__form .field-row {
+  gap: 20px;
+}
+
+.compose-page__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+@media (max-width: 900px) {
+  .compose-page {
+    padding: 24px 20px 48px;
+  }
+
+  .compose-page__form {
+    padding: 20px;
+  }
+}

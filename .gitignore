@@ -21,8 +21,12 @@ dist/
 
 # Editor / OS
 .vscode/
+.idea/
 .DS_Store
 Thumbs.db
 
 # Logs
 *.log
+
+# Uploaded receipt files (local dev storage)
+backend/app/modules/expense_claims/receipt_uploads/

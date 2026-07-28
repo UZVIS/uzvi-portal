@@ -49,6 +49,7 @@ class EmployeeUpdate(BaseModel):
     employment_status: Optional[str] = None
     access_tier: Optional[str] = None
     contact_details: Optional[str] = None
+    join_date: Optional[date] = None
 
 
 class EmployeeResponse(EmployeeBase):

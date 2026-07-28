@@ -1,0 +1,51 @@
+.claims-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.claims-table th {
+  text-align: left;
+  color: #6b7280;
+  font-weight: 500;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #eef0f2;
+}
+
+.claims-table td {
+  padding: 10px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.claims-table__empty {
+  font-size: 13px;
+  color: #9aa1ab;
+}
+
+.claims-table__badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.claims-table__badge--submitted {
+  background: #eef2ff;
+  color: #35507d;
+}
+
+.claims-table__badge--approved {
+  background: #e8f5ee;
+  color: #2f6b46;
+}
+
+.claims-table__badge--rejected {
+  background: #fdeceb;
+  color: #b8433a;
+}
+
+.claims-table__badge--reimbursed {
+  background: #eef6f3;
+  color: #2f5d50;
+}
