@@ -29,8 +29,11 @@ import ScenarioTable from "./ScenarioTable";
 import ScenarioDialog from "./ScenarioDialog";
 import { useAuth } from "../../../shared/auth/AuthContext";
 
-import { createScenario } from "../services/quoteService";
-
+import { createScenario,
+  updateScenario,
+  deleteScenario
+ } from "../services/quoteService";
+import ConfirmDialog from "./confirmDialog"
 import { toast } from "sonner";
 export default function OpportunityDetails() {
 
@@ -51,6 +54,16 @@ export default function OpportunityDetails() {
 
   const [reload, setReload] =
     useState(false);
+
+  const [showDeleteDialog, setShowDeleteDialog] =
+    useState(false);
+
+ const [selectedScenarioId, setSelectedScenarioId] =
+    useState("");
+
+  const [editingScenario, setEditingScenario] =
+useState<QuoteScenario | null>(null);
+
 
   useEffect(() => {
 
@@ -222,44 +235,104 @@ export default function OpportunityDetails() {
       </div>
 
       <ScenarioTable
-        scenarios={scenarios}
-        onNewScenario={() => setShowScenarioDialog(true)}
-      />
+  scenarios={scenarios}
+  onNewScenario={() => setShowScenarioDialog(true)}
+onDeleteScenario={(scenarioId) => {
 
-    <ScenarioDialog
-    isOpen={showScenarioDialog}
-    onClose={() =>
-        setShowScenarioDialog(false)
+    setSelectedScenarioId(scenarioId);
+
+    setShowDeleteDialog(true);
+
+}}
+ onEditScenario={(scenario) => {
+    setEditingScenario(scenario);
+    setShowScenarioDialog(true);
+  }}
+
+/>
+
+  <ScenarioDialog
+  isOpen={showScenarioDialog}
+  scenario={editingScenario}
+  onClose={() => {
+    setShowScenarioDialog(false);
+    setEditingScenario(null);
+  }}
+  onSave={async (data) => {
+
+    if (!employee || !id) return;
+
+    try {
+
+      if (editingScenario) {
+
+        await updateScenario(
+          editingScenario.scenario_id,
+          data
+        );
+
+        toast.success("Scenario updated successfully.");
+
+      } else {
+
+        await createScenario({
+          opportunity_id: id,
+          created_by: employee.employee_id,
+          ...data,
+        });
+
+        toast.success("Scenario created successfully.");
+
+      }
+
+      setReload(prev => !prev);
+
+      setShowScenarioDialog(false);
+
+      setEditingScenario(null);
+
+    } catch {
+
+      toast.error(
+        editingScenario
+          ? "Failed to update scenario."
+          : "Failed to create scenario."
+      );
+
     }
-    onSave={async (data) => {
 
-        if (!employee || !id) return;
+  }}
+/>
+   <ConfirmDialog
+    isOpen={showDeleteDialog}
+    title="Delete Scenario"
+    message="Are you sure you want to delete this scenario?"
+    onCancel={() =>
+        setShowDeleteDialog(false)
+    }
+    onConfirm={async () => {
 
         try {
 
-            await createScenario({
-
-                opportunity_id: id,
-
-                created_by: employee.employee_id,
-
-                ...data,
-
-            });
+            await deleteScenario(
+                selectedScenarioId
+            );
 
             toast.success(
-                "Scenario created successfully."
+                "Scenario deleted."
             );
 
             setReload(prev => !prev);
 
-            setShowScenarioDialog(false);
-
         } catch {
 
             toast.error(
-                "Failed to create scenario."
+                "Failed to delete scenario."
             );
+
+        } finally {
+
+            setShowDeleteDialog(false);
 
         }
 

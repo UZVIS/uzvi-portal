@@ -67,7 +67,36 @@ def get_scenario(db: Session, scenario_id: str) -> models.QuoteScenario | None:
         models.QuoteScenario.scenario_id == scenario_id
     ).first()
 
+def delete_scenario(db: Session, scenario_id: str) -> bool:
+    scenario = get_scenario(db, scenario_id)
 
+    if not scenario:
+        return False
+
+    db.delete(scenario)
+    db.commit()
+
+    return True
+
+def update_scenario(
+    db: Session,
+    scenario_id: str,
+    data: schemas.QuoteScenarioUpdate,
+) -> models.QuoteScenario | None:
+
+    scenario = get_scenario(db, scenario_id)
+
+    if not scenario:
+        return None
+
+    scenario.name = data.name
+    scenario.output_type = data.output_type
+    scenario.target_margin = data.target_margin
+
+    db.commit()
+    db.refresh(scenario)
+
+    return scenario
 
 def list_scenarios_for_opportunity(
     db: Session, opportunity_id: str
@@ -198,3 +227,60 @@ def compute_tender_view(scenario: models.QuoteScenario) -> schemas.TenderView:
     )
 
 
+def update_line_item(
+    db: Session,
+    line_item_id: str,
+    data: schemas.CostLineItemCreate,
+) -> models.CostLineItem | None:
+
+    line_item = db.query(models.CostLineItem).filter(
+        models.CostLineItem.line_item_id == line_item_id
+    ).first()
+
+    if not line_item:
+        return None
+
+    payload = data.model_dump()
+
+    if payload.get("library_item_id"):
+
+        lib_item = db.query(
+            models.StandardCostLibrary
+        ).filter(
+            models.StandardCostLibrary.item_id ==
+            payload["library_item_id"]
+        ).first()
+
+        if not lib_item:
+            raise ValueError("Library item not found")
+
+        if lib_item.cost_component == models.CostComponent.VENDOR:
+            payload["vendor_cost"] = lib_item.unit_cost
+        else:
+            payload["internal_cost"] = lib_item.unit_cost
+
+    for key, value in payload.items():
+        setattr(line_item, key, value)
+
+    db.commit()
+    db.refresh(line_item)
+
+    return line_item
+
+
+def delete_line_item(
+    db: Session,
+    line_item_id: str,
+) -> bool:
+
+    item = db.query(models.CostLineItem).filter(
+        models.CostLineItem.line_item_id == line_item_id
+    ).first()
+
+    if not item:
+        return False
+
+    db.delete(item)
+    db.commit()
+
+    return True

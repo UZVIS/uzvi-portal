@@ -58,6 +58,10 @@ class QuoteScenarioCreate(BaseModel):
     output_type: OutputType = OutputType.QUOTE
     target_margin: float = Field(..., ge=0, lt=1, description="e.g. 0.30 for 30%")
 
+class QuoteScenarioUpdate(BaseModel):
+    name: str
+    output_type: OutputType
+    target_margin: float = Field(..., ge=0, lt=1)
 
 class QuoteScenarioRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)

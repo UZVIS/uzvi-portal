@@ -2,6 +2,7 @@ import {
   apiDelete,
   apiGet,
   apiPost,
+  apiPut,
 } from "../../../api/client";
 
 import type {
@@ -140,3 +141,36 @@ export async function getLibraryItems(): Promise<LibraryItem[]> {
 
 }
 
+export async function updateScenario(
+    scenarioId: string,
+    data: {
+        name: string;
+        output_type: "quote" | "tender";
+        target_margin: number;
+    }
+): Promise<QuoteScenario> {
+
+    return apiPut(
+        `${BASE_URL}/scenarios/${scenarioId}`,
+        data
+    );
+
+}
+
+export async function updateLineItem(
+    lineItemId: string,
+    data: LineItemCreate
+) {
+    return apiPut(
+        `${BASE_URL}/line-items/${lineItemId}`,
+        data
+    );
+}
+
+export async function deleteLineItem(
+    lineItemId: string
+) {
+    return apiDelete(
+        `${BASE_URL}/line-items/${lineItemId}`
+    );
+}

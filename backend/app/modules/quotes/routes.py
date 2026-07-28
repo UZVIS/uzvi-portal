@@ -65,6 +65,44 @@ def get_scenario(scenario_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Scenario not found")
     return obj
 
+@router.delete("/scenarios/{scenario_id}", status_code=204)
+def delete_scenario(
+    scenario_id: str,
+    db: Session = Depends(get_db),
+):
+    deleted = service.delete_scenario(
+        db,
+        scenario_id,
+    )
+
+    if not deleted:
+        raise HTTPException(
+            status_code=404,
+            detail="Scenario not found",
+        )
+
+@router.put(
+    "/scenarios/{scenario_id}",
+    response_model=schemas.QuoteScenarioRead,
+)
+def update_scenario(
+    scenario_id: str,
+    data: schemas.QuoteScenarioUpdate,
+    db: Session = Depends(get_db),
+):
+    scenario = service.update_scenario(
+        db,
+        scenario_id,
+        data,
+    )
+
+    if not scenario:
+        raise HTTPException(
+            status_code=404,
+            detail="Scenario not found",
+        )
+
+    return scenario
 
 @router.post(
     "/scenarios/{scenario_id}/line-items",
@@ -101,3 +139,58 @@ def get_tender_view(scenario_id: str, db: Session = Depends(get_db)):
     return service.compute_tender_view(scenario)
 
 
+@router.put(
+    "/line-items/{line_item_id}",
+    response_model=schemas.CostLineItemRead,
+)
+def update_line_item(
+    line_item_id: str,
+    data: schemas.CostLineItemCreate,
+    db: Session = Depends(get_db),
+):
+
+    try:
+
+        obj = service.update_line_item(
+            db,
+            line_item_id,
+            data,
+        )
+
+    except ValueError as e:
+
+        raise HTTPException(
+            status_code=404,
+            detail=str(e),
+        )
+
+    if not obj:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Line item not found",
+        )
+
+    return obj
+
+
+@router.delete(
+    "/line-items/{line_item_id}",
+    status_code=204,
+)
+def delete_line_item(
+    line_item_id: str,
+    db: Session = Depends(get_db),
+):
+
+    deleted = service.delete_line_item(
+        db,
+        line_item_id,
+    )
+
+    if not deleted:
+
+        raise HTTPException(
+            status_code=404,
+            detail="Line item not found",
+        )

@@ -16,6 +16,8 @@ import type { QuoteScenario } from "../types/quote";
 interface ScenarioTableProps {
   scenarios: QuoteScenario[];
   onNewScenario?: () => void;
+  onDeleteScenario?: (scenarioId: string) => void;
+  onEditScenario?: (scenario: QuoteScenario) => void;
 }
 
 function formatDate(value?: string) {
@@ -47,6 +49,8 @@ function OutputTypeBadge({ type }: { type: QuoteScenario["output_type"] }) {
 export default function ScenarioTable({
   scenarios,
   onNewScenario,
+  onDeleteScenario,
+   onEditScenario,
 }: ScenarioTableProps) {
 
   const navigate = useNavigate();
@@ -150,19 +154,23 @@ export default function ScenarioTable({
                     <FolderOpen size={17} />
                   </button>
 
-                  <button
-                    className="icon-btn"
-                    title="Edit"
-                  >
-                    <Pencil size={17} />
-                  </button>
+                 <button
+  className="icon-btn"
+  title="Edit"
+  onClick={() => onEditScenario?.(scenario)}
+>
+  <Pencil size={17} />
+</button>
 
-                  <button
-                    className="icon-btn icon-btn-danger"
-                    title="Delete"
-                  >
-                    <Trash2 size={17} />
-                  </button>
+                 <button
+  className="icon-btn icon-btn-danger"
+  title="Delete"
+  onClick={() =>
+    onDeleteScenario?.(scenario.scenario_id)
+  }
+>
+  <Trash2 size={17} />
+</button>
 
                 </td>
 

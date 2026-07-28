@@ -9,8 +9,8 @@ import Header from "../../assets/components/Header";
 import CostSummaryCards from "../components/CostSummaryCards";
 import LineItemsTable from "../components/LineItemsTable";
 import OutputTabs from "../components/OutputTabs";
-import AddLineItemDialog from "../components/AddLineItemDialog";
-
+import AddLineItemDialog from "../components/AddLineItemDialog"
+import { deleteScenario } from "../services/quoteService";
 import {
     addLineItem,
     getScenarioById,
@@ -19,9 +19,10 @@ import {
 import type {
     QuoteScenario,
 } from "../types/quote";
-
+import ConfirmDialog from "../components/confirmDialog"
 import "../styles/quote-dashboard.css";
-
+import ScenarioDialog from "../components/ScenarioDialog";
+import { updateScenario } from "../services/quoteService";
 export default function ScenarioWorkspace() {
 
     const { scenarioId } = useParams();
@@ -36,6 +37,12 @@ export default function ScenarioWorkspace() {
 
     const [showLineItemDialog, setShowLineItemDialog] =
         useState(false);
+    
+    const [showDeleteDialog, setShowDeleteDialog] =
+    useState(false);
+
+    const [showEditDialog, setShowEditDialog] =
+    useState(false);
 
     useEffect(() => {
 
@@ -131,21 +138,31 @@ export default function ScenarioWorkspace() {
 
                         <div className="ws-header-actions">
 
-                            <button className="btn-secondary">
+                            <button
+  className="btn-secondary"
+  onClick={() =>
+    setShowEditDialog(true)
+  }
+>
 
-                                <Pencil size={15} />
+  <Pencil size={15} />
 
-                                Edit Scenario
+  Edit Scenario
 
-                            </button>
+</button>
 
-                            <button className="btn-danger-outline">
+<button
+    className="btn-danger-outline"
+    onClick={() =>
+        setShowDeleteDialog(true)
+    }
+>
 
-                                <Trash2 size={15} />
+    <Trash2 size={15} />
 
-                                Delete Scenario
+    Delete Scenario
 
-                            </button>
+</button>
 
                         </div>
 
@@ -203,6 +220,79 @@ export default function ScenarioWorkspace() {
 
                         }}
                     />
+
+
+                    <ConfirmDialog
+    isOpen={showDeleteDialog}
+    title="Delete Scenario"
+    message="Are you sure you want to delete this scenario?"
+    confirmLabel="Delete"
+    cancelLabel="Cancel"
+    onCancel={() =>
+        setShowDeleteDialog(false)
+    }
+    onConfirm={async () => {
+
+        try {
+
+            await deleteScenario(
+                scenario.scenario_id
+            );
+
+            toast.success(
+                "Scenario deleted."
+            );
+
+            navigate(-1);
+
+        } catch {
+
+            toast.error(
+                "Failed to delete scenario."
+            );
+
+        } finally {
+
+            setShowDeleteDialog(false);
+
+        }
+
+    }}
+/>
+
+<ScenarioDialog
+  isOpen={showEditDialog}
+  scenario={scenario}
+  onClose={() =>
+    setShowEditDialog(false)
+  }
+  onSave={async (data) => {
+
+    try {
+
+      await updateScenario(
+        scenario.scenario_id,
+        data
+      );
+
+      toast.success(
+        "Scenario updated successfully."
+      );
+
+      setReload(prev => !prev);
+
+      setShowEditDialog(false);
+
+    } catch {
+
+      toast.error(
+        "Failed to update scenario."
+      );
+
+    }
+
+  }}
+/>
 
                     {/* Export functionality will be added later as per FRD */}
 

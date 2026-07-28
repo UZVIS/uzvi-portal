@@ -64,16 +64,28 @@ export async function apiPut<T>(
 // DELETE
 // =============================
 export async function apiDelete<T>(
-  path: string
-): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    method: "DELETE",
-  });
+    path: string
+): Promise<T | void> {
 
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.detail || "Something went wrong");
-  }
+    const res = await fetch(`${BASE}${path}`, {
+        method: "DELETE",
+    });
 
-  return res.json();
+    if (!res.ok) {
+
+        const error = await res.json();
+
+        throw new Error(
+            error.detail || "Something went wrong"
+        );
+
+    }
+
+    // 204 No Content
+    if (res.status === 204) {
+        return;
+    }
+
+    return res.json();
+
 }

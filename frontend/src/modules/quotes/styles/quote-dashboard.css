@@ -1137,3 +1137,51 @@ tbody tr:hover .opp-name {
     background: #f97316;
     color: #fff;
 }
+
+.confirm-modal {
+  max-width: 380px;
+  text-align: center;
+}
+
+.confirm-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: #FDECEC;
+  color: #D64545;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.confirm-modal h2 {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.confirm-message {
+  font-size: 13.5px;
+  color: var(--muted);
+  line-height: 1.55;
+  margin: 0 0 22px;
+}
+
+.confirm-modal .modal-actions {
+  justify-content: center;
+}
+
+.danger-btn {
+  background: #D64545;
+  color: #fff;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 9px;
+  font-weight: 700;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+.danger-btn:hover {
+  background: #B93636;
+}
