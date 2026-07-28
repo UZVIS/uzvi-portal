@@ -110,16 +110,24 @@ class FunnelStageCount(BaseModel):
     count: int
 
 
+class TimeInStageEntry(BaseModel):
+    stage: str
+    avg_days_in_stage: float
+    candidate_count: int
+
+
 class FunnelStats(BaseModel):
     by_stage: list[FunnelStageCount]
     by_role: dict[str, int]
     by_source: dict[str, int]
+    time_in_stage: list[TimeInStageEntry]
 
 
 # ---------- FR-REC-05: hire conversion ----------
 
 class HireConversionRequest(BaseModel):
     employee_id: str = Field(..., description="New Employee Directory (M0) ID to create")
+    requester_id: str = Field(..., description="Employee ID of whoever is performing the hire")
     designation: Optional[str] = Field(
         None, description="Defaults to the candidate's applied_role if omitted"
     )

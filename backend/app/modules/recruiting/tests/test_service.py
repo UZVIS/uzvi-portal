@@ -4,6 +4,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.database import Base
 import app.modules.directory.models  # noqa: F401 — registers Employee/Team for the FK
+from app.modules.directory.models import Employee
 from app.modules.directory import service as directory_service
 
 from app.modules.recruiting import service
@@ -142,12 +143,20 @@ def test_detect_duplicate_candidates(db):
     assert not any("C003" in pair for pair in flagged_pairs)
 
 
+def _seed_admin(db, employee_id="ADMIN1"):
+    admin = Employee(employee_id=employee_id, name="Admin User", access_tier="Admin/Leadership")
+    db.add(admin)
+    db.commit()
+    return admin
+
+
 def test_convert_candidate_to_employee(db):
+    _seed_admin(db)
     service.create_candidate(
         db, CandidateCreate(candidate_id="C001", name="Priya Sharma", applied_role="Backend Engineer")
     )
     updated = service.convert_candidate_to_employee(
-        db, "C001", HireConversionRequest(employee_id="E100")
+        db, "C001", HireConversionRequest(employee_id="E100", requester_id="ADMIN1")
     )
     assert updated.converted_emp_id == "E100"
     assert updated.stage == "Hired"
@@ -157,12 +166,17 @@ def test_convert_candidate_to_employee(db):
 
 
 def test_convert_candidate_twice_raises(db):
+    _seed_admin(db)
     service.create_candidate(
         db, CandidateCreate(candidate_id="C001", name="Priya Sharma", applied_role="Backend Engineer")
     )
-    service.convert_candidate_to_employee(db, "C001", HireConversionRequest(employee_id="E100"))
+    service.convert_candidate_to_employee(
+        db, "C001", HireConversionRequest(employee_id="E100", requester_id="ADMIN1")
+    )
     with pytest.raises(service.CandidateAlreadyConverted):
-        service.convert_candidate_to_employee(db, "C001", HireConversionRequest(employee_id="E101"))
+        service.convert_candidate_to_employee(
+            db, "C001", HireConversionRequest(employee_id="E101", requester_id="ADMIN1")
+        )
 
 
 def test_funnel_stats(db):
@@ -188,3 +202,45 @@ def test_funnel_stats(db):
     assert stage_counts["Screened"] == 1
     assert stats["by_role"]["Backend Engineer"] == 2
     assert stats["by_source"]["LinkedIn"] == 2
+    # FR-REC-06: funnel stats also carry a time-in-stage breakdown.
+    assert "time_in_stage" in stats
+
+
+def test_time_in_stage_stats(db):
+    from datetime import datetime
+
+    service.create_candidate(
+        db,
+        CandidateCreate(candidate_id="C001", name="A", applied_role="Backend Engineer"),
+    )
+    candidate = service.get_candidate(db, "C001")
+    candidate.created_at = datetime(2026, 1, 1)
+    db.commit()
+
+    service.add_interview_stage(
+        db,
+        "C001",
+        InterviewStageCreate(stage_id="S001", stage_name="Screened"),
+    )
+    screened_stage = service.get_interview_stage(db, "S001")
+    screened_stage.timestamp = datetime(2026, 1, 4)  # 3 days after applying
+    db.commit()
+
+    service.add_interview_stage(
+        db,
+        "C001",
+        InterviewStageCreate(stage_id="S002", stage_name="Interview"),
+    )
+    interview_stage = service.get_interview_stage(db, "S002")
+    interview_stage.timestamp = datetime(2026, 1, 9)  # 5 days after Screened
+    db.commit()
+
+    results = {row["stage"]: row for row in service.get_time_in_stage_stats(db)}
+
+    assert results["Applied"]["avg_days_in_stage"] == 3.0
+    assert results["Applied"]["candidate_count"] == 1
+    assert results["Screened"]["avg_days_in_stage"] == 5.0
+    assert results["Screened"]["candidate_count"] == 1
+    # "Interview" is the candidate's current stage — it hasn't ended yet,
+    # so it contributes no completed duration.
+    assert "Interview" not in results

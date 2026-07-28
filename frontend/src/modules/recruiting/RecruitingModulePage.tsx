@@ -12,7 +12,7 @@ export default function RecruitingModulePage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { employee, logout } = useAuth();
-  const FIT_SCREEN_PATHS = ["/recruiting", "/recruiting/", "/recruiting/funnel", "/recruiting/sourcing"];
+  const FIT_SCREEN_PATHS = ["/recruiting", "/recruiting/", "/recruiting/sourcing"];
   const HUB_PATHS = ["/recruiting", "/recruiting/"];
   const isHub = FIT_SCREEN_PATHS.includes(location.pathname);
   const isAtHub = HUB_PATHS.includes(location.pathname);

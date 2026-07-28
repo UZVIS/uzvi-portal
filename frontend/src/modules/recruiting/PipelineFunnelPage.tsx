@@ -56,6 +56,20 @@ export function PipelineFunnelPage() {
     });
   }, [funnelData]);
 
+  const timeInStageRows = useMemo(() => {
+    if (!stats) return [];
+    const order = ["Applied", "Screened", "Interview", "Offer"] as const;
+    return order.map((stage) => {
+      const entry = stats.time_in_stage.find((t) => t.stage === stage);
+      return {
+        label: stage,
+        color: STAGE_META[stage].solid,
+        avgDays: entry?.avg_days_in_stage ?? null,
+        candidateCount: entry?.candidate_count ?? 0,
+      };
+    });
+  }, [stats]);
+
   const totals = useMemo(() => {
     const total = funnelData[0]?.value ?? 0;
     const hired = funnelData[funnelData.length - 1]?.value ?? 0;
@@ -175,6 +189,50 @@ export function PipelineFunnelPage() {
           </div>
         </section>
       </div>
+
+      <section className="panel funnel-page__table-panel funnel-page__timeinstage-panel">
+        <header className="panel__header">
+          <h2>Time in Stage</h2>
+          <p className="panel__subtitle">
+            Average days a candidate spends in each stage before moving forward.
+          </p>
+        </header>
+        <div className="panel__body">
+          {isLoading ? (
+            <p className="panel__loading">Loading…</p>
+          ) : (
+            <table className="fp-table">
+              <thead>
+                <tr>
+                  <th>Stage</th>
+                  <th>Avg. days before moving on</th>
+                  <th>Candidates completed</th>
+                </tr>
+              </thead>
+              <tbody>
+                {timeInStageRows.map((row) => (
+                  <tr key={row.label}>
+                    <td>
+                      <span className="fp-table__dot" style={{ background: row.color }} />
+                      {row.label}
+                    </td>
+                    <td>
+                      {row.avgDays === null ? (
+                        <span className="fp-table__dash">No data yet</span>
+                      ) : (
+                        <span className="fp-table__days">
+                          {row.avgDays} day{row.avgDays === 1 ? "" : "s"}
+                        </span>
+                      )}
+                    </td>
+                    <td>{row.candidateCount}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </section>
     </div>
   );
 }
