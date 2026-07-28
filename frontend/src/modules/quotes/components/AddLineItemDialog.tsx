@@ -6,10 +6,12 @@ import {
 
 import type {
     LibraryItem,
+    CostLineItem,
 } from "../types/quote";
 
 interface Props {
     isOpen: boolean;
+    initialData?: CostLineItem | null;
     onClose: () => void;
     onSave: (data: {
         description: string;
@@ -23,9 +25,11 @@ interface Props {
 
 export default function AddLineItemDialog({
     isOpen,
+    initialData,
     onClose,
     onSave,
 }: Props) {
+    console.log("Dialog initialData:", initialData);
 
     const [description, setDescription] = useState("");
 
@@ -44,18 +48,41 @@ export default function AddLineItemDialog({
     useState("");
     useEffect(() => {
 
-        if (isOpen) {
+    if (!isOpen) return;
 
-            setDescription("");
-            setVendorCost(0);
-            setInternalCost(0);
-            setQuantity(1);
-            setCohort("");
-            setLibraryItemId("");
+    if (initialData) {
 
-        }
+        setDescription(initialData.description);
 
-    }, [isOpen]);
+        setVendorCost(initialData.vendor_cost);
+
+        setInternalCost(initialData.internal_cost);
+
+        setQuantity(initialData.quantity);
+
+        setCohort(initialData.cohort ?? "");
+
+        setLibraryItemId(
+            initialData.library_item_id ?? ""
+        );
+
+    } else {
+
+        setDescription("");
+
+        setVendorCost(0);
+
+        setInternalCost(0);
+
+        setQuantity(1);
+
+        setCohort("");
+
+        setLibraryItemId("");
+
+    }
+
+}, [isOpen, initialData]);
 
     useEffect(() => {
 
@@ -90,7 +117,9 @@ export default function AddLineItemDialog({
 
             <div className="dialog">
 
-                <h2>Add Line Item</h2>
+                <h2>
+    {initialData ? "Edit Line Item" : "Add Line Item"}
+</h2>
 
                 <div className="form-group">
 
@@ -246,8 +275,7 @@ export default function AddLineItemDialog({
 })
                         }
                     >
-                        Save Line Item
-                    </button>
+{initialData ? "Save Changes" : "Save Line Item"}                    </button>
 
                 </div>
 

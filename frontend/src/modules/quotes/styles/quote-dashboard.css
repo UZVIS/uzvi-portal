@@ -837,8 +837,8 @@ tbody tr:hover .opp-name {
 
 /* Line items + totals layout */
 .workspace-grid {
-  display: grid;
-  grid-template-columns: 1fr 300px;
+  display: flex;
+  
   gap: 20px;
   align-items: start;
   margin-bottom: 26px;

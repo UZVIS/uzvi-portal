@@ -13,11 +13,15 @@ interface Props {
     scenarioId: string;
     lineItems: CostLineItem[];
     onAddLineItem: () => void;
+    onEditLineItem: (item: CostLineItem) => void;
+    onDeleteLineItem: (lineItemId: string) => void;
 }
 
 export default function LineItemsTable({
     lineItems,
     onAddLineItem,
+    onEditLineItem,
+    onDeleteLineItem,
 }: Props) {
 
     return (
@@ -129,22 +133,22 @@ export default function LineItemsTable({
                                 <td className="action-buttons">
 
                                     <button
-                                        className="icon-btn"
-                                        title="Edit"
-                                    >
-
-                                        <Pencil size={16} />
-
-                                    </button>
+    className="icon-btn"
+    title="Edit"
+    onClick={() => onEditLineItem(item)}
+>
+    <Pencil size={16} />
+</button>
 
                                     <button
-                                        className="icon-btn icon-btn-danger"
-                                        title="Delete"
-                                    >
-
-                                        <Trash2 size={16} />
-
-                                    </button>
+    className="icon-btn icon-btn-danger"
+    title="Delete"
+    onClick={() =>
+        onDeleteLineItem(item.line_item_id)
+    }
+>
+    <Trash2 size={16} />
+</button>
 
                                 </td>
 

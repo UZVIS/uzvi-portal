@@ -13,11 +13,13 @@ import AddLineItemDialog from "../components/AddLineItemDialog"
 import { deleteScenario } from "../services/quoteService";
 import {
     addLineItem,
+    updateLineItem,
+    deleteLineItem,
     getScenarioById,
 } from "../services/quoteService";
-
 import type {
     QuoteScenario,
+    CostLineItem,
 } from "../types/quote";
 import ConfirmDialog from "../components/confirmDialog"
 import "../styles/quote-dashboard.css";
@@ -37,7 +39,15 @@ export default function ScenarioWorkspace() {
 
     const [showLineItemDialog, setShowLineItemDialog] =
         useState(false);
-    
+
+    const [editingLineItem, setEditingLineItem] =
+        useState<CostLineItem | null>(null);
+
+    const [showDeleteLineItemDialog, setShowDeleteLineItemDialog] =
+         useState(false);
+
+    const [selectedLineItemId, setSelectedLineItemId] =
+         useState("");
     const [showDeleteDialog, setShowDeleteDialog] =
     useState(false);
 
@@ -174,13 +184,31 @@ export default function ScenarioWorkspace() {
 
                    <div className="workspace-grid">
 
-    <LineItemsTable
-        scenarioId={scenario.scenario_id}
-        lineItems={scenario.line_items}
-        onAddLineItem={() =>
-            setShowLineItemDialog(true)
-        }
-    />
+   <LineItemsTable
+    scenarioId={scenario.scenario_id}
+    lineItems={scenario.line_items}
+    onAddLineItem={() => {
+
+        setEditingLineItem(null);
+
+        setShowLineItemDialog(true);
+
+    }}
+    onEditLineItem={(item) => {
+        console.log("Clicked Edit:", item);
+        setEditingLineItem(item);
+
+        setShowLineItemDialog(true);
+
+    }}
+    onDeleteLineItem={(id) => {
+
+        setSelectedLineItemId(id);
+
+        setShowDeleteLineItemDialog(true);
+
+    }}
+/>
 
 </div>
 
@@ -189,37 +217,61 @@ export default function ScenarioWorkspace() {
                     />
 
                     <AddLineItemDialog
-                        isOpen={showLineItemDialog}
-                        onClose={() =>
-                            setShowLineItemDialog(false)
-                        }
-                        onSave={async (data) => {
+    isOpen={showLineItemDialog}
+    initialData={editingLineItem}
+    onClose={() => {
 
-                            try {
+        setShowLineItemDialog(false);
 
-                                await addLineItem(
-                                    scenario.scenario_id,
-                                    data
-                                );
+        setEditingLineItem(null);
 
-                                toast.success(
-                                    "Line item added successfully."
-                                );
+    }}
+    onSave={async (data) => {
 
-                                setReload(prev => !prev);
+        try {
 
-                                setShowLineItemDialog(false);
+            if (editingLineItem) {
 
-                            } catch {
+                await updateLineItem(
+                    editingLineItem.line_item_id,
+                    data
+                );
 
-                                toast.error(
-                                    "Failed to add line item."
-                                );
+                toast.success(
+                    "Line item updated successfully."
+                );
 
-                            }
+            } else {
 
-                        }}
-                    />
+                await addLineItem(
+                    scenario.scenario_id,
+                    data
+                );
+
+                toast.success(
+                    "Line item added successfully."
+                );
+
+            }
+
+            setReload(prev => !prev);
+
+            setShowLineItemDialog(false);
+
+            setEditingLineItem(null);
+
+        } catch {
+
+            toast.error(
+                editingLineItem
+                    ? "Failed to update line item."
+                    : "Failed to add line item."
+            );
+
+        }
+
+    }}
+/>
 
 
                     <ConfirmDialog
@@ -259,7 +311,43 @@ export default function ScenarioWorkspace() {
 
     }}
 />
+<ConfirmDialog
+    isOpen={showDeleteLineItemDialog}
+    title="Delete Line Item"
+    message="Are you sure you want to delete this line item?"
+    confirmLabel="Delete"
+    cancelLabel="Cancel"
+    onCancel={() =>
+        setShowDeleteLineItemDialog(false)
+    }
+    onConfirm={async () => {
 
+        try {
+
+            await deleteLineItem(
+                selectedLineItemId
+            );
+
+            toast.success(
+                "Line item deleted."
+            );
+
+            setReload(prev => !prev);
+
+        } catch {
+
+            toast.error(
+                "Failed to delete line item."
+            );
+
+        } finally {
+
+            setShowDeleteLineItemDialog(false);
+
+        }
+
+    }}
+/>
 <ScenarioDialog
   isOpen={showEditDialog}
   scenario={scenario}

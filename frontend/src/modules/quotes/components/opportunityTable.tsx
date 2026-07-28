@@ -46,13 +46,13 @@ export default function OpportunityTable({
           />
         </div>
 
-        <button className="filter-chip" disabled>
+        {/* <button className="filter-chip" disabled>
           Status <span className="soon-tag">Soon</span>
         </button>
 
         <button className="filter-chip" disabled>
           Client <span className="soon-tag">Soon</span>
-        </button>
+        </button> */}
 
         <div className="toolbar-spacer" />
 

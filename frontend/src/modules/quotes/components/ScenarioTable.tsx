@@ -189,11 +189,11 @@ export default function ScenarioTable({
           <span>
             Showing {filteredScenarios.length} of {scenarios.length} scenarios
           </span>
-          <div className="pagination-bar">
+          {/* <div className="pagination-bar">
             <button className="page-btn" disabled>Previous</button>
             <button className="page-btn page-btn-current">1</button>
             <button className="page-btn">Next</button>
-          </div>
+          </div> */}
         </div>
       )}
 
