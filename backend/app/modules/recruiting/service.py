@@ -288,4 +288,50 @@ def get_funnel_stats(db: Session) -> dict:
         "by_stage": [{"stage": k, "count": v} for k, v in by_stage.items()],
         "by_role": by_role,
         "by_source": by_source,
+        "time_in_stage": get_time_in_stage_stats(db, candidates=candidates),
     }
+
+
+def get_time_in_stage_stats(
+    db: Session, candidates: list[Candidate] | None = None
+) -> list[dict]:
+    """FR-REC-06: average time-in-stage across the candidate pool.
+
+    For each candidate, walks their chronological stage history — starting
+    from their application date (Candidate.created_at) and then through
+    every logged InterviewStage entry in timestamp order — and attributes
+    the gap between consecutive entries to the *earlier* stage, i.e. how
+    long the candidate actually sat there before moving on.
+
+    A candidate's current (most recent) stage doesn't contribute a
+    duration, since it hasn't ended yet — there's nothing to divide it by.
+    Any negative gap (e.g. a stage logged out of order) is skipped rather
+    than corrupting the average.
+    """
+    if candidates is None:
+        candidates = db.query(Candidate).all()
+
+    durations_by_stage: dict[str, list[float]] = {}
+
+    for candidate in candidates:
+        stage_events = sorted(candidate.interview_stages, key=lambda s: s.timestamp)
+        timeline = [("Applied", candidate.created_at)] + [
+            (event.stage_name, event.timestamp) for event in stage_events
+        ]
+
+        for i in range(len(timeline) - 1):
+            stage_name, start_ts = timeline[i]
+            _, end_ts = timeline[i + 1]
+            duration_days = (end_ts - start_ts).total_seconds() / 86400
+            if duration_days < 0:
+                continue
+            durations_by_stage.setdefault(stage_name, []).append(duration_days)
+
+    return [
+        {
+            "stage": stage,
+            "avg_days_in_stage": round(sum(days) / len(days), 2),
+            "candidate_count": len(days),
+        }
+        for stage, days in durations_by_stage.items()
+    ]

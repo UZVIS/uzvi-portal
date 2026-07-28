@@ -63,10 +63,17 @@ export interface FunnelStageCount {
   count: number;
 }
 
+export interface TimeInStageEntry {
+  stage: string;
+  avg_days_in_stage: number;
+  candidate_count: number;
+}
+
 export interface FunnelStats {
   by_stage: FunnelStageCount[];
   by_role: Record<string, number>;
   by_source: Record<string, number>;
+  time_in_stage: TimeInStageEntry[];
 }
 
 export interface DuplicateFlag {
