@@ -23,6 +23,8 @@ export interface ExpenseClaim {
   amount: number;
   date: string; // YYYY-MM-DD
   status: ClaimStatus;
+  description?: string | null;
+  receipt_file_path?: string | null;
 }
 
 export interface ExpenseClaimInput {
@@ -32,12 +34,13 @@ export interface ExpenseClaimInput {
   project_id?: string | null;
   amount: number;
   date: string;
-  // Accepted by the API but NOT persisted yet - the ER diagram's
-  // ExpenseClaim table has no description/receipt columns (flagged
-  // schema gap). Kept here so the form can still collect them and the
-  // gap stays visible end-to-end rather than silently dropped in the UI.
   description?: string;
-  receipt_attached?: boolean;
+}
+
+export interface ExpenseCategoryInput {
+  category_id: string;
+  name: string;
+  cap_amount?: number | null;
 }
 
 export interface PendingTotal {
@@ -53,6 +56,24 @@ export interface ProjectExpenseRollup {
   by_status: Record<string, number>;
 }
 
+function extractErrorMessage(rawBody: string, status: number, path: string): string {
+  try {
+    const parsed = JSON.parse(rawBody);
+    const detail = parsed?.detail;
+
+    if (Array.isArray(detail) && detail.length > 0) {
+      const rawMsg: string = detail[0].msg || "";
+      return rawMsg.replace(/^Value error,\s*/, "") || "Request to " + path + " failed (" + status + ")";
+    }
+    if (typeof detail === "string") {
+      return detail;
+    }
+  } catch {
+    // body wasn't valid JSON - fall through to generic message
+  }
+  return "Request to " + path + " failed (" + status + ")";
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     headers: { "Content-Type": "application/json" },
@@ -60,7 +81,22 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    throw new Error(`Request to ${path} failed (${res.status}): ${body}`);
+    throw new Error(extractErrorMessage(body, res.status, path));
+  }
+  return res.json() as Promise<T>;
+}
+
+// Separate from request() because file uploads must NOT set
+// "Content-Type: application/json" - the browser sets the correct
+// multipart boundary header automatically when we pass FormData.
+async function requestFormData<T>(path: string, formData: FormData): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    body: formData,
+  });
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(extractErrorMessage(body, res.status, path));
   }
   return res.json() as Promise<T>;
 }
@@ -68,11 +104,21 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 export const expenseClaimsApi = {
   listCategories: () => request<ExpenseCategory[]>("/categories"),
 
+  createCategory: (data: ExpenseCategoryInput) =>
+    request<ExpenseCategory>("/categories", { method: "POST", body: JSON.stringify(data) }),
+
   listClaims: (employeeId?: string) =>
     request<ExpenseClaim[]>(employeeId ? `/claims?employee_id=${employeeId}` : "/claims"),
 
   createClaim: (data: ExpenseClaimInput) =>
     request<ExpenseClaim>("/claims", { method: "POST", body: JSON.stringify(data) }),
+
+  // FR-EXP-01: attach a receipt file to an existing claim.
+  uploadReceipt: (claimId: string, file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    return requestFormData<ExpenseClaim>(`/claims/${claimId}/receipt`, formData);
+  },
 
   getPendingTotal: (employeeId: string) =>
     request<PendingTotal>(`/employees/${employeeId}/pending-total`),

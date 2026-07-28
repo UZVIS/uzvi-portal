@@ -33,6 +33,9 @@ import app.modules.assets.models
 import app.modules.consultant_utilization.models
 import app.modules.recruiting.models
 import app.modules.announcements.models
+import app.modules.attendance.models
+import app.modules.helpdesk.models
+import app.modules.performance_goals.models
 
 target_metadata = Base.metadata
 

@@ -5,7 +5,7 @@ from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.modules.announcements.models import Announcement, AnnouncementAck
-from app.modules.announcements.schemas import AnnouncementCreate
+from app.modules.announcements.schemas import AnnouncementCreate, AnnouncementUpdate
 from app.modules.directory.models import Employee
 
 VALID_TARGET_TYPES = {"company_wide", "team", "role"}
@@ -77,6 +77,55 @@ def get_announcement(db: Session, announcement_id: str) -> Announcement | None:
         .filter(Announcement.announcement_id == announcement_id)
         .first()
     )
+
+
+def update_announcement(
+    db: Session, announcement_id: str, updates: AnnouncementUpdate
+) -> Announcement:
+    """Edit an existing announcement. Only Admin/Leadership or Manager tiers
+    may edit (same RBAC rule as posting), enforced here at the service
+    layer per NFR-SEC-01 rather than only in the UI. Only fields the
+    caller actually set are changed (partial update)."""
+    announcement = get_announcement(db, announcement_id)
+    if not announcement:
+        raise AnnouncementNotFound(announcement_id)
+
+    editor = _get_employee(db, updates.edited_by)
+    if not editor:
+        raise PosterNotFound(updates.edited_by)
+    if editor.access_tier not in POSTER_ALLOWED_TIERS:
+        raise UnauthorizedPoster(editor.employee_id)
+
+    data = updates.model_dump(exclude={"edited_by"}, exclude_unset=True)
+
+    new_target_type = data.get("target_type", announcement.target_type)
+    new_target_value = data.get("target_value", announcement.target_value)
+
+    if "target_type" in data and data["target_type"] not in VALID_TARGET_TYPES:
+        raise InvalidTargetType(data["target_type"])
+
+    if new_target_type in ("team", "role") and not new_target_value:
+        raise TargetValueRequired(new_target_type)
+
+    for field, value in data.items():
+        setattr(announcement, field, value)
+
+    db.commit()
+    db.refresh(announcement)
+    return announcement
+
+
+def delete_announcement(db: Session, announcement_id: str) -> None:
+    """Permanently remove an announcement (e.g. cleaning up a duplicate post)."""
+    announcement = get_announcement(db, announcement_id)
+    if not announcement:
+        raise AnnouncementNotFound(announcement_id)
+
+    db.query(AnnouncementAck).filter(
+        AnnouncementAck.announcement_id == announcement_id
+    ).delete()
+    db.delete(announcement)
+    db.commit()
 
 
 def _archive_expired(db: Session) -> None:

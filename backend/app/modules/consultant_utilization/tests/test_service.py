@@ -61,10 +61,16 @@ def test_utilization_flags_under_utilized(db, employee):
 
 def test_utilization_flags_over_allocated(db, employee):
     service.create_project(
-        db, schemas.ProjectCreate(project_id="P1", name="Client A", project_type="real project")
+        db, schemas.ProjectCreate(project_id="P1", name="Client A", project_type="real project",
+                                   billing_rate=100, cost_rate=50)
     )
-    # 45 billable hours against a 40h/week capacity for a 1-week period -> >105%.
-    _log_hours(db, "E1", "P1", date(2026, 1, 5), 45, True)
+    # 45 billable hours across the week (spread over multiple days since a
+    # single entry is capped at 24h/day) against 40h/week capacity -> >105%.
+    _log_hours(db, "E1", "P1", date(2026, 1, 5), 9, True)
+    _log_hours(db, "E1", "P1", date(2026, 1, 6), 9, True)
+    _log_hours(db, "E1", "P1", date(2026, 1, 7), 9, True)
+    _log_hours(db, "E1", "P1", date(2026, 1, 8), 9, True)
+    _log_hours(db, "E1", "P1", date(2026, 1, 9), 9, True)
 
     summary = service.compute_utilization(db, "E1", date(2026, 1, 5), date(2026, 1, 11))
     assert summary.flag == "over_allocated"
@@ -75,7 +81,11 @@ def test_non_billable_hours_dont_count_toward_utilization(db, employee):
     service.create_project(
         db, schemas.ProjectCreate(project_id="P1", name="Internal", project_type="Internal")
     )
-    _log_hours(db, "E1", "P1", date(2026, 1, 5), 30, False)  # not billable
+    _log_hours(db, "E1", "P1", date(2026, 1, 5), 6, False)
+    _log_hours(db, "E1", "P1", date(2026, 1, 6), 6, False)
+    _log_hours(db, "E1", "P1", date(2026, 1, 7), 6, False)
+    _log_hours(db, "E1", "P1", date(2026, 1, 8), 6, False)
+    _log_hours(db, "E1", "P1", date(2026, 1, 9), 6, False)  # not billable
 
     summary = service.compute_utilization(db, "E1", date(2026, 1, 5), date(2026, 1, 11))
     assert summary.billable_hours == 0
@@ -109,7 +119,12 @@ def test_org_dashboard_groups_bench_risk_and_over_allocated(db, employee):
                                    billing_rate=100, cost_rate=50)
     )
     _log_hours(db, "E1", "P1", date(2026, 1, 5), 5, True)    # under-utilized
-    _log_hours(db, "E2", "P1", date(2026, 1, 5), 45, True)   # over-allocated
+
+    _log_hours(db, "E2", "P1", date(2026, 1, 5), 9, True)
+    _log_hours(db, "E2", "P1", date(2026, 1, 6), 9, True)
+    _log_hours(db, "E2", "P1", date(2026, 1, 7), 9, True)
+    _log_hours(db, "E2", "P1", date(2026, 1, 8), 9, True)
+    _log_hours(db, "E2", "P1", date(2026, 1, 9), 9, True)   # over-allocated
 
     dashboard = service.compute_org_utilization(db, date(2026, 1, 5), date(2026, 1, 11))
     assert "E1" in dashboard.bench_risk

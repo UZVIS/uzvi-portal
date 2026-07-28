@@ -1,10 +1,11 @@
-
 from datetime import date
 from typing import Optional, Dict
 
 from pydantic import BaseModel, Field
 
 ALLOWED_STATUSES = ["Submitted", "Approved", "Rejected", "Reimbursed"]
+ALLOWED_RECEIPT_EXTENSIONS = {".pdf", ".png", ".jpg", ".jpeg"}
+MAX_RECEIPT_SIZE_BYTES = 5 * 1024 * 1024  # 5 MB
 
 
 class ExpenseCategoryCreate(BaseModel):
@@ -24,9 +25,8 @@ class ExpenseClaimCreate(BaseModel):
     project_id: Optional[str] = None
     amount: float = Field(gt=0)
     date: date
-    # Accepted but not yet persisted - see module TODO on schema gap.
     description: Optional[str] = None
-    receipt_attached: Optional[bool] = None
+    
 
 
 class ExpenseClaimRead(BaseModel):
@@ -37,14 +37,14 @@ class ExpenseClaimRead(BaseModel):
     amount: float
     date: date
     status: str
+    description: Optional[str] = None
+    receipt_file_path: Optional[str] = None
 
     model_config = {"from_attributes": True}
 
 
 class ClaimDecision(BaseModel):
-    # NFR-SEC-01: this should come from the authenticated caller, not the
-    # request body, once real auth exists (V1 has no auth yet - NFR-SEC-05).
-    decided_by_role: str  # "Manager" | "Admin" | "HR-Restricted"
+    decided_by_role: str
 
 
 class PendingTotal(BaseModel):

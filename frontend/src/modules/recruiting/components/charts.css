@@ -1,0 +1,187 @@
+.donut {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.donut__seg {
+  transition: stroke-dasharray 0.4s ease;
+}
+
+.donut__center {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.donut__center strong {
+  font-family: var(--font-display);
+  font-size: 24px;
+  line-height: 1.1;
+  color: var(--color-ink);
+}
+
+.donut__center span {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-slate);
+  font-weight: 700;
+}
+
+/* ---------- Bar list ---------- */
+
+.bar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  justify-content: center;
+}
+
+.bar-list__row {
+  display: grid;
+  grid-template-columns: 100px 1fr 28px;
+  align-items: center;
+  gap: 10px;
+}
+
+.bar-list__label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--color-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bar-list__track {
+  height: 9px;
+  border-radius: 999px;
+  background: var(--color-paper);
+  overflow: hidden;
+}
+
+.bar-list__fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.bar-list__value {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--color-slate);
+  text-align: right;
+}
+
+.bar-list__empty {
+  font-size: 13px;
+  color: var(--color-slate);
+  margin: 0;
+}
+
+/* ==========================================================
+   Stage funnel — a plain, scannable list of stage rows, each
+   with a rounded progress bar sized to its share of the first
+   stage's count, plus a drop-off badge. "Rejected" is a side
+   exit, so it's broken out as its own chip beneath the list.
+   ========================================================== */
+
+.sfunnel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  gap: 14px;
+  justify-content: center;
+}
+
+.sfunnel__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.sfunnel__row {
+  display: grid;
+  grid-template-columns: 96px 1fr 30px 46px;
+  align-items: center;
+  gap: 10px;
+}
+
+.sfunnel__label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--color-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sfunnel__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.sfunnel__track {
+  height: 11px;
+  border-radius: 999px;
+  background: var(--color-paper);
+  overflow: hidden;
+}
+
+.sfunnel__fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.sfunnel__value {
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--color-ink);
+  text-align: right;
+}
+
+.sfunnel__dropoff {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 11.5px;
+  color: #e11d48;
+  text-align: right;
+}
+
+.sfunnel__dash {
+  color: var(--color-slate);
+  font-weight: 600;
+}
+
+.sfunnel__reject {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  border: 1.5px dashed;
+  border-radius: var(--radius-md);
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sfunnel__reject b {
+  font-family: var(--font-mono);
+  font-size: 14px;
+}

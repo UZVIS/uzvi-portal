@@ -59,6 +59,25 @@ export interface OrgUtilizationDashboard {
   project_margins: ProjectMargin[];
 }
 
+function extractErrorMessage(rawBody: string, status: number, path: string): string {
+  try {
+    const parsed = JSON.parse(rawBody);
+    const detail = parsed?.detail;
+
+    if (Array.isArray(detail) && detail.length > 0) {
+      const rawMsg: string = detail[0].msg || "";
+      // Pydantic prefixes custom validator errors with "Value error, "
+      return rawMsg.replace(/^Value error,\s*/, "") || `Request to ${path} failed (${status})`;
+    }
+    if (typeof detail === "string") {
+      return detail;
+    }
+  } catch {
+    // body wasn't valid JSON - fall through to generic message
+  }
+  return `Request to ${path} failed (${status})`;
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     headers: { "Content-Type": "application/json" },
@@ -66,7 +85,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     const body = await res.text().catch(() => "");
-    throw new Error(`Request to ${path} failed (${res.status}): ${body}`);
+    throw new Error(extractErrorMessage(body, res.status, path));
   }
   return res.json() as Promise<T>;
 }
@@ -95,4 +114,4 @@ export const utilizationApi = {
       `/dashboard/org?start_date=${startDate}&end_date=${endDate}` +
         (capacityHoursPerWeek ? `&capacity_hours_per_week=${capacityHoursPerWeek}` : "")
     ),
-};
+}
