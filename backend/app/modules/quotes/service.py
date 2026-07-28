@@ -68,6 +68,7 @@ def get_scenario(db: Session, scenario_id: str) -> models.QuoteScenario | None:
     ).first()
 
 
+
 def list_scenarios_for_opportunity(
     db: Session, opportunity_id: str
 ) -> list[models.QuoteScenario]:
@@ -195,3 +196,5 @@ def compute_tender_view(scenario: models.QuoteScenario) -> schemas.TenderView:
         selling_price=round(selling_price, 2),
         resulting_margin=round(_resulting_margin(total_cost, selling_price), 4),
     )
+
+

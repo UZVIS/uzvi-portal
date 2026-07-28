@@ -4,8 +4,10 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from . import schemas, service
 
-router = APIRouter(prefix="/quotes", tags=["M13 - Quote & Tender Calculator"])
-
+router = APIRouter(
+    prefix="/api/v1/quotes",
+    tags=["Quote & Tender Calculator"]
+)
 
 # ---------- Opportunities ----------
 
@@ -97,3 +99,5 @@ def get_tender_view(scenario_id: str, db: Session = Depends(get_db)):
     if not scenario:
         raise HTTPException(status_code=404, detail="Scenario not found")
     return service.compute_tender_view(scenario)
+
+

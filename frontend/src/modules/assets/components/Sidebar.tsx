@@ -7,6 +7,7 @@ import {
   Boxes,
   LayoutDashboard,
   RotateCcw,
+  Calculator,
 } from "lucide-react";
 
 import { NavLink, useLocation } from "react-router-dom";
@@ -62,6 +63,13 @@ const menu: MenuEntry[] = [
       },
     ],
   },
+   {
+    type: "item",
+    icon: Calculator,
+    label: "Quote & Tender Calculator",
+    path: "/quotes",
+  },
+
 ];
 
 const SIDEBAR_WIDTH_EXPANDED = "220px";
@@ -134,10 +142,10 @@ export default function Sidebar({ pendingReturnsCount = 0 }: SidebarProps) {
 
         <div className="sidebar-logo-text">
           <h2>UZVI PORTAL</h2>
-          <span>Asset Management</span>
+          <span>Employee Portal</span>
         </div>
 
-      </div>
+      </div> 
 
       <nav className="sidebar-menu">
 
