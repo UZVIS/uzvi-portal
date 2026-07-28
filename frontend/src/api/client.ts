@@ -1,4 +1,5 @@
-const BASE = '/api'
+
+const BASE = 'http://localhost:8000/api'
 
 export async function apiGet(path: string) {
   const res = await fetch(`${BASE}${path}`)
@@ -11,5 +12,13 @@ export async function apiPost(path: string, body: unknown) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })
+
+
+  if (!res.ok) {
+    const errorData = await res.json();
+
+    throw { response: { data: errorData } };
+  }
+
   return res.json()
 }
