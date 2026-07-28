@@ -3,13 +3,15 @@ import { BrowserRouter, Routes, Route, Navigate, Link } from "react-router-dom";
 import { AuthProvider } from "./shared/auth/AuthContext";
 import { LoginPage } from "./shared/auth/LoginPage";
 import { ProtectedRoute } from "./shared/components/ProtectedRoute";
-
 import { AnnouncementsPage } from "./modules/announcements/AnnouncementsPage";
 import { ComposeAnnouncementPage } from "./modules/announcements/ComposeAnnouncementPage";
 import { AcknowledgmentsOverviewPage } from "./modules/announcements/AcknowledgmentsOverviewPage";
 import { AnnouncementsDashboardPage } from "./modules/dashboard/AnnouncementsDashboardPage";
 import UtilizationModulePage from "./modules/consultant_utilization/UtilizationModulePage";
 import ExpenseClaimsModulePage from "./modules/expense_claims/ExpenseClaimsModulePage";
+import { DirectoryPage } from "./modules/directory/DirectoryPage";
+import { OnboardingPage } from "./modules/onboarding/OnboardingPage";
+import { DocumentsPage } from "./modules/documents/DocumentsPage";
 import HelpdeskModulePage from "./modules/helpdesk/HelpdeskModulePage";
 import TicketDetailsPage from "./modules/helpdesk/TicketDetailsPage";
 import RecruitingModulePage from "./modules/recruiting/RecruitingModulePage";
@@ -26,11 +28,13 @@ function HomePage() {
       <h1>UZVI Employee Portal</h1>
       <ul>
         <li><Link to="/dashboard">Announcements</Link></li>
+        <li><Link to="/directory">Employee Directory</Link></li>
+        <li><Link to="/onboarding">Onboarding</Link></li>
+        <li><Link to="/documents">Documents</Link></li>
         <li><Link to="/utilization">Consultant Utilization</Link></li>
         <li><Link to="/expenses">Expense Claims</Link></li>
         <li><Link to="/helpdesk">Helpdesk</Link></li>
         <li><Link to="/recruiting">Recruiting / Candidate Pipeline </Link></li>
-
       </ul>
     </div>
   );
@@ -41,9 +45,7 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-
           <Route path="/" element={<HomePage />} />
-
           <Route path="/login" element={<LoginPage />} />
 
           <Route
@@ -55,6 +57,30 @@ export default function App() {
             }
           />
 
+          <Route
+            path="/directory"
+            element={
+              <ProtectedRoute>
+                <DirectoryPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/onboarding"
+            element={
+              <ProtectedRoute>
+                <OnboardingPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/documents"
+            element={
+              <ProtectedRoute>
+                <DocumentsPage />
+              </ProtectedRoute>
+            }
+          />
           <Route
             path="/announcements"
             element={
@@ -134,7 +160,6 @@ export default function App() {
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
-
         </Routes>
       </BrowserRouter>
     </AuthProvider>

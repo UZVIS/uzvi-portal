@@ -1,0 +1,635 @@
+@import url("https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+
+.uzvi-portal-theme {
+  --color-navy: #2a2622;
+  --color-navy-soft: #3a342e;
+  --color-paper: #faf6f1;
+  --color-surface: #ffffff;
+  --color-ink: #2a2622;
+  --color-slate: #8a8178;
+  --color-hairline: #e4ddd4;
+  --color-amber: #d2691e;
+  --color-amber-soft: #fae9dc;
+  --color-teal: #2f6b4b;
+  --color-teal-soft: #e7f0ea;
+  --color-plum: #7a4fa5;
+  --color-plum-soft: #f3ecf7;
+
+  --font-display: "Figtree", "Segoe UI", sans-serif;
+  --font-body: "Figtree", "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --radius-sm: 8px;
+  --radius-md: 11px;
+  --radius-lg: 16px;
+
+  --shadow-card: 0 4px 14px 0 rgba(42, 38, 34, 0.08);
+  --shadow-button: 0 4px 14px 0 rgba(210, 105, 30, 0.34);
+
+  background: var(--color-paper);
+  min-height: 100%;
+  font-family: var(--font-body);
+  color: var(--color-ink);
+}
+
+.uzvi-portal-theme * {
+  box-sizing: border-box;
+}
+
+/* ---------- shared building blocks used across all 3 pages ---------- */
+
+.uzvi-portal-theme .button-primary {
+  background: var(--color-amber);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 13px 20px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: var(--shadow-button);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.uzvi-portal-theme .button-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px 0 rgba(210, 105, 30, 0.4);
+}
+
+.uzvi-portal-theme .button-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.uzvi-portal-theme .button-secondary {
+  background: var(--color-surface);
+  color: var(--color-ink);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  padding: 11px 18px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.uzvi-portal-theme .button-secondary:hover:not(:disabled) {
+  border-color: var(--color-amber);
+  background: var(--color-amber-soft);
+}
+
+.uzvi-portal-theme .button-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.uzvi-portal-theme .field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.uzvi-portal-theme .field__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-slate);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.uzvi-portal-theme .field__input {
+  background: var(--color-surface);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--color-ink);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.uzvi-portal-theme .field__input:focus {
+  border-color: var(--color-amber);
+  box-shadow: 0 0 0 3px var(--color-amber-soft);
+}
+
+.uzvi-portal-theme .field-row {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.uzvi-portal-theme .error-banner {
+  background: #fbeae4;
+  color: #a5432b;
+  border-radius: var(--radius-sm);
+  padding: 11px 14px;
+  font-size: 13px;
+  margin: 0 0 16px;
+  border: 1px solid #f0cec2;
+}
+
+.uzvi-portal-theme .success-banner {
+  background: var(--color-teal-soft);
+  color: #1e5f3f;
+  border-radius: var(--radius-sm);
+  padding: 11px 14px;
+  font-size: 13px;
+  margin: 0 0 16px;
+  border: 1px solid #cfe6d9;
+}
+
+/* ---------- page shell ---------- */
+
+.uzvi-portal-theme .directory-page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 40px 28px 72px;
+}
+
+.uzvi-portal-theme .directory-page__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+  gap: 16px;
+}
+
+.uzvi-portal-theme .directory-page__header .button-secondary {
+  margin-bottom: 16px;
+  font-size: 12px;
+  padding: 8px 14px;
+}
+
+.uzvi-portal-theme .directory-page__header h1 {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0 0 6px;
+  color: var(--color-navy);
+}
+
+.uzvi-portal-theme .directory-page__subtitle {
+  color: var(--color-slate);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+  max-width: 540px;
+}
+
+.uzvi-portal-theme .directory-page__me {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--color-ink);
+  white-space: nowrap;
+  background: var(--color-surface);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-lg);
+  padding: 8px 12px 8px 8px;
+  box-shadow: var(--shadow-card);
+}
+
+.uzvi-portal-theme .directory-page__me-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-amber);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 15px;
+  font-family: var(--font-display);
+  flex-shrink: 0;
+}
+
+.uzvi-portal-theme .directory-page__me-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1.2;
+}
+
+.uzvi-portal-theme .directory-page__me-name {
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.uzvi-portal-theme .directory-page__me-tier {
+  font-size: 11px;
+  color: var(--color-slate);
+}
+
+.uzvi-portal-theme .directory-page__manage {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.uzvi-portal-theme .directory-form,
+.uzvi-portal-theme .team-manager,
+.uzvi-portal-theme .template-builder,
+.uzvi-portal-theme .instance-tracker {
+  background: var(--color-surface);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-lg);
+  padding: 24px 26px;
+  box-shadow: var(--shadow-card);
+}
+
+.uzvi-portal-theme .directory-form__title {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0 0 18px;
+  color: var(--color-navy);
+}
+
+.uzvi-portal-theme .directory-page__list {
+  background: var(--color-surface);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-lg);
+  padding: 24px 26px;
+  box-shadow: var(--shadow-card);
+  margin-bottom: 20px;
+}
+
+.uzvi-portal-theme .directory-page__list:last-child {
+  margin-bottom: 0;
+}
+
+.uzvi-portal-theme .directory-page__list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+  gap: 16px;
+}
+
+.uzvi-portal-theme .directory-page__list-header h2 {
+  font-size: 17px;
+  font-weight: 700;
+  font-family: var(--font-display);
+  margin: 0;
+  white-space: nowrap;
+  color: var(--color-navy);
+}
+
+.uzvi-portal-theme .directory-page__search {
+  max-width: 320px;
+}
+
+/* ---------- directory table ---------- */
+
+.uzvi-portal-theme .directory-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  table-layout: fixed;
+}
+
+.uzvi-portal-theme .directory-table col:nth-child(1) { width: 9%; }
+.uzvi-portal-theme .directory-table col:nth-child(2) { width: 15%; }
+.uzvi-portal-theme .directory-table col:nth-child(3) { width: 11%; }
+.uzvi-portal-theme .directory-table col:nth-child(4) { width: 8%; }
+.uzvi-portal-theme .directory-table col:nth-child(5) { width: 14%; }
+.uzvi-portal-theme .directory-table col:nth-child(6) { width: 16%; }
+.uzvi-portal-theme .directory-table col:nth-child(7) { width: 12%; }
+.uzvi-portal-theme .directory-table col:nth-child(8) { width: 15%; }
+
+.uzvi-portal-theme .directory-table td,
+.uzvi-portal-theme .directory-table th {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.uzvi-portal-theme .directory-table td:nth-child(2),
+.uzvi-portal-theme .directory-table th:nth-child(2) {
+  white-space: normal;
+}
+
+.uzvi-portal-theme .directory-table th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-slate);
+  font-weight: 700;
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--color-hairline);
+  white-space: nowrap;
+  overflow: visible;
+}
+
+.uzvi-portal-theme .directory-row td {
+  padding: 13px 12px;
+  border-bottom: 1px solid var(--color-hairline);
+  vertical-align: middle;
+}
+
+.uzvi-portal-theme .directory-row:hover {
+  background: #fdfbf8;
+}
+
+.uzvi-portal-theme .directory-row__id {
+  font-family: var(--font-mono);
+  color: var(--color-slate);
+  font-size: 12.5px;
+}
+
+.uzvi-portal-theme .directory-row__name {
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.uzvi-portal-theme .directory-row__designation {
+  color: var(--color-slate);
+  font-size: 12px;
+  margin-top: 1px;
+}
+
+.uzvi-portal-theme .directory-row__muted {
+  color: var(--color-slate);
+  font-size: 13px;
+}
+
+.uzvi-portal-theme .directory-table:has(.directory-row--editing) {
+  table-layout: auto;
+}
+
+.uzvi-portal-theme .directory-row__exit-btn {
+  font-size: 12px;
+  padding: 7px 12px;
+}
+
+.uzvi-portal-theme .directory-row__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  white-space: normal;
+}
+
+.uzvi-portal-theme .tier-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: var(--color-amber-soft);
+  color: #9a5a1c;
+  letter-spacing: 0.02em;
+}
+
+.uzvi-portal-theme .tier-badge--admin-leadership {
+  background: var(--color-plum);
+  color: #fff;
+}
+
+.uzvi-portal-theme .tier-badge--hr-restricted {
+  background: var(--color-plum-soft);
+  color: #6a3f96;
+}
+
+.uzvi-portal-theme .tier-badge--manager {
+  background: var(--color-teal-soft);
+  color: #1e5f3f;
+}
+
+.uzvi-portal-theme .tier-badge--employee-consultant,
+.uzvi-portal-theme .tier-badge--employee {
+  background: #f1ece5;
+  color: var(--color-ink);
+}
+
+/* ---------- team manager ---------- */
+
+.uzvi-portal-theme .team-manager__list {
+  list-style: none;
+  margin: 0 0 18px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.uzvi-portal-theme .team-manager__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  padding: 10px 12px;
+  background: var(--color-paper);
+  border-radius: var(--radius-sm);
+}
+
+.uzvi-portal-theme .team-manager__name {
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.uzvi-portal-theme .team-manager__id {
+  font-family: var(--font-mono);
+  color: var(--color-slate);
+  font-size: 11.5px;
+}
+
+.uzvi-portal-theme .team-manager__form {
+  display: flex;
+  gap: 8px;
+}
+
+/* ---------- onboarding: templates + progress ---------- */
+
+.uzvi-portal-theme .template-builder__row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.uzvi-portal-theme .template-builder__row .field__input {
+  flex: 1;
+  min-width: 120px;
+}
+
+.uzvi-portal-theme .template-builder__list {
+  list-style: none;
+  margin: 0 0 18px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.uzvi-portal-theme .template-builder__template {
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  background: var(--color-paper);
+}
+
+.uzvi-portal-theme .template-builder__template-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 13.5px;
+}
+
+.uzvi-portal-theme .template-builder__template-header strong {
+  color: var(--color-navy);
+}
+
+.uzvi-portal-theme .template-builder__tasks {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: var(--color-ink);
+}
+
+.uzvi-portal-theme .instance-tracker__start {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.uzvi-portal-theme .instance-tracker__start .field__input {
+  flex: 1;
+  min-width: 120px;
+}
+
+.uzvi-portal-theme .instance-tracker__progress {
+  margin-top: 20px;
+}
+
+.uzvi-portal-theme .progress-bar {
+  position: relative;
+  height: 24px;
+  background: var(--color-hairline);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 18px;
+}
+
+.uzvi-portal-theme .progress-bar__fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-teal), #4e8d6e);
+  transition: width 0.3s ease;
+}
+
+.uzvi-portal-theme .progress-bar__label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.uzvi-portal-theme .instance-tracker__tasks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.uzvi-portal-theme .instance-tracker__task {
+  background: var(--color-paper);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+
+.uzvi-portal-theme .instance-tracker__task label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  cursor: pointer;
+}
+
+.uzvi-portal-theme .instance-tracker__task input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--color-teal);
+}
+
+.uzvi-portal-theme .instance-tracker__task-done {
+  text-decoration: line-through;
+  color: var(--color-slate);
+}
+
+/* ---------- documents ---------- */
+
+.uzvi-portal-theme .document-record {
+  margin-top: 22px;
+  border-top: 1px solid var(--color-hairline);
+  padding-top: 18px;
+}
+
+.uzvi-portal-theme .document-record dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 14px;
+  margin: 0 0 20px;
+  font-size: 13.5px;
+}
+
+.uzvi-portal-theme .document-record dt {
+  color: var(--color-slate);
+  font-weight: 600;
+}
+
+.uzvi-portal-theme .document-record dd {
+  margin: 0;
+  color: var(--color-ink);
+}
+
+.uzvi-portal-theme .document-record__logs-title {
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  font-weight: 700;
+  margin: 0 0 10px;
+  color: var(--color-navy);
+}
+
+.uzvi-portal-theme .document-record__logs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12.5px;
+}
+
+.uzvi-portal-theme .document-record__logs li {
+  background: var(--color-paper);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+}
+
+@media (max-width: 760px) {
+  .uzvi-portal-theme .directory-page__manage {
+    grid-template-columns: 1fr;
+  }
+  .uzvi-portal-theme .directory-table {
+    display: block;
+    overflow-x: auto;
+  }
+}

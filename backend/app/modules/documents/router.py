@@ -19,6 +19,15 @@ def register_document_record(doc_in: DocumentCreate, db: Session = Depends(get_d
         return service.create_document(db, doc_in)
     except service.DocumentAlreadyExists:
         raise HTTPException(status_code=400, detail="Document record ID already exists.")
+    except service.NotAuthorized as e:
+        raise HTTPException(status_code=403, detail=str(e))
+
+@router.get("/expired/list", response_model=List[DocumentResponse])
+def get_expired_documents(requester_id: str, db: Session = Depends(get_db)):
+    try:
+        return service.list_expired_documents(db, requester_id)
+    except service.NotAuthorized as e:
+        raise HTTPException(status_code=403, detail=str(e))
 
 
 @router.get("/{document_id}", response_model=DocumentResponse)
@@ -29,6 +38,8 @@ def view_document_record(
         return service.view_document(db, document_id, requester_id)
     except service.DocumentNotFound:
         raise HTTPException(status_code=404, detail="Document record not found.")
+    except service.NotAuthorized as e:
+        raise HTTPException(status_code=403, detail=str(e))
 
 
 @router.get("/{document_id}/logs", response_model=List[DocumentAccessLogResponse])
