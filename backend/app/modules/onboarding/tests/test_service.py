@@ -123,6 +123,15 @@ def test_create_instance_by_non_admin_raises(db):
         )
 
 
+def test_create_instance_by_hr_raises(db):
+  
+    _make_template_with_tasks(db)
+    with pytest.raises(service.NotAuthorized):
+        service.create_instance(
+            db, OnboardingInstanceCreate(instance_id="OI003", employee_id="E001", template_id="TPL1", requester_id="E003")
+        )
+
+
 # --- only the correct responsible party may complete a task ---
 
 def test_complete_hr_task_by_hr_succeeds(db):
