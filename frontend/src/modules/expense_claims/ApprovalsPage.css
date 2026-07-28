@@ -1,0 +1,140 @@
+.ap-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px 24px 60px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #1f2430;
+}
+
+.ap-page--status {
+  text-align: center;
+  padding-top: 80px;
+  color: #6b7280;
+}
+
+.ap-page--error {
+  color: #b8433a;
+}
+
+.ap-page__title {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.ap-page__subtitle {
+  font-size: 13px;
+  color: #9aa1ab;
+  margin: 0 0 16px;
+  max-width: 640px;
+}
+
+.ap-page__acting {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 16px;
+}
+
+.ap-page__acting select {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #d7dbe0;
+  font-size: 13px;
+}
+
+.ap-page__error {
+  color: #b8433a;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.ap-page__empty {
+  font-size: 13px;
+  color: #9aa1ab;
+}
+
+.ap-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: #ffffff;
+  border: 1px solid #e3e6ea;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.ap-table th {
+  text-align: left;
+  color: #6b7280;
+  font-weight: 500;
+  padding: 10px 14px;
+  background: #f7f8fa;
+  border-bottom: 1px solid #e3e6ea;
+}
+
+.ap-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.ap-table__actions {
+  display: flex;
+  gap: 6px;
+}
+
+.ap-table__done {
+  color: #c7cbd1;
+}
+
+.ap-btn {
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  color: white;
+}
+
+.ap-btn--approve {
+  background: #2f6b46;
+}
+
+.ap-btn--reject {
+  background: #b8433a;
+}
+
+.ap-btn--reimburse {
+  background: #35507d;
+}
+
+.ap-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.ap-badge--submitted {
+  background: #eef2ff;
+  color: #35507d;
+}
+
+.ap-badge--approved {
+  background: #e8f5ee;
+  color: #2f6b46;
+}
+
+.ap-badge--rejected {
+  background: #fdeceb;
+  color: #b8433a;
+}
+
+.ap-badge--reimbursed {
+  background: #eef6f3;
+  color: #2f5d50;
+}

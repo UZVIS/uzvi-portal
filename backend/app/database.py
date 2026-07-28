@@ -35,5 +35,6 @@ def init_db():
     from app.modules.consultant_utilization import models
     from app.modules.expense_claims import models
     from app.modules.performance_goals import models 
+    
     # Create all tables
     Base.metadata.create_all(bind=engine)
