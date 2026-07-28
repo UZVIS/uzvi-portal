@@ -58,7 +58,7 @@ export function PipelineFunnelPage() {
 
   const timeInStageRows = useMemo(() => {
     if (!stats) return [];
-    const order = ["Applied", "Screened", "Interview", "Offer"] as const;
+    const order = ["Applied", "Screened", "Interview"] as const;
     return order.map((stage) => {
       const entry = stats.time_in_stage.find((t) => t.stage === stage);
       return {

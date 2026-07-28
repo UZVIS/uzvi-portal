@@ -113,6 +113,7 @@ export interface ScorecardInput {
 
 export interface HireConversionInput {
   employee_id: string;
+  requester_id: string;
   designation?: string;
   team_id?: string;
   manager_id?: string;
@@ -124,6 +125,34 @@ export interface HireConversionInput {
 // caller for the Admin/Leadership + HR-Restricted access check enforced
 // by the backend (see recruiting/dependencies.py).
 const AUTH_STORAGE_KEY = "uzvi_portal_employee_id";
+
+// FastAPI's `detail` field isn't always a plain string: on 422 validation
+// errors it's an array of {loc, msg, type} objects, and some handlers raise
+// dict details. Stringifying those directly (e.g. `new Error(obj)`) collapses
+// to the useless "[object Object]" — this pulls out a readable message instead.
+function normalizeErrorDetail(detail: unknown): string {
+  if (!detail) return "";
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    return detail
+      .map((item) => {
+        if (typeof item === "string") return item;
+        if (item && typeof item === "object" && "msg" in item) {
+          const loc = Array.isArray((item as any).loc)
+            ? (item as any).loc.filter((p: unknown) => p !== "body").join(".")
+            : "";
+          return loc ? `${loc}: ${(item as any).msg}` : String((item as any).msg);
+        }
+        return JSON.stringify(item);
+      })
+      .join("; ");
+  }
+  if (typeof detail === "object") {
+    if ("msg" in (detail as any)) return String((detail as any).msg);
+    return JSON.stringify(detail);
+  }
+  return String(detail);
+}
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const employeeId = localStorage.getItem(AUTH_STORAGE_KEY);
@@ -138,7 +167,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     let detail = "";
     try {
       const body = await res.json();
-      detail = body?.detail ?? "";
+      detail = normalizeErrorDetail(body?.detail);
     } catch {
       detail = await res.text().catch(() => "");
     }
