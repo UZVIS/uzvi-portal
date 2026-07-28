@@ -4,6 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from app.database import Base, engine, init_db
 
 from app.modules.directory.router import router as employee_router
+from app.modules.directory.router import team_router
 from app.modules.attendance.router import router as attendance_router
 from app.modules.documents.router import router as document_router
 from app.modules.onboarding.router import router as onboarding_router
@@ -35,6 +36,7 @@ def startup():
 Base.metadata.create_all(bind=engine)
 
 app.include_router(employee_router)
+app.include_router(team_router)
 app.include_router(attendance_router, prefix="/api/v1")
 app.include_router(document_router)
 app.include_router(onboarding_router)
