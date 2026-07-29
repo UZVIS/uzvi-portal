@@ -1,11 +1,17 @@
 .ack-overview-screen {
+  --color-navy: #1a1614;
+  --color-navy-soft: #2a2421;
+  --color-amber: #f37021;
+  --color-amber-soft: #fce3d2;
+  --color-paper: #f4f6f8;
+
   min-height: 100vh;
   background: var(--color-paper);
 }
 
 .ack-overview-topbar {
-  background: var(--color-navy);
-  padding: 16px 32px;
+  background: transparent;
+  padding: 20px 32px 0;
 }
 
 .ack-overview-topbar__back {
@@ -14,17 +20,18 @@
   gap: 6px;
   background: transparent;
   border: none;
-  color: #fff;
+  color: var(--color-slate);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   padding: 6px 10px;
   border-radius: var(--radius-sm);
-  transition: background 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 .ack-overview-topbar__back:hover {
-  background: var(--color-navy-soft);
+  background: var(--color-amber-soft);
+  color: var(--color-amber);
 }
 
 .ack-overview-page {
@@ -101,8 +108,8 @@
   font-size: 11px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #4361ee;
-  background: #4361ee0d;
+  color: #d9591a;
+  background: #f370210d;
   padding: 14px 20px;
   border-bottom: 1px solid var(--color-hairline);
   white-space: nowrap;
@@ -192,15 +199,15 @@
 }
 
 .ack-announcement-item--company_wide {
-  border-left-color: #4361ee;
+  border-left-color: #f37021;
 }
 
 .ack-announcement-item--team {
-  border-left-color: #14b8a6;
+  border-left-color: #c2703d;
 }
 
 .ack-announcement-item--role {
-  border-left-color: #8b5cf6;
+  border-left-color: #3a342e;
 }
 
 .ack-announcement-item__icon {
@@ -215,15 +222,15 @@
 }
 
 .ack-announcement-item--company_wide .ack-announcement-item__icon {
-  background: linear-gradient(135deg, #4361ee, #3a56d4);
+  background: linear-gradient(135deg, #f37021, #d9591a);
 }
 
 .ack-announcement-item--team .ack-announcement-item__icon {
-  background: linear-gradient(135deg, #14b8a6, #0d9488);
+  background: linear-gradient(135deg, #c2703d, #8b4f26);
 }
 
 .ack-announcement-item--role .ack-announcement-item__icon {
-  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  background: linear-gradient(135deg, #3a342e, #1a1614);
 }
 
 .ack-announcement-item__text {

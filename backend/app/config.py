@@ -1,11 +1,7 @@
 import os
-
-
-class Settings:
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./portal.db")
-    ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
+from dotenv import load_dotenv
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-ENVIRONMENT = os.getenv("ENVIRONMENT")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./portal.db")
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")

@@ -8,10 +8,8 @@ import { AcknowledgmentDrawer } from "./components/AcknowledgmentDrawer";
 import {
   IconArrowLeft,
   IconBell,
-  IconBuilding,
   IconInbox,
   IconLayers,
-  IconLogOut,
   IconMegaphone,
 } from "./components/icons";
 import "./AnnouncementsPage.css";
@@ -21,17 +19,8 @@ const POSTER_TIERS = new Set(["Admin/Leadership", "Manager"]);
 
 type ViewMode = "feed" | "all";
 
-function initialsOf(name: string): string {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("");
-}
-
 export function AnnouncementsPage() {
-  const { employee, logout } = useAuth();
+  const { employee } = useAuth();
   const navigate = useNavigate();
   const canManage = employee ? POSTER_TIERS.has(employee.access_tier) : false;
 
@@ -78,11 +67,6 @@ export function AnnouncementsPage() {
     }
   }
 
-  function handleLogout() {
-    logout();
-    navigate("/login", { replace: true });
-  }
-
   const stats = useMemo(() => {
     const total = announcements.length;
     const needsAck = announcements.filter((a) => a.requires_ack).length;
@@ -93,29 +77,9 @@ export function AnnouncementsPage() {
 
   return (
     <div className="c-feed-screen">
-      <header className="topbar">
-        <div className="topbar__brand-group">
-          <button className="topbar__back-btn" onClick={() => navigate("/dashboard")}>
-            <IconArrowLeft size={14} /> Back
-          </button>
-          <div className="topbar__brand">
-            <span className="topbar__brand-icon">
-              <IconBuilding size={18} />
-            </span>
-            UZVI
-          </div>
-        </div>
-        <div className="topbar__user">
-          <div className="topbar__user-info">
-            <span className="topbar__user-name">{employee.name}</span>
-            <span className="topbar__user-role">{employee.access_tier}</span>
-          </div>
-          <span className="topbar__avatar">{initialsOf(employee.name)}</span>
-          <button className="topbar__logout" onClick={handleLogout}>
-            <IconLogOut size={14} /> Sign out
-          </button>
-        </div>
-      </header>
+      <button className="c-back-link" onClick={() => navigate("/dashboard")}>
+        <IconArrowLeft size={14} /> Back to Dashboard
+      </button>
 
       <div className="c-toolbar">
         <div className="c-toolbar__pills">
