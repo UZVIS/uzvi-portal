@@ -43,6 +43,10 @@ import { CalendarPage } from "./modules/calendar";
 
 // ─── Other modules ───────────────────────────────────────────────────────────
 import { AnnouncementsPage } from "./modules/announcements/AnnouncementsPage";
+import { assetRoutes } from "./modules/assets/routes";
+import { quoteRoutes } from "./modules/quotes/routes";
+import PendingReturnsPage from "./modules/assets/pages/pendingReturnsPage";
+import EmployeeDashboard from "./modules/assets/pages/EmployeeDashboard";
 import { ComposeAnnouncementPage } from "./modules/announcements/ComposeAnnouncementPage";
 import { AcknowledgmentsOverviewPage } from "./modules/announcements/AcknowledgmentsOverviewPage";
 import { AnnouncementsDashboardPage } from "./modules/dashboard/AnnouncementsDashboardPage";
@@ -312,6 +316,33 @@ function AppLayout() {
               }
             />
 
+          <Route
+            path="/announcements"
+            element={
+              <ProtectedRoute>
+                <AnnouncementsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+    path="/assets/pending-returns"
+    element={<PendingReturnsPage />}
+/>
+     
+      <Route
+    path="/employee-dashboard"
+    element={<EmployeeDashboard />}
+/>
+
+          {assetRoutes}
+          {quoteRoutes}
+
+          {allModules
+            .filter((module) => module.prefix !== "/announcements" &&
+             module.prefix !== "/assets" &&
+             module.prefix !== "/quotes"
+)
+            .map((module) => (
             <Route
               path="/calendar"
               element={<CalendarPage role={activeRole} />}
@@ -487,6 +518,8 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/*" element={<AuthGate />} />
         </Routes>
+        
+      </BrowserRouter>
       </Router>
     </AuthProvider>
   );
