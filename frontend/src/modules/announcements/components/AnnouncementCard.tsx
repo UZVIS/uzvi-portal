@@ -17,6 +17,7 @@ interface Props {
   currentEmployeeId: string;
   canManage: boolean;
   isAcking: boolean;
+  showAcknowledgeAction: boolean;
   onAcknowledge: () => void;
   onViewAcknowledgments: () => void;
 }
@@ -55,6 +56,7 @@ export function AnnouncementCard({
   currentEmployeeId,
   canManage,
   isAcking,
+  showAcknowledgeAction,
   onAcknowledge,
   onViewAcknowledgments,
 }: Props) {
@@ -127,7 +129,7 @@ export function AnnouncementCard({
                 <IconUsers size={14} /> View acknowledgments
               </button>
             )}
-            {announcement.requires_ack && acknowledged === false && (
+            {announcement.requires_ack && showAcknowledgeAction && acknowledged === false && (
               <button
                 className="c-notice__ack-button"
                 onClick={onAcknowledge}
@@ -137,7 +139,7 @@ export function AnnouncementCard({
                 {isAcking ? "Acknowledging…" : "Acknowledge"}
               </button>
             )}
-            {announcement.requires_ack && acknowledged === true && (
+            {announcement.requires_ack && showAcknowledgeAction && acknowledged === true && (
               <span className="c-notice__acked-tag">
                 <IconCheckCircle size={14} /> Acknowledged
               </span>
