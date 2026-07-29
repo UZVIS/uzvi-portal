@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { recruitingApi } from "./api";
 import type { FunnelStats } from "./api";
 import { DonutChart, BarList } from "./components/charts";
@@ -7,6 +8,7 @@ import { IconUsers, IconBriefcase, IconTarget, IconStar } from "./components/ico
 import "./SourcingPage.css";
 
 export function SourcingPage() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState<FunnelStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +55,9 @@ export function SourcingPage() {
 
   return (
     <div className="sourcing-page">
-
+      <button type="button" className="rec-back-top" onClick={() => navigate("/recruiting")}>
+        ← Back
+      </button>
       <div className="sourcing-page__hero">
         <div className="sourcing-page__hero-icon">
           <IconUsers size={24} />
@@ -107,7 +111,7 @@ export function SourcingPage() {
               <p className="panel__loading">Loading…</p>
             ) : (
               <div className="sourcing-page__donut-row">
-                <DonutChart data={sourceData} size={168} />
+                <DonutChart data={sourceData} size={140} />
                 <ul className="sourcing-page__legend">
                   {sourceData.map((d, i) => (
                     <li key={i}>

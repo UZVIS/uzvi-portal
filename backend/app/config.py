@@ -7,5 +7,5 @@ class Settings:
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-ENVIRONMENT = os.getenv("ENVIRONMENT")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./portal.db")
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
