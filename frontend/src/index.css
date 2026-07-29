@@ -1,3 +1,4 @@
+@import "tailwindcss";
 :root {
   --color-navy: #1c2438;
   --color-navy-soft: #2a3350;
@@ -171,4 +172,40 @@ a {
 
 .button-secondary:hover {
   background: var(--color-paper);
+}
+
+.button-danger {
+  background: #e11d48;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.15s ease;
+}
+
+.button-danger:hover:not(:disabled) {
+  background: #be123c;
+}
+
+.button-danger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.modal--sm {
+  max-width: 400px;
+}
+
+.modal__title-icon--danger {
+  color: #e11d48;
+}
+
+.modal__confirm-text {
+  font-size: 13.5px;
+  color: var(--color-ink);
+  line-height: 1.5;
+  margin: 0 0 20px;
 }

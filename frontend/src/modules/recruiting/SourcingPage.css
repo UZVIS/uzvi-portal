@@ -1,0 +1,332 @@
+/* Sourcing page — single viewport, legend beside donut */
+
+.sourcing-page {
+  position: relative;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+}
+
+.error-banner {
+  margin: 0;
+  font-size: 13px;
+  color: #e11d48;
+  flex: 0 0 auto;
+}
+
+.panel__loading {
+  color: var(--color-slate);
+  font-size: 13px;
+  margin: 0;
+}
+
+.sourcing-page__hero {
+  flex: 0 0 auto;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, #eafaf7 0%, #f3ecff 100%);
+  border: 1px solid rgba(20, 184, 166, 0.15);
+  overflow: hidden;
+}
+
+.sourcing-page__hero-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, #14b8a6, #0d9488);
+  color: #fff;
+  box-shadow: 0 10px 22px -10px rgba(20, 184, 166, 0.5);
+  flex-shrink: 0;
+}
+
+.sourcing-page__hero h1 {
+  font-size: 17px;
+  margin: 0;
+}
+
+.sourcing-page__hero p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--color-slate);
+}
+
+/* ---------- KPI row ---------- */
+
+.sourcing-page__kpis {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.src-kpi-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: 9px 12px;
+  box-shadow: var(--shadow-card);
+  border-bottom: 3px solid transparent;
+  min-width: 0;
+}
+
+.src-kpi-card strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 14px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.src-kpi-card span {
+  display: block;
+  font-size: 10px;
+  color: var(--color-slate);
+  font-weight: 600;
+  margin-top: 1px;
+}
+
+.src-kpi-card__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-md);
+  flex-shrink: 0;
+  color: #fff;
+}
+
+.src-kpi-card--teal {
+  border-bottom-color: #14b8a6;
+}
+.src-kpi-card--teal .src-kpi-card__icon {
+  background: linear-gradient(135deg, #14b8a6, #0d9488);
+}
+
+.src-kpi-card--amber {
+  border-bottom-color: #f59e0b;
+}
+.src-kpi-card--amber .src-kpi-card__icon {
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+}
+
+.src-kpi-card--indigo {
+  border-bottom-color: #4361ee;
+}
+.src-kpi-card--indigo .src-kpi-card__icon {
+  background: linear-gradient(135deg, #4361ee, #3a56d4);
+}
+
+/* ---------- Main grid fills remaining height ---------- */
+
+.sourcing-page__grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.panel {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 12px 16px 10px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.panel__header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.panel__header h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  margin: 0;
+}
+
+.panel__hint {
+  font-size: 10.5px;
+  color: var(--color-slate);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+}
+
+.panel__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.panel__footnote {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-hairline);
+  font-size: 11.5px;
+  color: var(--color-slate);
+  line-height: 1.35;
+}
+
+.panel__footnote strong {
+  color: var(--color-ink);
+}
+
+.panel__footnote svg {
+  flex-shrink: 0;
+  color: #f59e0b;
+}
+
+/* ---------- Donut + legend side-by-side (never stack on desktop) ---------- */
+
+.sourcing-page__donut-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 16px;
+  width: 100%;
+  min-height: 0;
+}
+
+.sourcing-page__donut-row .donut {
+  flex-shrink: 0;
+}
+
+.sourcing-page__legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+.sourcing-page__legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--color-ink);
+  background: var(--color-paper);
+  border-radius: var(--radius-md);
+  padding: 7px 10px;
+  min-width: 0;
+}
+
+.sourcing-page__legend-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sourcing-page__legend li b {
+  font-family: var(--font-mono);
+  flex-shrink: 0;
+  margin-left: 0;
+}
+
+.sourcing-page__legend-pct {
+  width: 36px;
+  text-align: right;
+  color: var(--color-slate);
+  font-size: 11.5px;
+  flex-shrink: 0;
+}
+
+.sourcing-page__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Back sits in AppLayout top padding — content does not move */
+.rec-back-top {
+  position: absolute;
+  top: -22px;
+  left: 0;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.15s ease;
+}
+.rec-back-top:hover {
+  color: #f37021;
+}
+
+@media (max-width: 900px) {
+  .sourcing-page__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .sourcing-page {
+    overflow-y: auto;
+    height: auto;
+    max-height: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .sourcing-page__kpis {
+    grid-template-columns: 1fr;
+  }
+
+  .sourcing-page__donut-row {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
