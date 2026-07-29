@@ -1,0 +1,369 @@
+.detail-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding-bottom: 40px;
+}
+
+.detail-page__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 0;
+  margin-bottom: 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-slate);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.detail-page__back:hover {
+  color: var(--color-navy);
+}
+
+.panel {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 24px 28px;
+  margin-bottom: 18px;
+}
+
+.panel:last-child {
+  margin-bottom: 0;
+}
+
+.detail__panel {
+  padding: 22px 28px;
+}
+
+.detail__panel-all {
+  padding: 0;
+  overflow: hidden;
+}
+
+.detail__body {
+  padding: 22px 28px;
+}
+
+.detail__divider {
+  height: 1px;
+  background: var(--color-hairline);
+  margin: 0 28px;
+}
+
+.detail__header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 28px 32px;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  color: #fff;
+}
+
+.detail__avatar {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.25);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+
+.detail__header-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.detail__header-info h2 {
+  font-size: 20px;
+  margin: 0;
+  color: #fff;
+}
+
+.detail__header-info p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.detail__stage-tag {
+  background: rgba(255, 255, 255, 0.22);
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.detail__resume {
+  margin: 0 0 18px;
+  font-size: 13px;
+  color: var(--color-slate);
+  background: var(--color-paper);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  line-height: 1.5;
+}
+
+/* ---------- Stage stepper ---------- */
+
+.detail__stepper {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  padding: 0;
+  flex-wrap: wrap;
+}
+
+.detail__step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detail__step-dot {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-hairline);
+  color: var(--color-slate);
+  font-size: 11px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.detail__step-dot:hover {
+  transform: scale(1.1);
+}
+
+.detail__step-dot--active,
+.detail__step-dot--done {
+  color: #fff;
+}
+
+.detail__step-label {
+  font-size: 11.5px;
+  color: var(--color-slate);
+  white-space: nowrap;
+}
+
+.detail__step-label--active {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--color-ink);
+  white-space: nowrap;
+}
+
+.detail__step-line {
+  width: 22px;
+  height: 2px;
+  background: var(--color-hairline);
+  margin: 0 6px;
+}
+
+.detail__reject-btn {
+  margin-left: auto;
+  border: 1.5px solid #f43f5e;
+  background: transparent;
+  color: #e11d48;
+  font-size: 11.5px;
+  font-weight: 800;
+  padding: 6px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.detail__reject-btn--active {
+  background: linear-gradient(135deg, #fb7185, #e11d48);
+  color: #fff;
+  border-color: transparent;
+}
+
+/* ---------- Convert-to-employee banner ---------- */
+
+.detail__convert-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 16px 0 0;
+  background: #dcf6ef;
+  color: #0d6b5c;
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  flex-wrap: wrap;
+}
+
+.detail__convert-banner span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detail__converted-tag b {
+  font-family: var(--font-mono);
+}
+
+.detail__convert-form {
+  margin: 12px 0 0;
+  background: var(--color-paper);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+/* ---------- Timeline ---------- */
+
+.detail__timeline-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 10px;
+}
+
+.detail__timeline-head h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+}
+
+.detail__stage-form {
+  margin: 0 0 16px;
+  background: var(--color-paper);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.detail__timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tl-item {
+  display: flex;
+  gap: 14px;
+  padding: 4px 0 18px;
+  position: relative;
+}
+
+.tl-item::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 16px;
+  bottom: 0;
+  width: 2px;
+  background: var(--color-hairline);
+}
+
+.tl-item:last-child::before {
+  display: none;
+}
+
+.tl-item__dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-navy);
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+
+.tl-item__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.tl-item__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.tl-item__header strong {
+  font-size: 14px;
+}
+
+.tl-item__time {
+  font-size: 11px;
+  color: var(--color-slate);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
+
+.tl-item__interviewer {
+  font-size: 12px;
+  color: var(--color-slate);
+  display: block;
+  margin-top: 2px;
+}
+
+.tl-item__notes {
+  font-size: 13px;
+  color: var(--color-ink);
+  margin: 8px 0 0;
+  line-height: 1.5;
+}
+
+.tl-item__scorecard {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff7e6;
+  color: #94591a;
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font-size: 12.5px;
+  margin-top: 8px;
+}
+
+.tl-item__add-sc {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--color-navy);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 6px 0 0;
+}
+
+.tl-item__sc-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.tl-item__sc-form input {
+  flex: 1;
+  min-width: 120px;
+}
+
+.tl-item__sc-form button {
+  font-size: 12px;
+  padding: 8px 12px;
+}
