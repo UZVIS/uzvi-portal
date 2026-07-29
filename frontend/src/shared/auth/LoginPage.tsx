@@ -12,7 +12,7 @@ export function LoginPage() {
   const location = useLocation();
   const from =
     (location.state as { from?: { pathname: string } } | null)?.from
-      ?.pathname ?? "/dashboard";
+      ?.pathname ?? "/";
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();

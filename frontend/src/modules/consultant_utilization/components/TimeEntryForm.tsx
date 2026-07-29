@@ -1,11 +1,10 @@
-
 import { useState } from "react";
 import type { Project } from "../api";
 import "./TimeEntryForm.css";
 
 interface Props {
   projects: Project[];
-  onSubmit: (entry: { projectId: string; date: string; hours: number; billable: boolean }) => Promise<void>;
+  onSubmit: (entry: { projectId: string; date: string; hours: number; billable: boolean; notes: string }) => Promise<void>;
 }
 
 export function TimeEntryForm({ projects, onSubmit }: Props) {
@@ -13,6 +12,7 @@ export function TimeEntryForm({ projects, onSubmit }: Props) {
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [hours, setHours] = useState("");
   const [billable, setBillable] = useState(true);
+  const [notes, setNotes] = useState("");
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -26,8 +26,9 @@ export function TimeEntryForm({ projects, onSubmit }: Props) {
     }
     setStatus("saving");
     try {
-      await onSubmit({ projectId, date, hours: parsedHours, billable });
+      await onSubmit({ projectId, date, hours: parsedHours, billable, notes });
       setHours("");
+      setNotes("");
       setStatus("saved");
     } catch (err) {
       setStatus("error");
@@ -72,6 +73,15 @@ export function TimeEntryForm({ projects, onSubmit }: Props) {
       <label className="entry-form__checkbox">
         <input type="checkbox" checked={billable} onChange={(e) => setBillable(e.target.checked)} />
         Billable
+      </label>
+
+      <label className="entry-form__notes">
+        Notes
+        <textarea
+          placeholder="What was this for? (optional)"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+        />
       </label>
 
       <button type="submit" disabled={status === "saving"}>

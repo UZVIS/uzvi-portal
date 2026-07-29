@@ -1,9 +1,7 @@
-"""
-M4 - Expense Claims
-backend/app/modules/expense_claims/service.py
-"""
+
 import os
 import uuid
+from datetime import datetime, timezone
 from typing import List, Optional
 from collections import defaultdict
 
@@ -21,7 +19,7 @@ VALID_TRANSITIONS = {
     "Reimbursed": set(),
 }
 
-# Local disk storage for now. Move to cloud storage (S3 etc.) for production.
+
 RECEIPT_STORAGE_DIR = os.path.join(os.path.dirname(__file__), "receipt_uploads")
 os.makedirs(RECEIPT_STORAGE_DIR, exist_ok=True)
 
@@ -42,7 +40,7 @@ class InvalidReceiptError(Exception):
     pass
 
 
-# --- Categories ---
+
 
 def create_category(db: Session, data: schemas.ExpenseCategoryCreate) -> models.ExpenseCategory:
     category = models.ExpenseCategory(**data.model_dump())
@@ -63,7 +61,7 @@ def get_category(db: Session, category_id: str) -> models.ExpenseCategory:
     return category
 
 
-# --- Claims ---
+
 
 def create_claim(db: Session, data: schemas.ExpenseClaimCreate) -> models.ExpenseClaim:
     """FR-EXP-01, FR-EXP-02 (cap enforcement)."""
@@ -129,11 +127,16 @@ def list_claims(db: Session, employee_id: Optional[str] = None) -> List[models.E
     return query.all()
 
 
-def _transition(db: Session, claim_id: str, new_status: str) -> models.ExpenseClaim:
+def _transition(
+    db: Session, claim_id: str, new_status: str, decided_by_role: Optional[str] = None
+) -> models.ExpenseClaim:
     claim = get_claim(db, claim_id)
     if new_status not in VALID_TRANSITIONS.get(claim.status, set()):
         raise InvalidTransitionError(f"Cannot move claim from {claim.status} to {new_status}")
     claim.status = new_status
+    if new_status in ("Approved", "Rejected"):
+        claim.decided_by_role = decided_by_role
+        claim.decided_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(claim)
     return claim
@@ -141,15 +144,15 @@ def _transition(db: Session, claim_id: str, new_status: str) -> models.ExpenseCl
 
 def approve_claim(db: Session, claim_id: str, decided_by_role: str) -> models.ExpenseClaim:
     claim = get_claim(db, claim_id)
-    if claim.amount > ADMIN_APPROVAL_THRESHOLD and decided_by_role not in ("Admin", "HR-Restricted"):
+    if claim.amount > ADMIN_APPROVAL_THRESHOLD and decided_by_role not in ("Admin/Leadership", "HR-Restricted"):
         raise PermissionError(
             f"Claim {claim_id} exceeds {ADMIN_APPROVAL_THRESHOLD} and requires Admin/Finance approval"
         )
-    return _transition(db, claim_id, "Approved")
+    return _transition(db, claim_id, "Approved", decided_by_role)
 
 
-def reject_claim(db: Session, claim_id: str) -> models.ExpenseClaim:
-    return _transition(db, claim_id, "Rejected")
+def reject_claim(db: Session, claim_id: str, decided_by_role: str) -> models.ExpenseClaim:
+    return _transition(db, claim_id, "Rejected", decided_by_role)
 
 
 def mark_reimbursed(db: Session, claim_id: str) -> models.ExpenseClaim:

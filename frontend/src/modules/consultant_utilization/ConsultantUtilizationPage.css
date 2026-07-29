@@ -4,6 +4,8 @@
   padding: 32px 24px 60px;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #1f2430;
+  background: #f7f5f2;
+  min-height: 100vh;
 }
 
 .cu-page--status {
@@ -43,7 +45,7 @@
 
 .cu-panel {
   background: #ffffff;
-  border: 1px solid #e3e6ea;
+  border: 1px solid #e6ddd3;
   border-radius: 10px;
   padding: 18px 20px;
 }
@@ -78,6 +80,27 @@
   border-bottom: 1px solid #f3f4f6;
 }
 
+.cu-panel--entries {
+  margin-top: 24px;
+}
+
+.cu-panel__empty-inline {
+  color: #9aa1ab;
+}
+
+.cu-table--entries th,
+.cu-table--entries td {
+  padding-right: 16px;
+}
+
+.cu-table__notes {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #4b5563;
+}
+
 .cu-trend__row {
   display: flex;
   align-items: center;
@@ -101,7 +124,7 @@
 
 .cu-trend__bar {
   height: 100%;
-  background: #2f5d50;
+  background: #E2622E;
   border-radius: 4px;
 }
 

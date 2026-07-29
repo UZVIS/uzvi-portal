@@ -1,7 +1,9 @@
-
 import { useEffect, useState } from "react";
-import { utilizationApi, type OrgUtilizationDashboard } from "./api";
+import { utilizationApi, type OrgUtilizationDashboard, type Project } from "./api";
+import { AddProjectForm } from "./components/AddProjectForm";
+import { AdminLogHoursForm } from "./components/AdminLogHoursForm";
 import "./OrgDashboardPage.css";
+import "../shared-theme.css";
 
 function isoDateNDaysAgo(n: number): string {
   const d = new Date();
@@ -15,15 +17,21 @@ export function OrgDashboardPage() {
   const [capacityHoursPerWeek, setCapacityHoursPerWeek] = useState("40");
 
   const [dashboard, setDashboard] = useState<OrgUtilizationDashboard | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   function load(start: string, end: string, capacity: number) {
     setLoading(true);
     setLoadError(null);
-    utilizationApi
-      .getOrgDashboard(start, end, capacity)
-      .then(setDashboard)
+    Promise.all([
+      utilizationApi.getOrgDashboard(start, end, capacity),
+      utilizationApi.listProjects(),
+    ])
+      .then(([dash, projectList]) => {
+        setDashboard(dash);
+        setProjects(projectList);
+      })
       .catch((err) => setLoadError(err instanceof Error ? err.message : "Couldn't load the org dashboard."))
       .finally(() => setLoading(false));
   }
@@ -40,10 +48,48 @@ export function OrgDashboardPage() {
     load(periodStart, periodEnd, Number(capacityHoursPerWeek) || 40);
   }
 
+  async function handleAddProject(input: {
+    name: string;
+    projectType: string;
+    billingRate: number | null;
+    costRate: number | null;
+  }) {
+    await utilizationApi.createProject({
+      project_id: `P-${Date.now()}`,
+      name: input.name,
+      project_type: input.projectType,
+      billing_rate: input.billingRate,
+      cost_rate: input.costRate,
+    });
+    load(periodStart, periodEnd, Number(capacityHoursPerWeek) || 40); // refresh so new project shows in margins table
+  }
+
+  async function handleAdminLogHours(input: {
+    employeeId: string;
+    projectId: string;
+    date: string;
+    hours: number;
+    billable: boolean;
+  }) {
+    await utilizationApi.createTimeEntry({
+      entry_id: `TE-${input.employeeId}-${input.projectId}-${input.date}-${Date.now()}`,
+      employee_id: input.employeeId,
+      project_id: input.projectId,
+      date: input.date,
+      hours: input.hours,
+      billable_flag: input.billable,
+    });
+    load(periodStart, periodEnd, Number(capacityHoursPerWeek) || 40); // refresh so the entry shows in utilization-by-employee
+  }
+
   return (
     <div className="od-page">
       <h1 className="od-page__title">Org Utilization Dashboard</h1>
-      <p className="od-page__subtitle">Admin/Leadership view (not yet role-restricted)</p>
+      <p className="od-page__subtitle">Admin/Leadership view</p>
+
+      <AddProjectForm onSubmit={handleAddProject} />
+
+      <AdminLogHoursForm projects={projects} onSubmit={handleAdminLogHours} />
 
       <form className="od-filters" onSubmit={handleApply}>
         <label>

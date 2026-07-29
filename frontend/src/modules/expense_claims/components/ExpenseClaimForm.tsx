@@ -7,24 +7,35 @@
  * creation. Receipt is a real file, uploaded in a second step after the
  * claim exists (multipart/form-data can't be mixed into the same JSON
  * body as the rest of the claim fields).
+ *
+ * FR-EXP-06: optional project link, so a claim can feed into the
+ * per-project expense rollup (cross-module link to M1's Project table).
  */
 import { useState } from "react";
 import type { ExpenseCategory } from "../api";
 import "./ExpenseClaimForm.css";
 
+interface ProjectOption {
+  project_id: string;
+  name: string;
+}
+
 interface Props {
   categories: ExpenseCategory[];
+  projects: ProjectOption[];
   onSubmit: (input: {
     categoryId: string;
     amount: number;
     date: string;
     description: string;
     receiptFile: File | null;
+    projectId: string | null;
   }) => Promise<void>;
 }
 
-export function ExpenseClaimForm({ categories, onSubmit }: Props) {
+export function ExpenseClaimForm({ categories, projects, onSubmit }: Props) {
   const [categoryId, setCategoryId] = useState(categories[0]?.category_id ?? "");
+  const [projectId, setProjectId] = useState("");
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [description, setDescription] = useState("");
@@ -44,10 +55,18 @@ export function ExpenseClaimForm({ categories, onSubmit }: Props) {
     }
     setStatus("saving");
     try {
-      await onSubmit({ categoryId, amount: parsedAmount, date, description, receiptFile });
+      await onSubmit({
+        categoryId,
+        amount: parsedAmount,
+        date,
+        description,
+        receiptFile,
+        projectId: projectId || null,
+      });
       setAmount("");
       setDescription("");
       setReceiptFile(null);
+      setProjectId("");
       setStatus("saved");
     } catch (err) {
       setStatus("error");
@@ -88,6 +107,18 @@ export function ExpenseClaimForm({ categories, onSubmit }: Props) {
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </label>
       </div>
+
+      <label className="claim-form__field">
+        Project (optional)
+        <select value={projectId} onChange={(e) => setProjectId(e.target.value)}>
+          <option value="">No project</option>
+          {projects.map((p) => (
+            <option key={p.project_id} value={p.project_id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+      </label>
 
       <label className="claim-form__field">
         Description
