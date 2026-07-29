@@ -27,6 +27,8 @@ from app.database import Base
 import app.modules.directory.models
 import app.modules.onboarding.models
 import app.modules.documents.models
+import app.modules.leave.models
+import app.modules.calendar.models
 import app.modules.training.models
 import app.modules.expense_claims.models
 import app.modules.assets.models

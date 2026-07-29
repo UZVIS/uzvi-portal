@@ -1,12 +1,12 @@
 .funnel-page {
+  position: relative;
   max-width: 1180px;
   width: 100%;
   margin: 0 auto;
-  flex: 1 1 auto;
-  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 18px;
+  padding-bottom: 8px;
 }
 
 .error-banner {
@@ -124,11 +124,10 @@
 }
 
 .funnel-page__grid {
-  flex: 1 1 auto;
-  min-height: 0;
   display: grid;
   grid-template-columns: 1.2fr 1fr;
-  gap: 14px;
+  gap: 18px;
+  align-items: start;
 }
 
 @media (max-width: 950px) {
@@ -141,15 +140,14 @@
   background: var(--color-surface);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
-  padding: 16px 20px;
+  padding: 18px 20px 20px;
   display: flex;
   flex-direction: column;
-  min-height: 0;
 }
 
 .panel__header {
   flex: 0 0 auto;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .panel__header h2 {
@@ -157,16 +155,29 @@
   margin: 0;
 }
 
+.panel__subtitle {
+  margin: 3px 0 0;
+  font-size: 12px;
+  color: var(--color-slate);
+}
+
 .funnel-page__chart-panel .panel__body {
-  flex: 1;
-  min-height: 0;
+  padding-top: 4px;
 }
 
 .funnel-page__table-panel .panel__body {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
   overflow-x: auto;
+}
+
+.funnel-page__timeinstage-panel {
+  margin-top: 2px;
+}
+
+.funnel-page__timeinstage-panel .panel__header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
 }
 
 .fp-table {
@@ -215,8 +226,38 @@
   font-family: var(--font-mono);
 }
 
+.fp-table__days {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
 .fp-table__reject-row td {
   color: var(--color-slate);
   font-size: 12px;
   font-style: italic;
+}
+
+/* Back sits in AppLayout top padding — content does not move */
+.rec-back-top {
+  position: absolute;
+  top: -22px;
+  left: 0;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.15s ease;
+}
+.rec-back-top:hover {
+  color: #f37021;
 }
