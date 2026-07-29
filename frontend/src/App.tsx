@@ -19,6 +19,8 @@ import { SourcingPage } from "./modules/recruiting/SourcingPage";
 import { CandidatePipelinePage } from "./modules/recruiting/CandidatePipelinePage";
 import { DuplicatesPage } from "./modules/recruiting/DuplicatesPage";
 import { CandidateDetailPage } from "./modules/recruiting/CandidateDetailPage";
+import TrainingModulePage from "./modules/training/TrainingModulePage";
+import ProgramDetailsPage from "./modules/training/ProgramDetailsPage";
 
 function HomePage() {
   return (
@@ -29,6 +31,7 @@ function HomePage() {
         <li><Link to="/utilization">Consultant Utilization</Link></li>
         <li><Link to="/expenses">Expense Claims</Link></li>
         <li><Link to="/helpdesk">Helpdesk</Link></li>
+        <li><Link to="/training">Training</Link></li>
         <li><Link to="/recruiting">Recruiting / Candidate Pipeline </Link></li>
 
       </ul>
@@ -117,6 +120,25 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+
+          <Route
+            path="/training"
+            element={
+              <ProtectedRoute>
+                <TrainingModulePage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/training/programs/:programId"
+            element={
+              <ProtectedRoute>
+                <ProgramDetailsPage />
+              </ProtectedRoute>
+            }
+          />
+          
           <Route
             path="/recruiting"
             element={
