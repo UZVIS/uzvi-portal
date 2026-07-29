@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../shared/auth/AuthContext";
 import { listAllAnnouncements, listFeedForEmployee, acknowledgeAnnouncement } from "./api";
@@ -7,7 +7,6 @@ import { AnnouncementCard } from "./components/AnnouncementCard";
 import { AcknowledgmentDrawer } from "./components/AcknowledgmentDrawer";
 import {
   IconArrowLeft,
-  IconBell,
   IconInbox,
   IconLayers,
   IconMegaphone,
@@ -67,50 +66,44 @@ export function AnnouncementsPage() {
     }
   }
 
-  const stats = useMemo(() => {
-    const total = announcements.length;
-    const needsAck = announcements.filter((a) => a.requires_ack).length;
-    return { total, needsAck };
-  }, [announcements]);
-
   if (!employee) return null;
 
   return (
-    <div className="c-feed-screen">
-      <button className="c-back-link" onClick={() => navigate("/dashboard")}>
-        <IconArrowLeft size={14} /> Back to Dashboard
-      </button>
+    <div className="announcements-page">
+      <div className="announcements-header">
+        <button className="announcements-back" onClick={() => navigate("/dashboard")}>
+          <IconArrowLeft size={14} /> Back
+        </button>
 
-      <div className="c-toolbar">
-        <div className="c-toolbar__pills">
+        <div className="announcements-header__row">
+          <div>
+            <h1>Announcements</h1>
+            <p>Company notices, updates, and required acknowledgments.</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="c-toolbar__pills">
+        {view === "feed" && (
           <button
-            className={`c-pill ${view === "feed" ? "c-pill--active c-pill--indigo" : ""}`}
+            className="c-pill c-pill--active c-pill--indigo"
             onClick={() => setView("feed")}
           >
             <IconInbox size={15} /> My Feed
           </button>
-          {canManage && (
-            <button
-              className={`c-pill ${view === "all" ? "c-pill--active c-pill--violet" : ""}`}
-              onClick={() => setView("all")}
-            >
-              <IconLayers size={15} /> All Announcements
-            </button>
-          )}
-        </div>
+        )}
 
-        <div className="c-toolbar__stats">
-          <span className="c-toolbar__stat c-toolbar__stat--blue">
-            <IconInbox size={13} /> {stats.total} total
-          </span>
-          <span className="c-toolbar__stat c-toolbar__stat--amber">
-            <IconBell size={13} /> {stats.needsAck} need ack
-          </span>
-        </div>
-
+        {canManage && view === "all" && (
+          <button
+            className="c-pill c-pill--active c-pill--violet"
+            onClick={() => setView("all")}
+          >
+            <IconLayers size={15} /> All Announcements
+          </button>
+        )}
       </div>
 
-      <main className="c-feed">
+      <div className="announcements-card">
         {error && (
           <p className="error-banner" role="alert">
             {error}
@@ -118,20 +111,20 @@ export function AnnouncementsPage() {
         )}
 
         {isLoading && (
-          <div className="c-feed__state">
+          <div className="announcements-state">
             <IconInbox size={22} />
             <p>Fetching the latest notices…</p>
           </div>
         )}
 
         {!isLoading && announcements.length === 0 && !error && (
-          <div className="c-feed__state">
+          <div className="announcements-state">
             <IconMegaphone size={22} />
             <p>Nothing here yet. Check back soon.</p>
           </div>
         )}
 
-        <ol className="c-ledger">
+        <ol className="notice-list">
           {announcements.map((a) => (
             <AnnouncementCard
               key={a.announcement_id}
@@ -139,12 +132,13 @@ export function AnnouncementsPage() {
               currentEmployeeId={employee.employee_id}
               canManage={canManage}
               isAcking={pendingAckId === a.announcement_id}
+              showAcknowledgeAction={view === "feed"}
               onAcknowledge={() => handleAcknowledge(a.announcement_id)}
               onViewAcknowledgments={() => setAckDrawerId(a.announcement_id)}
             />
           ))}
         </ol>
-      </main>
+      </div>
 
       {ackDrawerId && (
         <AcknowledgmentDrawer
