@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { recruitingApi } from "./api";
 import type { Candidate, DuplicateFlag } from "./api";
-import { STAGE_META, initialsOf } from "./stageMeta";
-import type { RecruitingOutletContext } from "./RecruitingModulePage";
 import {
   IconSparkles,
   IconUsers,
@@ -25,7 +23,6 @@ function greetingForHour(hour: number): string {
 
 export function RecruitingHomePage() {
   const navigate = useNavigate();
-  const { openCandidate } = useOutletContext<RecruitingOutletContext>();
 
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [duplicates, setDuplicates] = useState<DuplicateFlag[]>([]);
@@ -46,7 +43,10 @@ export function RecruitingHomePage() {
         setDuplicates(dupes);
       })
       .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Couldn't load the hub.");
+        if (!cancelled)
+          setError(
+            err instanceof Error ? err.message : "Couldn't load the hub."
+          );
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false);
@@ -65,24 +65,19 @@ export function RecruitingHomePage() {
     return { total, hired, active, conversion };
   }, [candidates]);
 
-  const recent = useMemo(
-    () =>
-      [...candidates]
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-        .slice(0, 5),
-    [candidates]
-  );
-
   const greeting = greetingForHour(new Date().getHours());
 
   return (
     <div className="rhub">
-      {error && <p className="error-banner">{error}</p>}
+      {error && (
+        <div className="rhub-error" role="alert">
+          {error}
+        </div>
+      )}
 
+      {/* ── Header card ─────────────────────────────────────────────── */}
       <section className="rhub-hero">
-        <div className="rhub-hero__blob rhub-hero__blob--a" aria-hidden="true" />
-        <div className="rhub-hero__blob rhub-hero__blob--b" aria-hidden="true" />
-        <div className="rhub-hero__content">
+        <div className="rhub-hero__left">
           <p className="rhub-hero__eyebrow">
             <IconSparkles size={14} /> {greeting}
           </p>
@@ -91,149 +86,114 @@ export function RecruitingHomePage() {
             Application to offer — sourcing, the candidate pipeline, and hire
             conversion, all in one place.
           </p>
+        </div>
+      </section>
 
-          <div className="rhub-hero__stats">
-            <div className="rhub-stat-pill">
-              <span className="rhub-stat-pill__icon rhub-stat-pill__icon--blue">
-                <IconUsers size={16} />
-              </span>
-              <div>
-                <strong>{isLoading ? "…" : totals.total}</strong>
-                <span>Total candidates</span>
-              </div>
-            </div>
-            <div className="rhub-stat-pill">
-              <span className="rhub-stat-pill__icon rhub-stat-pill__icon--amber">
-                <IconClock size={16} />
-              </span>
-              <div>
-                <strong>{isLoading ? "…" : totals.active}</strong>
-                <span>In active stages</span>
-              </div>
-            </div>
-            <div className="rhub-stat-pill">
-              <span className="rhub-stat-pill__icon rhub-stat-pill__icon--green">
-                <IconCheckCircle size={16} />
-              </span>
-              <div>
-                <strong>{isLoading ? "…" : totals.hired}</strong>
-                <span>Hired</span>
-              </div>
-            </div>
-            <div className="rhub-stat-pill">
-              <span className="rhub-stat-pill__icon rhub-stat-pill__icon--navy">
-                <IconTarget size={16} />
-              </span>
-              <div>
-                <strong>{isLoading ? "…" : `${totals.conversion}%`}</strong>
-                <span>Hire conversion</span>
-              </div>
-            </div>
+      {/* ── Stat cards ──────────────────────────────────────────────── */}
+      <section className="rhub-stats">
+        <div className="rhub-stat">
+          <div className="rhub-stat__icon rhub-stat__icon--blue">
+            <IconUsers size={18} />
+          </div>
+          <div>
+            <p className="rhub-stat__value">{isLoading ? "…" : totals.total}</p>
+            <p className="rhub-stat__label">Total candidates</p>
+          </div>
+        </div>
+        <div className="rhub-stat">
+          <div className="rhub-stat__icon rhub-stat__icon--amber">
+            <IconClock size={18} />
+          </div>
+          <div>
+            <p className="rhub-stat__value">{isLoading ? "…" : totals.active}</p>
+            <p className="rhub-stat__label">In active stages</p>
+          </div>
+        </div>
+        <div className="rhub-stat">
+          <div className="rhub-stat__icon rhub-stat__icon--green">
+            <IconCheckCircle size={18} />
+          </div>
+          <div>
+            <p className="rhub-stat__value">{isLoading ? "…" : totals.hired}</p>
+            <p className="rhub-stat__label">Hired</p>
+          </div>
+        </div>
+        <div className="rhub-stat">
+          <div className="rhub-stat__icon rhub-stat__icon--indigo">
+            <IconTarget size={18} />
+          </div>
+          <div>
+            <p className="rhub-stat__value">
+              {isLoading ? "…" : `${totals.conversion}%`}
+            </p>
+            <p className="rhub-stat__label">Hire conversion</p>
           </div>
         </div>
       </section>
 
+      {/* ── Module cards ────────────────────────────────────────────── */}
       <section className="rhub-grid">
-        <button className="rhub-card rhub-card--indigo" onClick={() => navigate("/recruiting/funnel")}>
-          <span className="rhub-card__icon">
-            <IconTrendingUp size={26} />
-          </span>
-          <div className="rhub-card__text">
-            <h3>Pipeline Funnel</h3>
-            <p>Stage-by-stage drop-off from application to hire.</p>
+        <button
+          className="rhub-card"
+          onClick={() => navigate("/recruiting/funnel")}
+        >
+          <div className="rhub-card__icon rhub-card__icon--indigo">
+            <IconTrendingUp size={22} />
           </div>
+          <h3>Pipeline Funnel</h3>
+          <p>Stage-by-stage drop-off from application to hire.</p>
           <span className="rhub-card__go">
-            Open <IconArrowRight size={15} />
+            Open <IconArrowRight size={14} />
           </span>
         </button>
 
-        <button className="rhub-card rhub-card--violet" onClick={() => navigate("/recruiting/pipeline")}>
-          <span className="rhub-card__icon">
-            <IconLayoutGrid size={26} />
-          </span>
-          <div className="rhub-card__text">
-            <h3>Candidate Pipeline</h3>
-            <p>Drag-and-drop board — move candidates between stages.</p>
+        <button
+          className="rhub-card"
+          onClick={() => navigate("/recruiting/pipeline")}
+        >
+          <div className="rhub-card__icon rhub-card__icon--violet">
+            <IconLayoutGrid size={22} />
           </div>
+          <h3>Candidate Pipeline</h3>
+          <p>Drag-and-drop board — move candidates between stages.</p>
           <span className="rhub-card__go">
-            Open <IconArrowRight size={15} />
+            Open <IconArrowRight size={14} />
           </span>
         </button>
 
-        <button className="rhub-card rhub-card--teal" onClick={() => navigate("/recruiting/sourcing")}>
-          <span className="rhub-card__icon">
-            <IconUsers size={26} />
-          </span>
-          <div className="rhub-card__text">
-            <h3>Sourcing &amp; Roles</h3>
-            <p>Where candidates come from, and which roles are hottest.</p>
+        <button
+          className="rhub-card"
+          onClick={() => navigate("/recruiting/sourcing")}
+        >
+          <div className="rhub-card__icon rhub-card__icon--teal">
+            <IconUsers size={22} />
           </div>
+          <h3>Sourcing &amp; Roles</h3>
+          <p>Where candidates come from, and which roles are hottest.</p>
           <span className="rhub-card__go">
-            Open <IconArrowRight size={15} />
+            Open <IconArrowRight size={14} />
           </span>
         </button>
 
-        <button className="rhub-card rhub-card--spotlight" onClick={() => navigate("/recruiting/duplicates")}>
-          <span className="rhub-card__spotlight-icon">
-            <IconCopyWarn size={26} />
-          </span>
-          <div className="rhub-card__text">
-            <h3>Duplicate Watch</h3>
-            <p>
-              {isLoading
-                ? "Checking for duplicates…"
-                : duplicates.length === 0
+        <button
+          className="rhub-card rhub-card--alert"
+          onClick={() => navigate("/recruiting/duplicates")}
+        >
+          <div className="rhub-card__icon rhub-card__icon--rose">
+            <IconCopyWarn size={22} />
+          </div>
+          <h3>Duplicate Watch</h3>
+          <p>
+            {isLoading
+              ? "Checking for duplicates…"
+              : duplicates.length === 0
                 ? "All clear — no likely duplicates."
                 : `${duplicates.length} likely duplicate pair(s) to review.`}
-            </p>
-          </div>
-          <span className="rhub-card__go rhub-card__go--light">
-            Open <IconArrowRight size={15} />
+          </p>
+          <span className="rhub-card__go">
+            Open <IconArrowRight size={14} />
           </span>
         </button>
-      </section>
-
-      <section className="rhub-recent">
-        <div className="rhub-recent__header">
-          <h2>
-            <IconClock size={16} /> Recently added candidates
-          </h2>
-          {candidates.length > 0 && (
-            <button className="rhub-recent__viewall" onClick={() => navigate("/recruiting/pipeline")}>
-              View all <IconArrowRight size={13} />
-            </button>
-          )}
-        </div>
-
-        {isLoading && <p className="rhub-recent__state">Loading candidates…</p>}
-
-        {!isLoading && recent.length === 0 && (
-          <p className="rhub-recent__state">No candidates logged yet.</p>
-        )}
-
-        <div className="rhub-recent__list">
-          {recent.map((c) => {
-            const meta = STAGE_META[c.stage];
-            return (
-              <div
-                key={c.candidate_id}
-                className="rhub-recent__item"
-                onClick={() => openCandidate(c.candidate_id)}
-              >
-                <span className="rhub-recent__item-badge" style={{ background: meta.gradient }}>
-                  {initialsOf(c.name)}
-                </span>
-                <div className="rhub-recent__item-text">
-                  <span className="rhub-recent__item-title">{c.name}</span>
-                  <span className="rhub-recent__item-meta">{c.applied_role}</span>
-                </div>
-                <span className="rhub-recent__badge" style={{ background: meta.soft, color: meta.solid }}>
-                  {c.stage}
-                </span>
-              </div>
-            );
-          })}
-        </div>
       </section>
     </div>
   );
