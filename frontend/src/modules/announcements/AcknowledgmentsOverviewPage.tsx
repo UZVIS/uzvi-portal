@@ -11,7 +11,6 @@ import {
   IconClock,
   IconLayers,
   IconShield,
-  IconUsers,
 } from "./components/icons";
 import { parseServerDate } from "../../shared/utils/date";
 import "./AcknowledgmentsOverviewPage.css";
@@ -171,159 +170,149 @@ export function AcknowledgmentsOverviewPage() {
   }, [summaries]);
 
   return (
-    <div className="ack-overview-screen">
-      <header className="ack-overview-topbar">
-        <button
-          className="ack-overview-topbar__back"
-          onClick={() => (selected ? closeAnnouncement() : navigate("/dashboard"))}
-        >
-          <IconArrowLeft size={16} /> {selected ? "Back to announcements" : "Back"}
-        </button>
-      </header>
+    <div className="ack-overview-page">
+      <button
+        className="ack-overview-back"
+        onClick={() => (selected ? closeAnnouncement() : navigate("/dashboard"))}
+      >
+        <IconArrowLeft size={14} /> {selected ? "Back to announcements" : "Back to dashboard"}
+      </button>
 
-      <div className="ack-overview-page">
-        {!selected && (
-          <>
-            <div className="ack-overview-page__header">
-              <span className="ack-overview-page__icon">
-                <IconUsers size={22} />
-              </span>
-              <div>
-                <h1>Acknowledgments</h1>
-                <p>Pick an announcement to see who's acknowledged it.</p>
-              </div>
-              {overallSummary && (
-                <div className="ack-overview-page__summary">
-                  <strong>{overallSummary.acked}</strong> / {overallSummary.total} acknowledged
-                </div>
-              )}
+      {!selected && (
+        <>
+          <div className="ack-overview-header">
+            <div>
+              <h1>Acknowledgments</h1>
+              <p>Pick an announcement to see who's acknowledged it.</p>
             </div>
-
-            {listError && (
-              <p className="error-banner" role="alert">
-                {listError}
-              </p>
+            {overallSummary && (
+              <div className="ack-overview-summary">
+                <strong>{overallSummary.acked}</strong> / {overallSummary.total} acknowledged
+              </div>
             )}
+          </div>
 
-            {isListLoading && <p className="ack-overview-page__state">Loading announcements…</p>}
+          {listError && (
+            <p className="error-banner" role="alert">
+              {listError}
+            </p>
+          )}
 
-            {!isListLoading && summaries && summaries.length === 0 && !listError && (
-              <p className="ack-overview-page__state">
-                No announcements currently require acknowledgment.
-              </p>
-            )}
+          {isListLoading && <p className="ack-overview-state">Loading announcements…</p>}
 
-            <div className="ack-announcement-list">
-              {summaries?.map((s) => {
-                const { label, kind } = categoryFor(s.announcement);
-                const Icon = KIND_ICON[kind];
-                const pending = s.totalCount - s.ackedCount;
-                return (
-                  <button
-                    key={s.announcement.announcement_id}
-                    className={`ack-announcement-item ack-announcement-item--${kind}`}
-                    onClick={() => openAnnouncement(s.announcement)}
-                  >
-                    <span className="ack-announcement-item__icon">
-                      <Icon size={18} />
-                    </span>
-                    <div className="ack-announcement-item__text">
-                      <h3>{s.announcement.title}</h3>
-                      <div className="ack-announcement-item__meta">
-                        <span>{label}</span>
-                        <span>
-                          <IconClock size={12} /> {formatPostedAt(s.announcement.posted_at)}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="ack-announcement-item__stats">
-                      <span className="ack-announcement-item__count">
-                        {s.ackedCount} / {s.totalCount} acknowledged
+          {!isListLoading && summaries && summaries.length === 0 && !listError && (
+            <p className="ack-overview-state">
+              No announcements currently require acknowledgment.
+            </p>
+          )}
+
+          <div className="ack-announcement-list">
+            {summaries?.map((s) => {
+              const { label, kind } = categoryFor(s.announcement);
+              const Icon = KIND_ICON[kind];
+              const pending = s.totalCount - s.ackedCount;
+              return (
+                <button
+                  key={s.announcement.announcement_id}
+                  className={`ack-announcement-item ack-announcement-item--${kind}`}
+                  onClick={() => openAnnouncement(s.announcement)}
+                >
+                  <span className="ack-announcement-item__icon">
+                    <Icon size={18} />
+                  </span>
+                  <div className="ack-announcement-item__text">
+                    <h3>{s.announcement.title}</h3>
+                    <div className="ack-announcement-item__meta">
+                      <span>{label}</span>
+                      <span>
+                        <IconClock size={12} /> {formatPostedAt(s.announcement.posted_at)}
                       </span>
-                      {pending > 0 ? (
-                        <span className="ack-announcement-item__pending">{pending} pending</span>
-                      ) : (
-                        <span className="ack-announcement-item__done">
-                          <IconCheckCircle size={12} /> All acknowledged
-                        </span>
-                      )}
                     </div>
-                    <IconArrowRight size={16} className="ack-announcement-item__go" />
-                  </button>
-                );
-              })}
-            </div>
-          </>
-        )}
+                  </div>
+                  <div className="ack-announcement-item__stats">
+                    <span className="ack-announcement-item__count">
+                      {s.ackedCount} / {s.totalCount} acknowledged
+                    </span>
+                    {pending > 0 ? (
+                      <span className="ack-announcement-item__pending">{pending} pending</span>
+                    ) : (
+                      <span className="ack-announcement-item__done">
+                        <IconCheckCircle size={12} /> All acknowledged
+                      </span>
+                    )}
+                  </div>
+                  <IconArrowRight size={16} className="ack-announcement-item__go" />
+                </button>
+              );
+            })}
+          </div>
+        </>
+      )}
 
-        {selected && (
-          <>
-            <div className="ack-overview-page__header">
-              <span className="ack-overview-page__icon">
-                <IconUsers size={22} />
-              </span>
-              <div>
-                <h1>{selected.title}</h1>
-                <p>{categoryFor(selected).label} · acknowledgment status</p>
+      {selected && (
+        <>
+          <div className="ack-overview-header">
+            <div>
+              <h1>{selected.title}</h1>
+              <p>{categoryFor(selected).label} · acknowledgment status</p>
+            </div>
+            {rows && (
+              <div className="ack-overview-summary">
+                <strong>{rows.filter((r) => r.acknowledged).length}</strong> / {rows.length}{" "}
+                acknowledged
               </div>
-              {rows && (
-                <div className="ack-overview-page__summary">
-                  <strong>{rows.filter((r) => r.acknowledged).length}</strong> / {rows.length}{" "}
-                  acknowledged
-                </div>
-              )}
-            </div>
-
-            {detailError && (
-              <p className="error-banner" role="alert">
-                {detailError}
-              </p>
             )}
+          </div>
 
-            {isDetailLoading && (
-              <p className="ack-overview-page__state">Loading acknowledgment records…</p>
-            )}
+          {detailError && (
+            <p className="error-banner" role="alert">
+              {detailError}
+            </p>
+          )}
 
-            {!isDetailLoading && rows && (
-              <div className="ack-table-wrap">
-                <table className="ack-table">
-                  <thead>
-                    <tr>
-                      <th>Name</th>
-                      <th>Employee ID</th>
-                      <th>Role</th>
-                      <th>Status</th>
-                      <th>Acknowledged On</th>
+          {isDetailLoading && (
+            <p className="ack-overview-state">Loading acknowledgment records…</p>
+          )}
+
+          {!isDetailLoading && rows && (
+            <div className="ack-table-wrap">
+              <table className="ack-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Employee ID</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Acknowledged On</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row, i) => (
+                    <tr key={`${row.employee_id}-${i}`}>
+                      <td>{row.name}</td>
+                      <td className="ack-table__mono">{row.employee_id}</td>
+                      <td>{row.designation ?? row.access_tier}</td>
+                      <td>
+                        <span
+                          className={`ack-table__status ${
+                            row.acknowledged
+                              ? "ack-table__status--acked"
+                              : "ack-table__status--pending"
+                          }`}
+                        >
+                          <IconCheckCircle size={13} />
+                          {row.acknowledged ? "Acknowledged" : "Pending"}
+                        </span>
+                      </td>
+                      <td className="ack-table__mono">{formatAckAt(row.acknowledged_at)}</td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((row, i) => (
-                      <tr key={`${row.employee_id}-${i}`}>
-                        <td>{row.name}</td>
-                        <td className="ack-table__mono">{row.employee_id}</td>
-                        <td>{row.designation ?? row.access_tier}</td>
-                        <td>
-                          <span
-                            className={`ack-table__status ${
-                              row.acknowledged
-                                ? "ack-table__status--acked"
-                                : "ack-table__status--pending"
-                            }`}
-                          >
-                            <IconCheckCircle size={13} />
-                            {row.acknowledged ? "Acknowledged" : "Pending"}
-                          </span>
-                        </td>
-                        <td className="ack-table__mono">{formatAckAt(row.acknowledged_at)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </>
-        )}
-      </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

@@ -119,7 +119,6 @@ function AppLayout() {
 
   const getHeaderTitle = () => {
     if (location.pathname.startsWith("/announcements")) return "Announcements";
-    if (location.pathname === "/dashboard") return "Announcements";
     if (location.pathname.startsWith("/utilization"))
       return "Consultant Utilization";
     if (location.pathname.startsWith("/expenses")) return "Expense Claims";
@@ -129,6 +128,7 @@ function AppLayout() {
     if (location.pathname.startsWith("/onboarding")) return "Onboarding";
     if (location.pathname.startsWith("/documents")) return "Documents";
     if (location.pathname === "/calendar") return "Company Calendar";
+    if (location.pathname === "/dashboard") return "Announcements";
     if (location.pathname === "/") return "Leave Dashboard";
     return "UZVI Workspace";
   };
@@ -170,7 +170,7 @@ function AppLayout() {
             <NavLink to="/calendar" icon={CalendarDays} label="Company Calendar" />
           </div>
           <div className="mb-0.5">
-            <NavLink to="/announcements" icon={Megaphone} label="Announcements" />
+            <NavLink to="/dashboard" icon={Megaphone} label="Announcements" />
           </div>
           <div className="mb-0.5">
             <NavLink
