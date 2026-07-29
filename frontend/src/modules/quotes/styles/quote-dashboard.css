@@ -549,41 +549,42 @@ tbody tr:hover .opp-name {
 }
 
 .summary-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 18px 24px;
-  margin-bottom: 26px;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 18px 24px;
+  background: #fff;
+  border: 1px solid #e6e8ef;
+  border-radius: 18px;
+  overflow: hidden;
+  margin-bottom: 28px;
 }
 
 .summary-item {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  padding: 26px 32px;
+  border-bottom: 1px solid #edf1f7;
+}
+
+.summary-item:nth-last-child(-n + 3) {
+  border-bottom: none;
 }
 
 .summary-label {
-  font-size: 11px;
+  display: block;
+  font-size: 12px;
   font-weight: 700;
-  color: var(--muted-soft);
-  letter-spacing: 0.04em;
+  color: #8b95a7;
   text-transform: uppercase;
+  margin-bottom: 10px;
 }
 
 .summary-value {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+  color: #111827;
 }
 
 .summary-value-muted {
-  font-weight: 500;
-  color: var(--muted);
-  font-size: 12px;
-  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: #6b7280;
 }
 
 .section-head-row {
@@ -595,7 +596,7 @@ tbody tr:hover .opp-name {
 
 .section-title {
   margin: 0;
-  font-size: 16px;
+  font-size: 10px;
   font-weight: 700;
   color: var(--ink);
 }

@@ -2,10 +2,14 @@ import { Briefcase, Layers, FileText } from "lucide-react";
 
 interface QuoteDashboardCardsProps {
   totalOpportunities: number;
+  totalScenarios: number;
+  totalQuotes: number;
 }
 
 export default function QuoteDashboardCards({
   totalOpportunities,
+  totalScenarios,
+  totalQuotes,
 }: QuoteDashboardCardsProps) {
   return (
     <div className="dashboard-cards">
@@ -26,7 +30,7 @@ export default function QuoteDashboardCards({
           <Layers size={20} />
         </div>
         <div className="card-body">
-          <h2>0</h2>
+          <h2>{totalScenarios}</h2>
           <span className="card-title">Scenarios</span>
           <span className="card-caption">Scenarios created</span>
         </div>
@@ -37,7 +41,7 @@ export default function QuoteDashboardCards({
           <FileText size={20} />
         </div>
         <div className="card-body">
-          <h2>0</h2>
+          <h2>{totalQuotes}</h2>
           <span className="card-title">Quotes Generated</span>
           <span className="card-caption">Quotes generated</span>
         </div>
