@@ -82,11 +82,10 @@ const NavLink = ({
       to={to}
       className={`flex items-center justify-between px-3 py-2 mb-0.5 rounded-lg font-semibold transition-all duration-200 
                 ${isSubItem ? "ml-6 text-sm py-1.5" : "text-[13px]"} 
-                ${
-                  isActive
-                    ? "bg-[#F37021] text-white shadow-md"
-                    : "text-gray-400 hover:bg-white/5 hover:text-white"
-                }`}
+                ${isActive
+          ? "bg-[#F37021] text-white shadow-md"
+          : "text-gray-400 hover:bg-white/5 hover:text-white"
+        }`}
     >
       <div className="flex items-center space-x-3">
         <span className={isActive ? "text-white" : "text-gray-500"}>
@@ -101,12 +100,28 @@ const NavLink = ({
   );
 };
 
+// ─── Dashboard Router ────────────────────────────────────────────────────────
+// Dropdown nundi vachina activeView ni batti okate dashboard render avthundi
+const HomeDashboard = ({ view }: { view: string }) => {
+  if (view === "Manager") return <ManagerDashboard />;
+  if (view === "HR") return <HRDashboard />;
+  if (view === "Admin") return <AdminDashboard />;
+
+  // Default for "Employee" or anything else
+  return <LeaveDashboard />;
+};
+
 // ─── Authenticated layout ────────────────────────────────────────────────────
 function AppLayout() {
-  const [activeRole, setActiveRole] = useState("Employee");
   const location = useLocation();
   const navigate = useNavigate();
   const { employee, logout } = useAuth();
+
+  // Actual backend role of the user
+  const actualRole = employee?.access_tier ?? "Employee";
+
+  // State for the dropdown view switcher
+  const [activeView, setActiveView] = useState(actualRole);
 
   const displayName = employee?.name ?? "Admin User";
   const initials = displayName
@@ -120,8 +135,7 @@ function AppLayout() {
   const getHeaderTitle = () => {
     if (location.pathname.startsWith("/announcements")) return "Announcements";
     if (location.pathname === "/dashboard") return "Announcements";
-    if (location.pathname.startsWith("/utilization"))
-      return "Consultant Utilization";
+    if (location.pathname.startsWith("/utilization")) return "Consultant Utilization";
     if (location.pathname.startsWith("/expenses")) return "Expense Claims";
     if (location.pathname.startsWith("/recruiting")) return "Recruiting";
     if (location.pathname.startsWith("/helpdesk")) return "Helpdesk";
@@ -173,11 +187,7 @@ function AppLayout() {
             <NavLink to="/announcements" icon={Megaphone} label="Announcements" />
           </div>
           <div className="mb-0.5">
-            <NavLink
-              to="/utilization"
-              icon={Users}
-              label="Consultant Utilization"
-            />
+            <NavLink to="/utilization" icon={Users} label="Consultant Utilization" />
           </div>
           <div className="mb-0.5">
             <NavLink to="/expenses" icon={CreditCard} label="Expense Claims" />
@@ -231,31 +241,48 @@ function AppLayout() {
           </div>
 
           <div className="flex items-center space-x-4">
-            {/* Role switcher */}
+            {/* Conditional Dropdown based on actual user role */}
             <div className="flex items-center space-x-2 bg-[#2A2421] border border-white/10 rounded-xl px-3 py-1.5 hover:bg-white/5 transition">
               <UserCog size={16} className="text-[#F37021]" />
               <select
-                value={activeRole}
-                onChange={(e) => setActiveRole(e.target.value)}
-                className="bg-transparent text-gray-300 text-sm font-semibold outline-none cursor-pointer appearance-none pr-3"
+                value={activeView}
+                onChange={(e) => setActiveView(e.target.value)}
+                className="bg-transparent text-gray-300 text-sm font-semibold outline-none appearance-none pr-3 cursor-pointer"
               >
-                <option value="Employee" className="bg-[#1A1614] text-white">
-                  Employee
-                </option>
-                <option value="Manager" className="bg-[#1A1614] text-white">
-                  Manager
-                </option>
-                <option value="HR" className="bg-[#1A1614] text-white">
-                  HR
-                </option>
-                <option value="Admin" className="bg-[#1A1614] text-white">
-                  Admin
-                </option>
+                {/* Employee only sees Employee Option */}
+                {actualRole === "Employee" && (
+                  <option value="Employee" className="bg-[#1A1614] text-white">Employee</option>
+                )}
+
+                {/* Manager sees Manager & Employee Options */}
+                {actualRole === "Manager" && (
+                  <>
+                    <option value="Manager" className="bg-[#1A1614] text-white">Manager</option>
+                    <option value="Employee" className="bg-[#1A1614] text-white">Employee</option>
+                  </>
+                )}
+
+                {/* HR sees HR & Employee Options */}
+                {actualRole === "HR" && (
+                  <>
+                    <option value="HR" className="bg-[#1A1614] text-white">HR</option>
+                    <option value="Employee" className="bg-[#1A1614] text-white">Employee</option>
+                  </>
+                )}
+
+                {/* Admin sees only Admin Option */}
+                {actualRole === "Admin" && (
+                  <option value="Admin" className="bg-[#1A1614] text-white">Admin</option>
+                )}
+
+                {/* Fallback Option */}
+                {!["Employee", "Manager", "HR", "Admin"].includes(actualRole) && (
+                  <option value={actualRole} className="bg-[#1A1614] text-white">
+                    {actualRole}
+                  </option>
+                )}
               </select>
-              <ChevronDown
-                size={14}
-                className="text-gray-500 -ml-2 pointer-events-none"
-              />
+              <ChevronDown size={14} className="text-gray-500 -ml-2 pointer-events-none" />
             </div>
 
             {/* Date */}
@@ -297,148 +324,41 @@ function AppLayout() {
         {/* Page content */}
         <div className="flex-1 overflow-y-auto p-6 md:p-8">
           <Routes>
-            <Route
-              path="/"
-              element={
-                activeRole === "Employee" ? (
-                  <LeaveDashboard />
-                ) : activeRole === "Manager" ? (
-                  <ManagerDashboard />
-                ) : activeRole === "Admin" ? (
-                  <AdminDashboard />
-                ) : activeRole === "HR" ? (
-                  <HRDashboard />
-                ) : null
-              }
-            />
+            {/* View renders dynamically based on the dropdown selection */}
+            <Route path="/" element={<HomeDashboard view={activeView} />} />
 
-            <Route
-              path="/calendar"
-              element={<CalendarPage role={activeRole} />}
-            />
+            <Route path="/calendar" element={<CalendarPage role={actualRole} />} />
 
-            <Route
-              path="/announcements"
-              element={
-                <ProtectedRoute>
-                  <AnnouncementsPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/announcements/new"
-              element={
-                <ProtectedRoute>
-                  <ComposeAnnouncementPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/announcements/acknowledgments"
-              element={
-                <ProtectedRoute>
-                  <AcknowledgmentsOverviewPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <AnnouncementsDashboardPage />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/announcements" element={<ProtectedRoute><AnnouncementsPage /></ProtectedRoute>} />
+            <Route path="/announcements/new" element={<ProtectedRoute><ComposeAnnouncementPage /></ProtectedRoute>} />
+            <Route path="/announcements/acknowledgments" element={<ProtectedRoute><AcknowledgmentsOverviewPage /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><AnnouncementsDashboardPage /></ProtectedRoute>} />
 
-            <Route
-              path="/utilization"
-              element={
-                <ProtectedRoute>
-                  <UtilizationModulePage />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/utilization" element={<ProtectedRoute><UtilizationModulePage /></ProtectedRoute>} />
+            <Route path="/expenses" element={<ProtectedRoute><ExpenseClaimsModulePage /></ProtectedRoute>} />
 
-            <Route
-              path="/expenses"
-              element={
-                <ProtectedRoute>
-                  <ExpenseClaimsModulePage />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/recruiting"
-              element={
-                <ProtectedRoute>
-                  <RecruitingModulePage />
-                </ProtectedRoute>
-              }
-            >
+            <Route path="/recruiting" element={<ProtectedRoute><RecruitingModulePage /></ProtectedRoute>}>
               <Route index element={<RecruitingHomePage />} />
               <Route path="funnel" element={<PipelineFunnelPage />} />
               <Route path="sourcing" element={<SourcingPage />} />
               <Route path="pipeline" element={<CandidatePipelinePage />} />
               <Route path="duplicates" element={<DuplicatesPage />} />
-              <Route
-                path="candidates/:candidateId"
-                element={<CandidateDetailPage />}
-              />
+              <Route path="candidates/:candidateId" element={<CandidateDetailPage />} />
             </Route>
 
-            <Route
-              path="/helpdesk"
-              element={
-                <ProtectedRoute>
-                  <HelpdeskModulePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/helpdesk/tickets/:ticketId"
-              element={
-                <ProtectedRoute>
-                  <TicketDetailsPage />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/helpdesk" element={<ProtectedRoute><HelpdeskModulePage /></ProtectedRoute>} />
+            <Route path="/helpdesk/tickets/:ticketId" element={<ProtectedRoute><TicketDetailsPage /></ProtectedRoute>} />
 
-            <Route
-              path="/directory"
-              element={
-                <ProtectedRoute>
-                  <DirectoryPage />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/onboarding"
-              element={
-                <ProtectedRoute>
-                  <OnboardingPage />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/documents"
-              element={
-                <ProtectedRoute>
-                  <DocumentsPage />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/directory" element={<ProtectedRoute><DirectoryPage /></ProtectedRoute>} />
+            <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
+            <Route path="/documents" element={<ProtectedRoute><DocumentsPage /></ProtectedRoute>} />
 
             <Route
               path="*"
               element={
                 <div className="flex flex-col items-center justify-center h-64 bg-white rounded-2xl border border-gray-200 shadow-sm p-8 text-center">
                   <span className="text-4xl mb-4">🚧</span>
-                  <h3 className="text-lg font-bold text-gray-800">
-                    Module Under Construction
-                  </h3>
+                  <h3 className="text-lg font-bold text-gray-800">Module Under Construction</h3>
                   <p className="text-sm text-gray-500 mt-2">
                     This section is outside the scope of our current focus.
                   </p>
@@ -465,12 +385,10 @@ function AuthGate() {
     );
   }
 
-  // Public route
   if (location.pathname === "/login") {
     return <LoginPage />;
   }
 
-  // Not logged in → force login
   if (!employee) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
