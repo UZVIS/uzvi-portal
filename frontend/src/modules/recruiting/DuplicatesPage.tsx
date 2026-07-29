@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import { recruitingApi } from "./api";
 import type { Candidate, DuplicateFlag } from "./api";
 import { IconCopyWarn, IconArrowRight } from "./components/icons";
@@ -7,6 +7,7 @@ import type { RecruitingOutletContext } from "./RecruitingModulePage";
 import "./DuplicatesPage.css";
 
 export function DuplicatesPage() {
+  const navigate = useNavigate();
   const { openCandidate } = useOutletContext<RecruitingOutletContext>();
   const [flags, setFlags] = useState<DuplicateFlag[]>([]);
   const [candidates, setCandidates] = useState<Record<string, Candidate>>({});
@@ -50,7 +51,9 @@ export function DuplicatesPage() {
 
   return (
     <div className="dup-page">
-
+      <button type="button" className="rec-back-top" onClick={() => navigate("/recruiting")}>
+        ← Back
+      </button>
       <div className="dup-hero">
         <div className="dup-hero__icon">
           <IconCopyWarn size={24} />

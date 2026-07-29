@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { recruitingApi } from "./api";
 import type { FunnelStats } from "./api";
 import { StageFunnelChart } from "./components/charts";
@@ -7,6 +8,7 @@ import { IconTrendingUp, IconUsers, IconCheckCircle, IconTarget } from "./compon
 import "./PipelineFunnelPage.css";
 
 export function PipelineFunnelPage() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState<FunnelStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -58,7 +60,7 @@ export function PipelineFunnelPage() {
 
   const timeInStageRows = useMemo(() => {
     if (!stats) return [];
-    const order = ["Applied", "Screened", "Interview", "Offer"] as const;
+    const order = ["Applied", "Screened", "Interview"] as const;
     return order.map((stage) => {
       const entry = stats.time_in_stage.find((t) => t.stage === stage);
       return {
@@ -79,7 +81,9 @@ export function PipelineFunnelPage() {
 
   return (
     <div className="funnel-page">
-
+      <button type="button" className="rec-back-top" onClick={() => navigate("/recruiting")}>
+        ← Back
+      </button>
       <div className="funnel-page__hero">
         <div className="funnel-page__hero-icon">
           <IconTrendingUp size={24} />
