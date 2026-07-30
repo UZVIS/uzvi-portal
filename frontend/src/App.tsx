@@ -156,75 +156,51 @@ function AppLayout() {
   return (
     <div className="flex h-screen bg-[#F4F6F8] font-sans overflow-hidden">
       {/* ─── SIDEBAR ─────────────────────────────────────────────────────── */}
-      <aside className="w-[280px] bg-[#1A1614] flex flex-col justify-between shrink-0 transition-all">
+      <aside className="w-[280px] bg-[#1A1614] flex flex-col justify-between shrink-0">
+        {/* Logo */}
         <div className="px-4 py-3 flex items-center justify-between border-b border-white/5">
           <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 bg-[#F37021] text-white rounded-full flex items-center justify-center font-black text-lg shadow-lg">
+            <div className="w-9 h-9 bg-[#F37021] text-white rounded-full flex items-center justify-center font-black text-lg">
               U
             </div>
+
             <div>
-              <h1 className="font-extrabold text-white text-[15px] tracking-wide leading-tight">
+              <h1 className="font-extrabold text-white text-[15px]">
                 UZVI PORTAL
               </h1>
-              <p className="text-[11px] text-[#F37021] font-bold tracking-wide">
+              <p className="text-[11px] text-[#F37021] font-bold">
                 Employee Portal
               </p>
             </div>
           </div>
-          <button className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition">
-            <ChevronLeft size={16} />
-          </button>
         </div>
 
-        <div className="flex-1 overflow-hidden px-3 py-3">
-          <div className="mb-0.5">
-            <NavLink to="/" icon={Briefcase} label="Leave Management" />
-          </div>
-          <div className="mb-0.5">
-            <NavLink to="/calendar" icon={CalendarDays} label="Company Calendar" />
-          </div>
-          <div className="mb-0.5">
-            <NavLink to="/announcements" icon={Megaphone} label="Announcements" />
-          </div>
-          <div className="mb-0.5">
-            <NavLink to="/utilization" icon={Users} label="Consultant Utilization" />
-          </div>
-          <div className="mb-0.5">
-            <NavLink to="/expenses" icon={CreditCard} label="Expense Claims" />
-          </div>
-          <div className="mb-0.5">
-            <NavLink to="/recruiting" icon={UserPlus} label="Recruiting" />
-          </div>
-          <div className="mb-0.5">
-            <NavLink to="/helpdesk" icon={Headphones} label="Helpdesk" />
-          </div>
-          <div className="mb-0.5">
-            <NavLink to="/directory" icon={BookUser} label="Directory" />
-          </div>
-          <div className="mb-0.5">
-            <NavLink to="/onboarding" icon={ClipboardList} label="Onboarding" />
-          </div>
-          <div className="mb-0.5">
-            <NavLink to="/documents" icon={FolderOpen} label="Documents" />
-          </div>
+        {/* Navigation */}
+        <div className="flex-1 overflow-y-auto px-3 py-3">
+          <NavLink to="/" icon={Briefcase} label="Leave Management" />
+          <NavLink to="/calendar" icon={CalendarDays} label="Company Calendar" />
+          <NavLink to="/dashboard" icon={Megaphone} label="Announcements" />
+          <NavLink to="/utilization" icon={Users} label="Consultant Utilization" />
+          <NavLink to="/expenses" icon={CreditCard} label="Expense Claims" />
+          <NavLink to="/recruiting" icon={UserPlus} label="Recruiting" />
+          <NavLink to="/helpdesk" icon={Headphones} label="Helpdesk" />
+          <NavLink to="/directory" icon={BookUser} label="Directory" />
+          <NavLink to="/onboarding" icon={ClipboardList} label="Onboarding" />
+          <NavLink to="/documents" icon={FolderOpen} label="Documents" />
         </div>
 
-        {/* Bottom user card */}
-        <div className="px-3 py-2.5 border-t border-white/5 flex items-center justify-between hover:bg-white/5 cursor-pointer transition">
+        {/* Logged in User */}
+        <div className="px-3 py-3 border-t border-white/5">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-[#F37021] text-white rounded-full flex items-center justify-center font-bold text-sm shadow-md">
+            <div className="w-10 h-10 bg-[#F37021] rounded-full flex items-center justify-center text-white font-bold">
               {initials}
             </div>
+
             <div>
-              <p className="text-sm font-bold text-white leading-tight">
-                {displayName}
-              </p>
-              <p className="text-[11px] text-[#F37021] font-semibold">
-                {tierLabel}
-              </p>
+              <p className="text-white font-bold">{employee?.name}</p>
+              <p className="text-xs text-[#F37021]">{employee?.access_tier}</p>
             </div>
           </div>
-          <ChevronDown size={16} className="text-gray-500" />
         </div>
       </aside>
 
