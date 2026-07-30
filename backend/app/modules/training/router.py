@@ -27,7 +27,7 @@ from app.modules.training.schemas import (
 )
 
 router = APIRouter(
-    prefix="/training",
+    prefix="/api/training",
     tags=["Training"],
 )
 

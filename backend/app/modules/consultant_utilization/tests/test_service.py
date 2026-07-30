@@ -1,11 +1,5 @@
-"""
-M1 - Consultant Utilization Tracker
-backend/app/modules/consultant_utilization/tests/test_service.py
 
-Per NFR-MNT-03: unit tests for core business logic (calculations, validation).
-Uses an isolated in-memory SQLite DB - not the real app database.
-"""
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 from sqlalchemy import create_engine
@@ -109,6 +103,24 @@ def test_project_margin_calculation(db, employee):
 def test_time_entry_rejects_unknown_project(db, employee):
     with pytest.raises(service.NotFoundError):
         _log_hours(db, "E1", "NO_SUCH_PROJECT", date(2026, 1, 5), 5, True)
+
+def test_time_entry_rejects_future_date(db, employee):
+    service.create_project(
+        db, schemas.ProjectCreate(project_id="P1", name="Client A", project_type="real project",
+                                   billing_rate=100, cost_rate=50)
+    )
+    tomorrow = date.today() + timedelta(days=1)
+    with pytest.raises(service.FutureDateError):
+        _log_hours(db, "E1", "P1", tomorrow, 5, True)
+
+
+def test_time_entry_allows_today(db, employee):
+    service.create_project(
+        db, schemas.ProjectCreate(project_id="P1", name="Client A", project_type="real project",
+                                   billing_rate=100, cost_rate=50)
+    )
+    entry = _log_hours(db, "E1", "P1", date.today(), 5, True)
+    assert entry.date == date.today()
 
 
 def test_org_dashboard_groups_bench_risk_and_over_allocated(db, employee):

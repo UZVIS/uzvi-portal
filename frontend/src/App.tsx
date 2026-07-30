@@ -56,6 +56,8 @@ import { PipelineFunnelPage } from "./modules/recruiting/PipelineFunnelPage";
 import { SourcingPage } from "./modules/recruiting/SourcingPage";
 import { CandidatePipelinePage } from "./modules/recruiting/CandidatePipelinePage";
 import { CandidateDetailPage } from "./modules/recruiting/CandidateDetailPage";
+import TrainingModulePage from "./modules/training/TrainingModulePage";
+import ProgramDetailsPage from "./modules/training/ProgramDetailsPage";
 import { DuplicatesPage } from "./modules/recruiting/DuplicatesPage";
 import HelpdeskModulePage from "./modules/helpdesk/HelpdeskModulePage";
 import TicketDetailsPage from "./modules/helpdesk/TicketDetailsPage";
@@ -155,7 +157,7 @@ function AppLayout() {
  
   return (
     <div className="flex h-screen bg-[#F4F6F8] font-sans overflow-hidden">
-      {/* ─── SIDEBAR ─────────────────────────────────────────────────────── */}
+      {/* ─── SIDEBAR ─────────────────────────────────────────────────── */}
       <aside className="w-[280px] bg-[#1A1614] flex flex-col justify-between shrink-0 transition-all">
         <div className="px-4 py-3 flex items-center justify-between border-b border-white/5">
           <div className="flex items-center space-x-3">
@@ -437,12 +439,8 @@ function AppLayout() {
             />
  
             <Route
-              path="/onboarding"
-              element={
-                <ProtectedRoute>
-                  <OnboardingPage />
-                </ProtectedRoute>
-              }
+              path="candidates/:candidateId"
+              element={<CandidateDetailPage />}
             />
  
             <Route

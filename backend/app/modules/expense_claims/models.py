@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Float, Date, ForeignKey
+from sqlalchemy import Column, String, Float, Date, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -29,8 +29,11 @@ class ExpenseClaim(Base):
     status = Column(String, nullable=False, default="Submitted")
 
     description = Column(String, nullable=True)
-    
+
     receipt_file_path = Column(String, nullable=True)
+
+    decided_by_role = Column(String, nullable=True)
+    decided_at = Column(DateTime(timezone=True), nullable=True)
 
     employee = relationship("Employee")
     category = relationship("ExpenseCategory", back_populates="claims")

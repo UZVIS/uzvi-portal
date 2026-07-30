@@ -1,7 +1,4 @@
-/**
- * M4 - Expense Claims
- * frontend/src/modules/expense_claims/components/AddCategoryForm.css
- */
+
 
 .add-category-form {
   margin-top: 24px;
@@ -42,7 +39,7 @@
 
 .add-category-form button {
   padding: 8px 16px;
-  background: #1a1a2e;
+  background: #F37021;
   color: #fff;
   border: none;
   border-radius: 6px;

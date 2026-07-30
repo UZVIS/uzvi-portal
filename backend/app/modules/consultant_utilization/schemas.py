@@ -28,6 +28,7 @@ class TimeEntryCreate(BaseModel):
     hours: float = Field(gt=0,le=24)
     billable_flag: bool = False
     source: str = "manual"  # manual | import
+    notes: Optional[str] = None
 
 
 class TimeEntryRead(TimeEntryCreate):

@@ -1,0 +1,23 @@
+.enrollment-page {
+  padding: 24px;
+}
+.create-program-button {
+  cursor: pointer;
+}
+
+.create-program-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.create-program-form input,
+.create-program-form select {
+  padding: 10px;
+}
+
+.form-error {
+  color: #dc2626;
+  font-size: 14px;
+}

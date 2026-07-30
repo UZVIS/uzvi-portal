@@ -1,9 +1,4 @@
-"""
-M4 - Expense Claims
-backend/app/modules/expense_claims/tests/test_service.py
 
-Per NFR-MNT-03: unit tests for core business logic (calculations, validation).
-"""
 from datetime import date
 
 import pytest
@@ -96,7 +91,7 @@ def test_high_value_claim_requires_admin_approval(db, employee):
     with pytest.raises(PermissionError):
         service.approve_claim(db, "CL5", decided_by_role="Manager")
 
-    claim = service.approve_claim(db, "CL5", decided_by_role="Admin")
+    claim = service.approve_claim(db, "CL5", decided_by_role="Admin/Leadership")
     assert claim.status == "Approved"
 
 
