@@ -166,10 +166,18 @@ function AppLayout() {
           </button>
         </div>
 
-        <div className="flex-1 overflow-hidden px-3 py-3">
-          <div className="mb-0.5">
-            <NavLink to="/" icon={Briefcase} label="Leave Management" />
-          </div>
+       <div className="flex-1 overflow-hidden px-3 py-3">
+  <div className="mb-0.5">
+    <NavLink to="/assets" icon={Briefcase} label="Assets" />
+  </div>
+
+  <div className="mb-0.5">
+    <NavLink to="/quotes" icon={Briefcase} label="Quotes" />
+  </div>
+
+  <div className="mb-0.5">
+    <NavLink to="/" icon={Briefcase} label="Leave Management" />
+  </div>
           <div className="mb-0.5">
             <NavLink to="/calendar" icon={CalendarDays} label="Company Calendar" />
           </div>
@@ -337,12 +345,7 @@ function AppLayout() {
           {assetRoutes}
           {quoteRoutes}
 
-          {allModules
-            .filter((module) => module.prefix !== "/announcements" &&
-             module.prefix !== "/assets" &&
-             module.prefix !== "/quotes"
-)
-            .map((module) => (
+        
             <Route
               path="/calendar"
               element={<CalendarPage role={activeRole} />}
@@ -518,8 +521,6 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/*" element={<AuthGate />} />
         </Routes>
-        
-      </BrowserRouter>
       </Router>
     </AuthProvider>
   );
