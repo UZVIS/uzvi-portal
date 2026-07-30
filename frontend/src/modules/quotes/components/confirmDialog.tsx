@@ -24,7 +24,7 @@ export default function ConfirmDialog({
 
   return (
     <div className="modal-overlay">
-      <div className="modal confirm-modal">
+      <div className="confirm-modal">
 
         <div className="confirm-icon">
           <AlertTriangle size={22} />

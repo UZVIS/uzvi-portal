@@ -8,10 +8,10 @@ import "../styles/quote-dashboard.css";
 export default function OpportunityDetailsPage() {
   return (
     <div className="dashboard-layout">
-      <Sidebar />
+      {/* <Sidebar /> */}
 
       <div className="dashboard-page">
-        <Header />
+        {/* <Header /> */}
 
         <main className="dashboard-body">
           <OpportunityDetails />

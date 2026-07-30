@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import Sidebar from "../components/Sidebar";
+
 import Header from "../components/Header";
 import DashboardCards from "../components/DashboardCards";
 import SearchBar from "../components/SearchBar";
@@ -126,11 +126,11 @@ const [returnEmployeeName, setReturnEmployeeName] = useState("");
 
         <div className="dashboard-layout">
 
-            <Sidebar />
+            {/* <Sidebar /> */}
 
             <div className="dashboard-page">
 
-                <Header />
+                {/* <Header /> */}
 
                 <main className="dashboard-body">
 

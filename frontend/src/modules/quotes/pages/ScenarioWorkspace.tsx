@@ -91,11 +91,11 @@ export default function ScenarioWorkspace() {
 
         <div className="dashboard-layout">
 
-            <Sidebar />
+            {/* <Sidebar /> */}
 
             <div className="dashboard-page">
 
-                <Header />
+                {/* <Header /> */}
 
                 <main className="dashboard-body">
 

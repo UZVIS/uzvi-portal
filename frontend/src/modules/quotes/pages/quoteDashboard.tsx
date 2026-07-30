@@ -95,11 +95,11 @@ setTotalQuotes(quoteCount);
 
     <div className="dashboard-layout">
 
-      <Sidebar />
+      {/* <Sidebar /> */}
 
       <div className="dashboard-page">
 
-        <Header />
+        {/* <Header /> */}
 
         <main className="dashboard-body">
 
