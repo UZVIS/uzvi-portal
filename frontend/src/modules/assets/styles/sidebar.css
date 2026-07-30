@@ -1,0 +1,412 @@
+/* ===========================
+   SIDEBAR
+=========================== */
+
+.sidebar{
+    width: var(--sidebar-width, 220px);
+    height:100vh;
+
+    position:fixed;
+    top:0;
+    left:0;
+
+    background:#211d1b;
+    color:#fff;
+
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+
+    border-right:1px solid #2f2926;
+
+    overflow:hidden;
+
+    transition: width .2s ease;
+}
+
+
+/* ===========================
+   COLLAPSE TOGGLE
+=========================== */
+
+.sidebar-collapse-btn {
+    position: absolute;
+    top: 20px;
+    right: 12px;
+
+    width: 24px;
+    height: 24px;
+
+    border-radius: 50%;
+    border: 1px solid #2f2926;
+    background: #2a2523;
+    color: #d6d6d6;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    cursor: pointer;
+    z-index: 10;
+
+    transition: background .15s ease;
+}
+
+.sidebar-collapse-btn:hover {
+    background: #3a332f;
+    color: #ffffff;
+}
+
+.sidebar-collapse-btn:hover {
+    background: #2a2523;
+    color: #ffffff;
+}
+
+.sidebar.collapsed .menu-label,
+.sidebar.collapsed .sidebar-logo-text,
+.sidebar.collapsed .user-info {
+    display: none;
+}
+
+.sidebar.collapsed .sidebar-logo,
+.sidebar.collapsed .menu-item,
+.sidebar.collapsed .menu-group-link,
+.sidebar.collapsed .sidebar-user {
+    justify-content: center;
+}
+
+.sidebar.collapsed .menu-subgroup {
+    display: none;
+}
+
+
+/* ===========================
+   LOGO
+=========================== */
+
+.sidebar-logo{
+
+    display:flex;
+    align-items:center;
+    gap:12px;
+
+    padding:18px 18px;
+
+    border-bottom:1px solid rgba(255,255,255,.07);
+}
+
+.logo-circle{
+
+    width:42px;
+    height:42px;
+
+    border-radius:50%;
+
+    background:#ef6c22;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    flex-shrink:0;
+}
+
+.sidebar-logo h2{
+
+    margin:0;
+
+    font-size:14px;
+
+    line-height:1.2;
+
+    font-weight:700;
+
+    letter-spacing:.3px;
+}
+
+.sidebar-logo span{
+
+    display:block;
+
+    margin-top:2px;
+
+    font-size:11px;
+
+    color:#ef6c22;
+
+    font-weight:500;
+}
+
+
+/* ===========================
+   MENU
+=========================== */
+
+.sidebar-menu{
+
+    flex:1;
+
+    padding:14px 12px;
+
+    display:flex;
+    flex-direction:column;
+
+    gap:2px;
+}
+
+.menu-item{
+
+    display:flex;
+    align-items:center;
+
+    gap:10px;
+
+    height:40px;
+
+    padding:0 12px;
+
+    border-radius:8px;
+
+    color:#d6d6d6;
+
+    text-decoration:none;
+
+    cursor:pointer;
+
+    transition:.25s;
+
+    font-size:12px;
+
+    font-weight:500;
+}
+
+.menu-item svg{
+
+    font-size:17px;
+
+    flex-shrink:0;
+}
+
+.menu-item:hover{
+
+    background:#2a2523;
+
+    color:#ffffff;
+}
+
+.menu-item.active{
+
+    background:#ef6c22;
+
+    color:#fff;
+
+    box-shadow:0 8px 18px rgba(239,108,34,.28);
+}
+
+
+/* ===========================
+   USER CARD
+=========================== */
+
+.sidebar-user{
+
+    margin:14px;
+
+    padding:10px;
+
+    border-radius:10px;
+
+    border:1px solid rgba(255,255,255,.08);
+
+    display:flex;
+    align-items:center;
+
+    gap:10px;
+}
+
+.avatar{
+
+    width:38px;
+    height:38px;
+
+    border-radius:50%;
+
+    background:#ef6c22;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    font-size:15px;
+
+    font-weight:700;
+
+    flex-shrink:0;
+}
+
+.user-info{
+
+    flex:1;
+}
+
+.user-info strong{
+
+    display:block;
+
+    font-size:13px;
+
+    font-weight:600;
+
+    margin-bottom:2px;
+}
+
+.user-info small{
+
+    display:block;
+
+    font-size:11px;
+
+    color:#ef6c22;
+}
+
+.user-arrow{
+
+    color:#aaa;
+
+    font-size:13px;
+}
+
+/* ===========================
+   ASSETS GROUP (parent + nested child)
+=========================== */
+
+.menu-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.menu-group-header {
+    display: flex;
+    align-items: center;
+    padding: 0;
+    border-radius: 8px;
+    transition: .25s;
+}
+
+.menu-group-header:hover {
+    background: #2a2523;
+}
+
+.menu-group-header.active {
+    background: #ef6c22;
+    box-shadow: 0 8px 18px rgba(239, 108, 34, .28);
+}
+
+.menu-group-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    height: 40px;
+    padding: 0 12px;
+    color: #d6d6d6;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.menu-group-header.active .menu-group-link {
+    color: #fff;
+}
+
+.menu-group-header:not(.active):hover .menu-group-link {
+    color: #ffffff;
+}
+
+.menu-chevron-btn {
+    background: none;
+    border: none;
+    color: #d6d6d6;
+    cursor: pointer;
+    height: 40px;
+    padding: 0 12px;
+    display: flex;
+    align-items: center;
+    opacity: .55;
+}
+
+.menu-group-header.active .menu-chevron-btn {
+    color: #fff;
+    opacity: .85;
+}
+
+.menu-chevron-btn:hover {
+    opacity: 1;
+}
+
+/* Nested children — visually smaller, indented, tree line */
+.menu-subgroup {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    margin: 4px 0 4px 20px;
+    padding-left: 12px;
+
+    border-left: 1px solid rgba(255, 255, 255, .1);
+}
+
+.menu-subitem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    height: 34px;
+    padding: 0 10px;
+
+    border-radius: 6px;
+
+    color: #a8a8a8;
+    text-decoration: none;
+
+    font-size: 11.5px;
+    font-weight: 500;
+
+    transition: .25s;
+    margin-top:10px;
+}
+
+.menu-subitem svg {
+    flex-shrink: 0;
+    opacity: .85;
+}
+
+.menu-subitem:hover {
+    background: #2a2523;
+    color: #ffffff;
+}
+
+.menu-subitem.active {
+    background: rgba(239, 108, 34, .14);
+    color: #ef6c22;
+    font-weight: 600;
+    box-shadow: none;
+}
+
+.menu-badge {
+    margin-left: auto;
+    background: #ef6c22;
+    color: #fff;
+    font-size: 10.5px;
+    font-weight: 700;
+    line-height: 1;
+    padding: 3px 7px;
+    border-radius: 999px;
+    min-width: 18px;
+    text-align: center;
+}
+
+.menu-subitem.active .menu-badge {
+    background: #fff;
+    color: #ef6c22;
+}

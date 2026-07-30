@@ -1,0 +1,300 @@
+import { useEffect, useState } from "react";
+
+import {
+  ChevronDown,
+  ChevronRight,
+  ChevronLeft,
+  Boxes,
+  LayoutDashboard,
+  RotateCcw,
+  Calculator,
+} from "lucide-react";
+
+import { NavLink, useLocation } from "react-router-dom";
+
+import "../styles/sidebar.css";
+
+interface SidebarProps {
+  pendingReturnsCount?: number;
+}
+
+interface SubItem {
+  icon: typeof LayoutDashboard;
+  label: string;
+  path: string;
+  badgeKey?: string;
+}
+
+interface FlatItem {
+  type: "item";
+  icon: typeof LayoutDashboard;
+  label: string;
+  path: string;
+}
+
+interface MenuGroup {
+  type: "group";
+  icon: typeof Boxes;
+  label: string;
+  path: string;
+  children: SubItem[];
+}
+
+type MenuEntry = FlatItem | MenuGroup;
+
+const menu: MenuEntry[] = [
+  {
+    type: "item",
+    icon: LayoutDashboard,
+    label: "Dashboard",
+    path: "/dashboard",
+  },
+  {
+    type: "group",
+    icon: Boxes,
+    label: "Assets",
+    path: "/assets",
+    children: [
+      {
+        icon: RotateCcw,
+        label: "Pending Returns",
+        path: "/assets/pending-returns",
+        badgeKey: "pendingReturns",
+      },
+    ],
+  },
+   {
+    type: "item",
+    icon: Calculator,
+    label: "Quote & Tender Calculator",
+    path: "/quotes",
+  },
+
+];
+
+const SIDEBAR_WIDTH_EXPANDED = "220px";
+const SIDEBAR_WIDTH_COLLAPSED = "72px";
+const STORAGE_KEY = "uzvi-sidebar-collapsed";
+
+function applySidebarWidth(isCollapsed: boolean) {
+  document.documentElement.style.setProperty(
+    "--sidebar-width",
+    isCollapsed ? SIDEBAR_WIDTH_COLLAPSED : SIDEBAR_WIDTH_EXPANDED
+  );
+}
+
+export default function Sidebar({ pendingReturnsCount = 0 }: SidebarProps) {
+  const location = useLocation();
+
+  const [isCollapsed, setIsCollapsed] = useState<boolean>(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored === "true";
+  });
+
+  // Keep the shared CSS variable (read by dashboard.css for the page's
+  // margin/width) in sync with this component's state, on mount and toggle.
+  useEffect(() => {
+    applySidebarWidth(isCollapsed);
+  }, [isCollapsed]);
+
+  function handleToggleCollapse() {
+    setIsCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem(STORAGE_KEY, String(next));
+      return next;
+    });
+  }
+
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {};
+    menu.forEach((entry) => {
+      if (entry.type === "group") {
+        initial[entry.label] = location.pathname.startsWith(entry.path);
+      }
+    });
+    return initial;
+  });
+
+  function toggleGroup(label: string) {
+    setOpenGroups((prev) => ({
+      ...prev,
+      [label]: !prev[label],
+    }));
+  }
+
+  return (
+    <aside className={`sidebar ${isCollapsed ? "collapsed" : ""}`}>
+
+      <button
+        type="button"
+        className="sidebar-collapse-btn"
+        onClick={handleToggleCollapse}
+        aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+      >
+        {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+      </button>
+
+      <div className="sidebar-logo">
+
+        <div className="avatar">
+          U
+        </div>
+
+        <div className="sidebar-logo-text">
+          <h2>UZVI PORTAL</h2>
+          <span>Employee Portal</span>
+        </div>
+
+      </div> 
+
+      <nav className="sidebar-menu">
+
+        {menu.map((entry) => {
+
+          if (entry.type === "item") {
+
+            const ItemIcon = entry.icon;
+
+            return (
+
+              <NavLink
+                key={entry.label}
+                to={entry.path}
+                title={isCollapsed ? entry.label : undefined}
+                className={({ isActive }) =>
+                  `menu-item ${isActive ? "active" : ""}`
+                }
+              >
+
+                <ItemIcon size={18} />
+
+                <span className="menu-label">{entry.label}</span>
+
+              </NavLink>
+
+            );
+
+          }
+
+          const group = entry;
+          const GroupIcon = group.icon;
+          const isOpen = openGroups[group.label];
+          const isGroupActive = location.pathname.startsWith(group.path);
+
+          return (
+
+            <div key={group.label} className="menu-group">
+
+              <div
+                className={`menu-item menu-group-header ${
+                  isGroupActive ? "active" : ""
+                }`}
+              >
+
+                <NavLink
+                  to={group.path}
+                  end
+                  title={isCollapsed ? group.label : undefined}
+                  className="menu-group-link"
+                >
+
+                  <GroupIcon size={18} />
+
+                  <span className="menu-label">{group.label}</span>
+
+                </NavLink>
+
+                {!isCollapsed && (
+
+                  <button
+                    type="button"
+                    className="menu-chevron-btn"
+                    aria-label={
+                      isOpen
+                        ? `Collapse ${group.label}`
+                        : `Expand ${group.label}`
+                    }
+                    onClick={() => toggleGroup(group.label)}
+                  >
+
+                    {isOpen ? (
+                      <ChevronDown size={14} />
+                    ) : (
+                      <ChevronRight size={14} />
+                    )}
+
+                  </button>
+
+                )}
+
+              </div>
+
+              {isOpen && !isCollapsed && (
+
+                <div className="menu-subgroup">
+
+                  {group.children.map((item) => {
+
+                    const Icon = item.icon;
+
+                    const badgeCount =
+                      item.badgeKey === "pendingReturns"
+                        ? pendingReturnsCount
+                        : 0;
+
+                    return (
+
+                      <NavLink
+                        key={item.label}
+                        to={item.path}
+                        className={({ isActive }) =>
+                          `menu-item menu-subitem ${isActive ? "active" : ""}`
+                        }
+                      >
+
+                        <Icon size={16} />
+
+                        <span className="menu-label">{item.label}</span>
+
+                        {badgeCount > 0 && (
+                          <span className="menu-badge">
+                            {badgeCount > 99 ? "99+" : badgeCount}
+                          </span>
+                        )}
+
+                      </NavLink>
+
+                    );
+
+                  })}
+
+                </div>
+
+              )}
+
+            </div>
+
+          );
+
+        })}
+
+      </nav>
+
+      <div className="sidebar-user">
+
+        <div className="avatar">
+          AU
+        </div>
+
+        <div className="user-info">
+          <strong>Admin User</strong>
+          <small>Administrator</small>
+        </div>
+
+        <ChevronDown size={16} className="menu-label" />
+
+      </div>
+
+    </aside>
+  );
+}

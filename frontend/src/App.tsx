@@ -43,6 +43,10 @@ import { CalendarPage } from "./modules/calendar";
 
 // ─── Other modules ───────────────────────────────────────────────────────────
 import { AnnouncementsPage } from "./modules/announcements/AnnouncementsPage";
+import { assetRoutes } from "./modules/assets/routes";
+import { quoteRoutes } from "./modules/quotes/routes";
+import PendingReturnsPage from "./modules/assets/pages/pendingReturnsPage";
+import EmployeeDashboard from "./modules/assets/pages/EmployeeDashboard";
 import { ComposeAnnouncementPage } from "./modules/announcements/ComposeAnnouncementPage";
 import { AcknowledgmentsOverviewPage } from "./modules/announcements/AcknowledgmentsOverviewPage";
 import { AnnouncementsDashboardPage } from "./modules/dashboard/AnnouncementsDashboardPage";
@@ -134,8 +138,8 @@ function AppLayout() {
 
   const getHeaderTitle = () => {
     if (location.pathname.startsWith("/announcements")) return "Announcements";
-    if (location.pathname === "/dashboard") return "Announcements";
-    if (location.pathname.startsWith("/utilization")) return "Consultant Utilization";
+    if (location.pathname.startsWith("/utilization"))
+      return "Consultant Utilization";
     if (location.pathname.startsWith("/expenses")) return "Expense Claims";
     if (location.pathname.startsWith("/recruiting")) return "Recruiting";
     if (location.pathname.startsWith("/helpdesk")) return "Helpdesk";
@@ -143,6 +147,7 @@ function AppLayout() {
     if (location.pathname.startsWith("/onboarding")) return "Onboarding";
     if (location.pathname.startsWith("/documents")) return "Documents";
     if (location.pathname === "/calendar") return "Company Calendar";
+    if (location.pathname === "/dashboard") return "Announcements";
     if (location.pathname === "/") return "Leave Dashboard";
     return "UZVI Workspace";
   };
@@ -175,18 +180,41 @@ function AppLayout() {
           </div>
         </div>
 
-        {/* Navigation */}
-        <div className="flex-1 overflow-y-auto px-3 py-3">
-          <NavLink to="/" icon={Briefcase} label="Leave Management" />
-          <NavLink to="/calendar" icon={CalendarDays} label="Company Calendar" />
-          <NavLink to="/dashboard" icon={Megaphone} label="Announcements" />
-          <NavLink to="/utilization" icon={Users} label="Consultant Utilization" />
-          <NavLink to="/expenses" icon={CreditCard} label="Expense Claims" />
-          <NavLink to="/recruiting" icon={UserPlus} label="Recruiting" />
-          <NavLink to="/helpdesk" icon={Headphones} label="Helpdesk" />
-          <NavLink to="/directory" icon={BookUser} label="Directory" />
-          <NavLink to="/onboarding" icon={ClipboardList} label="Onboarding" />
-          <NavLink to="/documents" icon={FolderOpen} label="Documents" />
+        <div className="flex-1 overflow-hidden px-3 py-3">
+          <div className="mb-0.5">
+            <NavLink to="/" icon={Briefcase} label="Leave Management" />
+          </div>
+          <div className="mb-0.5">
+            <NavLink to="/calendar" icon={CalendarDays} label="Company Calendar" />
+          </div>
+          <div className="mb-0.5">
+            <NavLink to="/dashboard" icon={Megaphone} label="Announcements" />
+          </div>
+          <div className="mb-0.5">
+            <NavLink
+              to="/utilization"
+              icon={Users}
+              label="Consultant Utilization"
+            />
+          </div>
+          <div className="mb-0.5">
+            <NavLink to="/expenses" icon={CreditCard} label="Expense Claims" />
+          </div>
+          <div className="mb-0.5">
+            <NavLink to="/recruiting" icon={UserPlus} label="Recruiting" />
+          </div>
+          <div className="mb-0.5">
+            <NavLink to="/helpdesk" icon={Headphones} label="Helpdesk" />
+          </div>
+          <div className="mb-0.5">
+            <NavLink to="/directory" icon={BookUser} label="Directory" />
+          </div>
+          <div className="mb-0.5">
+            <NavLink to="/onboarding" icon={ClipboardList} label="Onboarding" />
+          </div>
+          <div className="mb-0.5">
+            <NavLink to="/documents" icon={FolderOpen} label="Documents" />
+          </div>
         </div>
 
         {/* Logged in User */}
@@ -303,7 +331,37 @@ function AppLayout() {
             {/* View renders dynamically based on the dropdown selection */}
             <Route path="/" element={<HomeDashboard view={activeView} />} />
 
-            <Route path="/calendar" element={<CalendarPage role={actualRole} />} />
+            <Route
+              path="/announcements"
+              element={
+                <ProtectedRoute>
+                  <AnnouncementsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/assets/pending-returns"
+              element={<PendingReturnsPage />}
+            />
+
+            <Route
+              path="/employee-dashboard"
+              element={<EmployeeDashboard />}
+            />
+
+            {assetRoutes}
+            {quoteRoutes}
+
+            {allModules
+              .filter((module) => module.prefix !== "/announcements" &&
+                module.prefix !== "/assets" &&
+                module.prefix !== "/quotes"
+              )
+              .map((module) => (
+            <Route
+              path="/calendar"
+              element={<CalendarPage role={activeRole} />}
+            />
 
             <Route path="/announcements" element={<ProtectedRoute><AnnouncementsPage /></ProtectedRoute>} />
             <Route path="/announcements/new" element={<ProtectedRoute><ComposeAnnouncementPage /></ProtectedRoute>} />
@@ -381,7 +439,9 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/*" element={<AuthGate />} />
         </Routes>
-      </Router>
-    </AuthProvider>
+
+      </BrowserRouter>
+    </Router>
+    </AuthProvider >
   );
 }

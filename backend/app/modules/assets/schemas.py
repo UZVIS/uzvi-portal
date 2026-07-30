@@ -11,6 +11,11 @@ class AssetCreate(BaseModel):
     purchase_date: date
     status: str
 
+class AssetUpdate(BaseModel):
+    tag: str
+    asset_type: str
+    purchase_date: date
+    status: str
 
 class AssetResponse(BaseModel):
     asset_id: str
@@ -18,11 +23,26 @@ class AssetResponse(BaseModel):
     asset_type: str
     purchase_date: date
     status: str
+    
 
     model_config = {
         "from_attributes": True
     }
 
+class AssetListResponse(BaseModel):
+    asset_id: str
+    tag: str
+    asset_type: str
+    purchase_date: date
+    status: str
+    
+    assignment_id: Optional[str] = None
+    employee_id: Optional[str] = None
+    employee_name: Optional[str] = None
+
+    model_config = {
+        "from_attributes": True
+    }
 
 class AssetAssignmentCreate(BaseModel):
     assignment_id: str
@@ -37,6 +57,18 @@ class AssetAssignmentResponse(BaseModel):
     assignment_id: str
     asset_id: str
     employee_id: str
+    assigned_date: date
+    returned_date: Optional[date] = None
+    remarks: Optional[str] = None
+
+    model_config = {
+        "from_attributes": True
+    }
+
+class AssetHistoryResponse(BaseModel):
+    assignment_id: str
+    employee_id: str
+    employee_name: Optional[str] = None
     assigned_date: date
     returned_date: Optional[date] = None
     remarks: Optional[str] = None
@@ -78,5 +110,36 @@ class AssignmentDetailsResponse(BaseModel):
 # inventory report
 class InventorySummaryResponse(BaseModel):
     total_assets: int
-    available_assets: int
+    in_stock_assets: int
     assigned_assets: int
+    under_repair_assets: int
+    retired_assets: int
+
+class PendingReturnResponse(BaseModel):
+    assignment_id: str
+
+    asset_id: str
+    tag: str
+    asset_type: str
+
+    employee_id: str
+    employee_name: str
+
+    assigned_date: date
+
+    model_config = {
+        "from_attributes": True
+    }
+    assignment_id: str
+    asset_id: str
+    tag: str
+    asset_type: str
+
+    employee_id: str
+    employee_name: str
+
+    assigned_date: date
+
+    model_config = {
+        "from_attributes": True
+    }

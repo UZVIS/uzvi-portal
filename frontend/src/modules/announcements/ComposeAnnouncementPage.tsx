@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../shared/auth/AuthContext";
 import { createAnnouncement } from "./api";
 import type { TargetType } from "./types";
-import { IconArrowLeft, IconMegaphone, IconSend } from "./components/icons";
+import { IconArrowLeft, IconSend } from "./components/icons";
 import "./ComposeAnnouncementPage.css";
 
 export function ComposeAnnouncementPage() {
@@ -58,55 +58,49 @@ export function ComposeAnnouncementPage() {
   }
 
   return (
-    <div className="compose-screen">
-      <header className="compose-topbar">
-        <button
-          className="compose-topbar__back"
-          onClick={() => navigate("/dashboard")}
-        >
-          <IconArrowLeft size={16} /> Back
-        </button>
-      </header>
+    <div className="compose-page">
+      <button className="compose-back" onClick={() => navigate("/dashboard")}>
+        <IconArrowLeft size={14} /> Back to dashboard
+      </button>
 
-      <div className="compose-page">
-        <div className="compose-page__header">
-          <span className="compose-page__icon">
-            <IconMegaphone size={22} />
-          </span>
-          <div>
-            <h1>New announcement</h1>
-            <p>Post a notice to the company, a team, or a specific role.</p>
-          </div>
+      <div className="compose-card">
+        <div className="compose-header">
+          <h2>New Announcement</h2>
+          <p>Post a notice to the company, a team, or a specific role.</p>
         </div>
 
-        <form className="compose-page__form" onSubmit={handleSubmit}>
-          <label className="field">
-            <span className="field__label">Title</span>
-            <input
-              className="field__input"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Diwali office closure"
-              autoFocus
-            />
-          </label>
+        <form className="compose-form" onSubmit={handleSubmit}>
+          {error && (
+            <div className="form-error" role="alert">
+              {error}
+            </div>
+          )}
 
-          <label className="field">
-            <span className="field__label">Body</span>
-            <textarea
-              className="field__input field__textarea"
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              rows={6}
-              placeholder="Details for everyone reading this…"
-            />
-          </label>
+          <div className="form-grid">
+            <div className="form-group full-width">
+              <label>Title</label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Diwali office closure"
+                autoFocus
+              />
+            </div>
 
-          <div className="field-row">
-            <label className="field">
-              <span className="field__label">Audience</span>
+            <div className="form-group full-width">
+              <label>Body</label>
+              <textarea
+                rows={6}
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                placeholder="Details for everyone reading this…"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Audience</label>
               <select
-                className="field__input"
                 value={targetType}
                 onChange={(e) => setTargetType(e.target.value as TargetType)}
               >
@@ -114,59 +108,52 @@ export function ComposeAnnouncementPage() {
                 <option value="team">Specific team</option>
                 <option value="role">Specific role</option>
               </select>
-            </label>
+            </div>
 
             {targetType !== "company_wide" && (
-              <label className="field">
-                <span className="field__label">
-                  {targetType === "team" ? "Team ID" : "Role"}
-                </span>
+              <div className="form-group">
+                <label>{targetType === "team" ? "Team ID" : "Role"}</label>
                 <input
-                  className="field__input"
+                  type="text"
                   value={targetValue}
                   onChange={(e) => setTargetValue(e.target.value)}
                   placeholder={targetType === "team" ? "T1" : "Manager"}
                 />
-              </label>
+              </div>
             )}
-          </div>
 
-          <div className="field-row">
-            <label className="checkbox-field">
-              <input
-                type="checkbox"
-                checked={requiresAck}
-                onChange={(e) => setRequiresAck(e.target.checked)}
-              />
-              <span>Requires acknowledgment</span>
-            </label>
-
-            <label className="field">
-              <span className="field__label">Expires (optional)</span>
+            <div className="form-group">
+              <label>Expires (optional)</label>
               <input
                 type="date"
-                className="field__input"
                 value={expiryDate}
                 onChange={(e) => setExpiryDate(e.target.value)}
               />
-            </label>
+            </div>
+
+            <div className="form-group full-width">
+              <label className="checkbox-field">
+                <input
+                  type="checkbox"
+                  checked={requiresAck}
+                  onChange={(e) => setRequiresAck(e.target.checked)}
+                />
+                <span>Requires acknowledgment</span>
+              </label>
+            </div>
           </div>
 
-          {error && (
-            <p className="error-banner" role="alert">
-              {error}
-            </p>
-          )}
-
-          <div className="compose-page__actions">
+          <div className="form-actions">
             <button
               type="button"
-              className="button-secondary"
+              className="cancel-btn"
               onClick={() => navigate("/announcements")}
+              disabled={isSubmitting}
             >
               Cancel
             </button>
-            <button type="submit" className="button-primary" disabled={isSubmitting}>
+
+            <button type="submit" className="submit-btn" disabled={isSubmitting}>
               <IconSend size={14} /> {isSubmitting ? "Posting…" : "Post announcement"}
             </button>
           </div>

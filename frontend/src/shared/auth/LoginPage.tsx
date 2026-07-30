@@ -28,6 +28,13 @@ export function LoginPage() {
     setError(null);
     setIsSubmitting(true);
     try {
+      const emp = await login(employeeId.trim());
+
+if (emp.access_tier === "Administrator") {
+    navigate("/dashboard", { replace: true });
+} else {
+    navigate("/employee-dashboard", { replace: true });
+}
       await login(employeeId.trim());
       navigate(from, { replace: true });
     } catch (err) {

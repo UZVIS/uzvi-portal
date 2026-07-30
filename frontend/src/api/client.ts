@@ -1,24 +1,91 @@
+const BASE = "/api";
 
-const BASE = 'http://localhost:8000/api'
-
-export async function apiGet(path: string) {
-  const res = await fetch(`${BASE}${path}`)
-  return res.json()
-}
-
-export async function apiPost(path: string, body: unknown) {
-  const res = await fetch(`${BASE}${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  })
-
+// =============================
+// GET
+// =============================
+export async function apiGet<T>(path: string): Promise<T> {
+  const res = await fetch(`${BASE}${path}`);
 
   if (!res.ok) {
-    const errorData = await res.json();
-
-    throw { response: { data: errorData } };
+    const error = await res.json();
+    throw new Error(error.detail || "Something went wrong");
   }
 
-  return res.json()
+  return res.json();
+}
+
+// =============================
+// POST
+// =============================
+export async function apiPost<T>(
+  path: string,
+  body: unknown
+): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.detail || "Something went wrong");
+  }
+
+  return res.json();
+}
+
+// =============================
+// PUT
+// =============================
+export async function apiPut<T>(
+  path: string,
+  body: unknown
+): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.detail || "Something went wrong");
+  }
+
+  return res.json();
+}
+
+// =============================
+// DELETE
+// =============================
+export async function apiDelete<T>(
+    path: string
+): Promise<T | void> {
+
+    const res = await fetch(`${BASE}${path}`, {
+        method: "DELETE",
+    });
+
+    if (!res.ok) {
+
+        const error = await res.json();
+
+        throw new Error(
+            error.detail || "Something went wrong"
+        );
+
+    }
+
+    // 204 No Content
+    if (res.status === 204) {
+        return;
+    }
+
+    return res.json();
+
 }
