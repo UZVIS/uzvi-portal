@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../shared/auth/AuthContext";
 import { listAllAnnouncements, listFeedForEmployee, acknowledgeAnnouncement } from "./api";
@@ -7,11 +7,8 @@ import { AnnouncementCard } from "./components/AnnouncementCard";
 import { AcknowledgmentDrawer } from "./components/AcknowledgmentDrawer";
 import {
   IconArrowLeft,
-  IconBell,
-  IconBuilding,
   IconInbox,
   IconLayers,
-  IconLogOut,
   IconMegaphone,
 } from "./components/icons";
 import "./AnnouncementsPage.css";
@@ -21,17 +18,8 @@ const POSTER_TIERS = new Set(["Admin/Leadership", "Manager"]);
 
 type ViewMode = "feed" | "all";
 
-function initialsOf(name: string): string {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("");
-}
-
 export function AnnouncementsPage() {
-  const { employee, logout } = useAuth();
+  const { employee } = useAuth();
   const navigate = useNavigate();
   const canManage = employee ? POSTER_TIERS.has(employee.access_tier) : false;
 
@@ -78,75 +66,44 @@ export function AnnouncementsPage() {
     }
   }
 
-  function handleLogout() {
-    logout();
-    navigate("/login", { replace: true });
-  }
-
-  const stats = useMemo(() => {
-    const total = announcements.length;
-    const needsAck = announcements.filter((a) => a.requires_ack).length;
-    return { total, needsAck };
-  }, [announcements]);
-
   if (!employee) return null;
 
   return (
-    <div className="c-feed-screen">
-      <header className="topbar">
-        <div className="topbar__brand-group">
-          <button className="topbar__back-btn" onClick={() => navigate("/dashboard")}>
-            <IconArrowLeft size={14} /> Back
-          </button>
-          <div className="topbar__brand">
-            <span className="topbar__brand-icon">
-              <IconBuilding size={18} />
-            </span>
-            UZVI
-          </div>
-        </div>
-        <div className="topbar__user">
-          <div className="topbar__user-info">
-            <span className="topbar__user-name">{employee.name}</span>
-            <span className="topbar__user-role">{employee.access_tier}</span>
-          </div>
-          <span className="topbar__avatar">{initialsOf(employee.name)}</span>
-          <button className="topbar__logout" onClick={handleLogout}>
-            <IconLogOut size={14} /> Sign out
-          </button>
-        </div>
-      </header>
+    <div className="announcements-page">
+      <div className="announcements-header">
+        <button className="announcements-back" onClick={() => navigate("/dashboard")}>
+          <IconArrowLeft size={14} /> Back
+        </button>
 
-      <div className="c-toolbar">
-        <div className="c-toolbar__pills">
+        <div className="announcements-header__row">
+          <div>
+            <h1>Announcements</h1>
+            <p>Company notices, updates, and required acknowledgments.</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="c-toolbar__pills">
+        {view === "feed" && (
           <button
-            className={`c-pill ${view === "feed" ? "c-pill--active c-pill--indigo" : ""}`}
+            className="c-pill c-pill--active c-pill--indigo"
             onClick={() => setView("feed")}
           >
             <IconInbox size={15} /> My Feed
           </button>
-          {canManage && (
-            <button
-              className={`c-pill ${view === "all" ? "c-pill--active c-pill--violet" : ""}`}
-              onClick={() => setView("all")}
-            >
-              <IconLayers size={15} /> All Announcements
-            </button>
-          )}
-        </div>
+        )}
 
-        <div className="c-toolbar__stats">
-          <span className="c-toolbar__stat c-toolbar__stat--blue">
-            <IconInbox size={13} /> {stats.total} total
-          </span>
-          <span className="c-toolbar__stat c-toolbar__stat--amber">
-            <IconBell size={13} /> {stats.needsAck} need ack
-          </span>
-        </div>
-
+        {canManage && view === "all" && (
+          <button
+            className="c-pill c-pill--active c-pill--violet"
+            onClick={() => setView("all")}
+          >
+            <IconLayers size={15} /> All Announcements
+          </button>
+        )}
       </div>
 
-      <main className="c-feed">
+      <div className="announcements-card">
         {error && (
           <p className="error-banner" role="alert">
             {error}
@@ -154,20 +111,20 @@ export function AnnouncementsPage() {
         )}
 
         {isLoading && (
-          <div className="c-feed__state">
+          <div className="announcements-state">
             <IconInbox size={22} />
             <p>Fetching the latest notices…</p>
           </div>
         )}
 
         {!isLoading && announcements.length === 0 && !error && (
-          <div className="c-feed__state">
+          <div className="announcements-state">
             <IconMegaphone size={22} />
             <p>Nothing here yet. Check back soon.</p>
           </div>
         )}
 
-        <ol className="c-ledger">
+        <ol className="notice-list">
           {announcements.map((a) => (
             <AnnouncementCard
               key={a.announcement_id}
@@ -175,12 +132,13 @@ export function AnnouncementsPage() {
               currentEmployeeId={employee.employee_id}
               canManage={canManage}
               isAcking={pendingAckId === a.announcement_id}
+              showAcknowledgeAction={view === "feed"}
               onAcknowledge={() => handleAcknowledge(a.announcement_id)}
               onViewAcknowledgments={() => setAckDrawerId(a.announcement_id)}
             />
           ))}
         </ol>
-      </main>
+      </div>
 
       {ackDrawerId && (
         <AcknowledgmentDrawer

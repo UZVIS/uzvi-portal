@@ -1,166 +1,77 @@
-.ack-overview-screen {
-  min-height: 100vh;
-  background: var(--color-paper);
+.ack-overview-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.ack-overview-topbar {
-  background: var(--color-navy);
-  padding: 16px 32px;
-}
-
-.ack-overview-topbar__back {
+.ack-overview-back {
+  align-self: flex-start;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   background: transparent;
   border: none;
-  color: #fff;
+  color: #9a8f84;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  padding: 6px 10px;
-  border-radius: var(--radius-sm);
-  transition: background 0.15s ease;
+  padding: 6px 4px;
+  transition: color 0.15s ease;
 }
 
-.ack-overview-topbar__back:hover {
-  background: var(--color-navy-soft);
+.ack-overview-back:hover {
+  color: #E2622E;
 }
 
-.ack-overview-page {
-  width: 100%;
-  padding: 40px 48px 64px;
-}
-
-.ack-overview-page__header {
+.ack-overview-header {
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-bottom: 24px;
+  flex-wrap: wrap;
 }
 
-.ack-overview-page__icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-md);
-  background: var(--color-amber-soft);
-  color: var(--color-amber);
-  flex-shrink: 0;
+.ack-overview-header h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #222;
 }
 
-.ack-overview-page__header h1 {
-  font-size: 22px;
-}
-
-.ack-overview-page__header p {
-  margin: 4px 0 0;
-  color: var(--color-slate);
+.ack-overview-header p {
+  margin-top: 6px;
+  color: #777;
   font-size: 14px;
 }
 
-.ack-overview-page__summary {
+.ack-overview-summary {
   margin-left: auto;
-  background: var(--color-surface);
-  border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-card);
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
   padding: 10px 18px;
   font-size: 14px;
-  color: var(--color-slate);
+  color: #6b7280;
   white-space: nowrap;
 }
 
-.ack-overview-page__summary strong {
-  color: var(--color-ink);
+.ack-overview-summary strong {
+  color: #111827;
   font-size: 16px;
 }
 
-.ack-overview-page__state {
-  color: var(--color-slate);
+.ack-overview-state {
+  color: #6b7280;
   font-size: 14px;
   padding: 24px 0;
 }
 
-.ack-table-wrap {
-  background: var(--color-surface);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-  overflow-x: auto;
-}
-
-.ack-table {
-  width: 100%;
-  border-collapse: collapse;
+.error-banner {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  padding: 12px 16px;
+  border-radius: 8px;
   font-size: 14px;
-}
-
-.ack-table thead th {
-  text-align: left;
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: #4361ee;
-  background: #4361ee0d;
-  padding: 14px 20px;
-  border-bottom: 1px solid var(--color-hairline);
-  white-space: nowrap;
-}
-
-.ack-table tbody td {
-  padding: 14px 20px;
-  border-bottom: 1px solid var(--color-hairline);
-  color: var(--color-ink);
-  vertical-align: middle;
-}
-
-.ack-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.ack-table tbody tr:hover {
-  background: var(--color-paper);
-}
-
-.ack-table__mono {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 13px;
-  color: var(--color-slate);
-}
-
-.ack-table__status {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 600;
-  font-size: 12.5px;
-  padding: 4px 10px;
-  border-radius: 999px;
-}
-
-.ack-table__status--acked {
-  background: var(--color-teal-soft, #e2f5ef);
-  color: var(--color-teal, #0f8a6e);
-}
-
-.ack-table__status--pending {
-  background: var(--color-amber-soft);
-  color: var(--color-amber);
-}
-
-@media (max-width: 900px) {
-  .ack-overview-page {
-    padding: 24px 20px 48px;
-  }
-
-  .ack-overview-page__header {
-    flex-wrap: wrap;
-  }
-
-  .ack-overview-page__summary {
-    margin-left: 0;
-  }
 }
 
 /* ---------- Announcement list (step 1) ---------- */
@@ -176,31 +87,30 @@
   align-items: center;
   gap: 16px;
   text-align: left;
-  background: var(--color-surface);
-  border: none;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
   border-left: 4px solid transparent;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-  padding: 14px 20px;
+  border-radius: 14px;
+  padding: 16px 20px;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: all 0.2s ease;
 }
 
 .ack-announcement-item:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 22px -12px rgba(20, 20, 50, 0.25);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px);
 }
 
 .ack-announcement-item--company_wide {
-  border-left-color: #4361ee;
+  border-left-color: #2563eb;
 }
 
 .ack-announcement-item--team {
-  border-left-color: #14b8a6;
+  border-left-color: #0d9488;
 }
 
 .ack-announcement-item--role {
-  border-left-color: #8b5cf6;
+  border-left-color: #7c3aed;
 }
 
 .ack-announcement-item__icon {
@@ -209,21 +119,21 @@
   justify-content: center;
   width: 38px;
   height: 38px;
-  border-radius: var(--radius-md);
+  border-radius: 10px;
   color: #fff;
   flex-shrink: 0;
 }
 
 .ack-announcement-item--company_wide .ack-announcement-item__icon {
-  background: linear-gradient(135deg, #4361ee, #3a56d4);
+  background: #2563eb;
 }
 
 .ack-announcement-item--team .ack-announcement-item__icon {
-  background: linear-gradient(135deg, #14b8a6, #0d9488);
+  background: #0d9488;
 }
 
 .ack-announcement-item--role .ack-announcement-item__icon {
-  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  background: #7c3aed;
 }
 
 .ack-announcement-item__text {
@@ -232,10 +142,10 @@
 }
 
 .ack-announcement-item__text h3 {
-  margin: 0 0 3px;
-  font-size: 14.5px;
-  font-weight: 800;
-  color: var(--color-ink);
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -245,8 +155,8 @@
   display: flex;
   align-items: center;
   gap: 14px;
-  font-size: 12px;
-  color: var(--color-slate);
+  font-size: 12.5px;
+  color: #9ca3af;
 }
 
 .ack-announcement-item__meta span {
@@ -266,16 +176,16 @@
 .ack-announcement-item__count {
   font-size: 12.5px;
   font-weight: 700;
-  color: var(--color-ink);
+  color: #111827;
   white-space: nowrap;
 }
 
 .ack-announcement-item__pending {
   font-size: 11px;
   font-weight: 700;
-  color: var(--color-amber);
-  background: var(--color-amber-soft);
-  padding: 2px 9px;
+  color: #d97706;
+  background: #fef3c7;
+  padding: 3px 10px;
   border-radius: 999px;
   white-space: nowrap;
 }
@@ -286,22 +196,92 @@
   gap: 4px;
   font-size: 11px;
   font-weight: 700;
-  color: var(--color-teal, #0f8a6e);
-  background: var(--color-teal-soft, #e2f5ef);
-  padding: 2px 9px;
+  color: #15803d;
+  background: #dcfce7;
+  padding: 3px 10px;
   border-radius: 999px;
   white-space: nowrap;
 }
 
 .ack-announcement-item__go {
-  color: var(--color-slate);
+  color: #9ca3af;
   flex-shrink: 0;
 }
 
-@media (max-width: 700px) {
+/* ---------- Detail table (step 2) ---------- */
+
+.ack-table-wrap {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  overflow: hidden;
+  overflow-x: auto;
+}
+
+.ack-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.ack-table thead th {
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #6b7280;
+  background: #f8fafc;
+  padding: 14px 20px;
+  white-space: nowrap;
+}
+
+.ack-table tbody td {
+  padding: 14px 20px;
+  border-top: 1px solid #f3f4f6;
+  color: #374151;
+  vertical-align: middle;
+}
+
+.ack-table tbody tr:hover {
+  background: #fafafa;
+}
+
+.ack-table__mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.ack-table__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  font-size: 12.5px;
+  padding: 5px 12px;
+  border-radius: 999px;
+}
+
+.ack-table__status--acked {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.ack-table__status--pending {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+@media (max-width: 768px) {
+  .ack-overview-summary {
+    margin-left: 0;
+  }
+
   .ack-announcement-item {
     flex-wrap: wrap;
   }
+
   .ack-announcement-item__stats {
     align-items: flex-start;
     margin-left: 54px;

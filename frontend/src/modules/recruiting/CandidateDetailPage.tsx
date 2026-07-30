@@ -8,6 +8,7 @@ import {
   type CandidateStage,
 } from "./api";
 import { STAGE_META, initialsOf } from "./stageMeta";
+import { useAuth } from "../../shared/auth/AuthContext";
 import {
   IconArrowLeft,
   IconPlus,
@@ -31,6 +32,7 @@ function parseServerTimestamp(iso: string): Date {
 export function CandidateDetailPage() {
   const { candidateId } = useParams<{ candidateId: string }>();
   const navigate = useNavigate();
+  const { employee } = useAuth();
 
   const [candidate, setCandidate] = useState<CandidateDetail | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -148,11 +150,16 @@ export function CandidateDetailPage() {
   async function handleConvert(e: React.FormEvent) {
     e.preventDefault();
     if (!newEmployeeId.trim() || !joinDate || !candidateId) return;
+    if (!employee?.employee_id) {
+      setError("You must be logged in to convert a candidate to an employee.");
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
       await recruitingApi.convertToEmployee(candidateId, {
         employee_id: newEmployeeId.trim(),
+        requester_id: employee.employee_id,
         designation: designation.trim() || undefined,
         join_date: joinDate,
       });

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useOutletContext } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router-dom";
 import { recruitingApi, PIPELINE_STAGES } from "./api";
 import type { Candidate, CandidateInput, CandidateStage, CandidateUpdateInput } from "./api";
 import { initialsOf, STAGE_META, colorForIndex } from "./stageMeta";
@@ -36,6 +36,7 @@ function avatarColorFor(id: string): string {
 }
 
 export function CandidatePipelinePage() {
+  const navigate = useNavigate();
   const { openCandidate } = useOutletContext<RecruitingOutletContext>();
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -112,6 +113,9 @@ export function CandidatePipelinePage() {
 
   return (
     <div className="pipeline">
+      <button type="button" className="rec-back-top" onClick={() => navigate("/recruiting")}>
+        ← Back
+      </button>
       <div className="pipeline__hero">
         <div className="pipeline__hero-icon">
           <IconUsers size={20} />

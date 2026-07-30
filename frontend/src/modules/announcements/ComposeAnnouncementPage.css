@@ -1,92 +1,198 @@
-.compose-screen {
-  min-height: 100vh;
-  background: var(--color-paper);
+.compose-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
 }
 
-.compose-topbar {
-  background: var(--color-navy);
-  padding: 16px 32px;
-}
-
-.compose-topbar__back {
+.compose-back {
+  align-self: flex-start;
+  width: 100%;
+  max-width: 900px;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   background: transparent;
   border: none;
-  color: #fff;
+  color: #9a8f84;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  padding: 6px 10px;
-  border-radius: var(--radius-sm);
-  transition: background 0.15s ease;
+  padding: 0;
+  transition: color 0.15s ease;
 }
 
-.compose-topbar__back:hover {
-  background: var(--color-navy-soft);
+.compose-back:hover {
+  color: #E2622E;
 }
 
-.compose-page {
+.compose-card {
   width: 100%;
+  max-width: 900px;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.compose-header {
+  margin-bottom: 24px;
+}
+
+.compose-header h2 {
   margin: 0;
-  padding: 40px 48px 64px;
+  color: #1f2937;
+  font-size: 28px;
 }
 
-.compose-page__header {
+.compose-header p {
+  margin-top: 8px;
+  color: #6b7280;
+  font-size: 15px;
+}
+
+.compose-form {
   display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 28px;
-}
-
-.compose-page__icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: var(--radius-md);
-  background: var(--color-amber-soft);
-  color: var(--color-amber);
-  flex-shrink: 0;
-}
-
-.compose-page__header h1 {
-  font-size: 22px;
-}
-
-.compose-page__header p {
-  margin: 4px 0 0;
-  color: var(--color-slate);
-  font-size: 14px;
-}
-
-.compose-page__form {
-  background: var(--color-surface);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
-  padding: 32px 40px 36px;
-  max-width: 1100px;
-}
-
-.compose-page__form .field-row {
+  flex-direction: column;
   gap: 20px;
 }
 
-.compose-page__actions {
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-group label {
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 15px;
+  font-family: inherit;
+  background: #ffffff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 140px;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #E2622E;
+  box-shadow: 0 0 0 3px rgba(226, 98, 46, 0.15);
+}
+
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+}
+
+.checkbox-field input {
+  width: 18px;
+  height: 18px;
+  accent-color: #E2622E;
+  cursor: pointer;
+}
+
+.form-error {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.form-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 12px;
   margin-top: 8px;
 }
 
-@media (max-width: 900px) {
-  .compose-page {
-    padding: 24px 20px 48px;
+.cancel-btn,
+.submit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 22px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.cancel-btn {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.cancel-btn:hover:not(:disabled) {
+  background: #d1d5db;
+}
+
+.submit-btn {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.cancel-btn:disabled,
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .compose-card {
+    padding: 24px;
   }
 
-  .compose-page__form {
-    padding: 20px;
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .cancel-btn,
+  .submit-btn {
+    width: 100%;
+    justify-content: center;
   }
 }

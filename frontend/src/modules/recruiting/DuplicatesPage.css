@@ -1,4 +1,5 @@
 .dup-page {
+  position: relative;
   max-width: 980px;
   margin: 0 auto;
 }
@@ -161,4 +162,28 @@
   .dup-hero__threshold {
     margin-left: 0;
   }
+}
+
+/* Back sits in AppLayout top padding — content does not move */
+.rec-back-top {
+  position: absolute;
+  top: -22px;
+  left: 0;
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  line-height: 1;
+  transition: color 0.15s ease;
+}
+.rec-back-top:hover {
+  color: #f37021;
 }

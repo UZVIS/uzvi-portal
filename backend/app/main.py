@@ -1,16 +1,21 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.database import Base, engine, init_db
 
 from app.modules.directory.router import router as employee_router
+from app.modules.directory.router import team_router
 from app.modules.attendance.router import router as attendance_router
 from app.modules.documents.router import router as document_router
 from app.modules.onboarding.router import router as onboarding_router
+from app.modules.leave.router import router as leave_router
+from app.modules.calendar.router import router as calendar_router
 from app.modules.assets.router import router as asset_router
 from app.modules.announcements.router import router as announcement_router
 from app.modules.helpdesk.router import router as helpdesk_router
 from app.modules.training.router import router as training_router
+from app.modules.quotes.routes import router as quote_router
 from app.modules.recruiting.router import router as recruiting_router
 from app.modules.recruiting.router import interview_stage_router
 
@@ -28,6 +33,18 @@ from app.modules.performance_goals.router import router as performance_router
 
 app = FastAPI(title="UZVI Services Employee Portal")
 
+#Frontend connection
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000", 
+        "http://localhost:5173", 
+        "http://127.0.0.1:5173"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"], 
+    allow_headers=["*"],
+)
 @app.on_event("startup")
 def startup():
     init_db()
@@ -35,11 +52,16 @@ def startup():
 Base.metadata.create_all(bind=engine)
 
 app.include_router(employee_router)
+app.include_router(team_router)
 app.include_router(attendance_router, prefix="/api/v1")
 app.include_router(document_router)
 app.include_router(onboarding_router)
+app.include_router(leave_router)
+app.include_router(calendar_router)
 app.include_router(asset_router)
 app.include_router(announcement_router)
+app.include_router(quote_router)
+# M6 Training Module: Register training endpoints with the main FastAPI app
 app.include_router(helpdesk_router)
 app.include_router(training_router)
 app.include_router(recruiting_router)
