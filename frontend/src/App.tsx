@@ -58,6 +58,8 @@ import { PipelineFunnelPage } from "./modules/recruiting/PipelineFunnelPage";
 import { SourcingPage } from "./modules/recruiting/SourcingPage";
 import { CandidatePipelinePage } from "./modules/recruiting/CandidatePipelinePage";
 import { CandidateDetailPage } from "./modules/recruiting/CandidateDetailPage";
+import TrainingModulePage from "./modules/training/TrainingModulePage";
+import ProgramDetailsPage from "./modules/training/ProgramDetailsPage";
 import { DuplicatesPage } from "./modules/recruiting/DuplicatesPage";
 import HelpdeskModulePage from "./modules/helpdesk/HelpdeskModulePage";
 import TicketDetailsPage from "./modules/helpdesk/TicketDetailsPage";
@@ -363,124 +365,142 @@ function AppLayout() {
               }
             />
 
-            <Route
-              path="/expenses"
-              element={
-                <ProtectedRoute>
-                  <ExpenseClaimsModulePage />
-                </ProtectedRoute>
-              }
-            />
+          <Route
+            path="/helpdesk/tickets/:ticketId"
+            element={
+              <ProtectedRoute>
+                <TicketDetailsPage />
+              </ProtectedRoute>
+            }
+          />
 
-            <Route
-              path="/recruiting"
-              element={
-                <ProtectedRoute>
-                  <RecruitingModulePage />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<RecruitingHomePage />} />
-              <Route path="funnel" element={<PipelineFunnelPage />} />
-              <Route path="sourcing" element={<SourcingPage />} />
-              <Route path="pipeline" element={<CandidatePipelinePage />} />
-              <Route path="duplicates" element={<DuplicatesPage />} />
-              <Route
-                path="candidates/:candidateId"
-                element={<CandidateDetailPage />}
-              />
-            </Route>
+          <Route
+            path="/training"
+            element={
+              <ProtectedRoute>
+                <TrainingModulePage />
+              </ProtectedRoute>
+            }
+          />
 
-            <Route
-              path="/helpdesk"
-              element={
-                <ProtectedRoute>
-                  <HelpdeskModulePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/helpdesk/tickets/:ticketId"
-              element={
-                <ProtectedRoute>
-                  <TicketDetailsPage />
-                </ProtectedRoute>
-              }
-            />
+          <Route
+            path="/training/programs/:programId"
+            element={
+              <ProtectedRoute>
+                <ProgramDetailsPage />
+              </ProtectedRoute>
+            }
+          />
 
-            <Route
-              path="/directory"
-              element={
-                <ProtectedRoute>
-                  <DirectoryPage />
-                </ProtectedRoute>
-              }
-            />
+          <Route
+            path="/expenses"
+            element={
+              <ProtectedRoute>
+                <ExpenseClaimsModulePage />
+              </ProtectedRoute>
+            }
+          />
 
+          <Route
+            path="/recruiting"
+            element={
+              <ProtectedRoute>
+                <RecruitingModulePage />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<RecruitingHomePage />} />
+            <Route path="funnel" element={<PipelineFunnelPage />} />
+            <Route path="sourcing" element={<SourcingPage />} />
+            <Route path="pipeline" element={<CandidatePipelinePage />} />
+            <Route path="duplicates" element={<DuplicatesPage />} />
             <Route
-              path="/onboarding"
-              element={
-                <ProtectedRoute>
-                  <OnboardingPage />
-                </ProtectedRoute>
-              }
+              path="candidates/:candidateId"
+              element={<CandidateDetailPage />}
             />
+          </Route>
 
-            <Route
-              path="/documents"
-              element={
-                <ProtectedRoute>
-                  <DocumentsPage />
-                </ProtectedRoute>
-              }
-            />
+          <Route
+            path="/helpdesk"
+            element={
+              <ProtectedRoute>
+                <HelpdeskModulePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/directory"
+            element={
+              <ProtectedRoute>
+                <DirectoryPage />
+              </ProtectedRoute>
+            }
+          />
 
-            <Route
-              path="/assets/pending-returns"
-              element={<PendingReturnsPage />}
-            />
+          <Route
+            path="/onboarding"
+            element={
+              <ProtectedRoute>
+                <OnboardingPage />
+              </ProtectedRoute>
+            }
+          />
 
-            <Route
-              path="/employee-dashboard"
-              element={<EmployeeDashboard />}
-            />
+          <Route
+            path="/documents"
+            element={
+              <ProtectedRoute>
+                <DocumentsPage />
+              </ProtectedRoute>
+            }
+          />
 
-            {assetRoutes}
-            {quoteRoutes}
+          <Route
+            path="/assets/pending-returns"
+            element={<PendingReturnsPage />}
+          />
 
-            <Route
-              path="*"
-              element={
-                <div className="flex flex-col items-center justify-center h-64 bg-white rounded-2xl border border-gray-200 shadow-sm p-8 text-center">
-                  <span className="text-4xl mb-4">🚧</span>
-                  <h3 className="text-lg font-bold text-gray-800">
-                    Module Under Construction
-                  </h3>
-                  <p className="text-sm text-gray-500 mt-2">
-                    This section is outside the scope of our current focus.
-                  </p>
-                </div>
-              }
-            />
-          </Routes>
-        </div>
-      </main>
-    </div>
-  );
+          <Route
+            path="/employee-dashboard"
+            element={<EmployeeDashboard />}
+          />
+
+          {assetRoutes}
+          {quoteRoutes}
+
+          <Route
+            path="*"
+            element={
+              <div className="flex flex-col items-center justify-center h-64 bg-white rounded-2xl border border-gray-200 shadow-sm p-8 text-center">
+                <span className="text-4xl mb-4">🚧</span>
+                <h3 className="text-lg font-bold text-gray-800">
+                  Module Under Construction
+                </h3>
+                <p className="text-sm text-gray-500 mt-2">
+                  This section is outside the scope of our current focus.
+                </p>
+              </div>
+            }
+          />
+        </Routes>
+      </div>
+    </main>
+  </div>
+);
 }
 
 // ─── Gate: show login or app ──────────────────────────────────────────
 function AuthGate() {
-  const { employee, isLoading } = useAuth();
-  const location = useLocation();
+const { employee, isLoading } = useAuth();
+const location = useLocation();
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#1A1614] flex items-center justify-center">
-        <div className="w-10 h-10 border-2 border-[#F37021] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+if (isLoading) {
+  return (
+    <div className="min-h-screen bg-[#1A1614] flex items-center justify-center">
+      <div className="w-10 h-10 border-2 border-[#F37021] border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
 
   // Public route
   if (location.pathname === "/login") {
