@@ -25,6 +25,8 @@ import {
   BookUser,
   ClipboardList,
   FolderOpen,
+  Package,
+  Quote,
 } from "lucide-react";
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
@@ -43,10 +45,6 @@ import { CalendarPage } from "./modules/calendar";
 
 // ─── Other modules ───────────────────────────────────────────────────────────
 import { AnnouncementsPage } from "./modules/announcements/AnnouncementsPage";
-import { assetRoutes } from "./modules/assets/routes";
-import { quoteRoutes } from "./modules/quotes/routes";
-import PendingReturnsPage from "./modules/assets/pages/pendingReturnsPage";
-import EmployeeDashboard from "./modules/assets/pages/EmployeeDashboard";
 import { ComposeAnnouncementPage } from "./modules/announcements/ComposeAnnouncementPage";
 import { AcknowledgmentsOverviewPage } from "./modules/announcements/AcknowledgmentsOverviewPage";
 import { AnnouncementsDashboardPage } from "./modules/dashboard/AnnouncementsDashboardPage";
@@ -58,12 +56,20 @@ import { PipelineFunnelPage } from "./modules/recruiting/PipelineFunnelPage";
 import { SourcingPage } from "./modules/recruiting/SourcingPage";
 import { CandidatePipelinePage } from "./modules/recruiting/CandidatePipelinePage";
 import { CandidateDetailPage } from "./modules/recruiting/CandidateDetailPage";
+import TrainingModulePage from "./modules/training/TrainingModulePage";
+import ProgramDetailsPage from "./modules/training/ProgramDetailsPage";
 import { DuplicatesPage } from "./modules/recruiting/DuplicatesPage";
 import HelpdeskModulePage from "./modules/helpdesk/HelpdeskModulePage";
 import TicketDetailsPage from "./modules/helpdesk/TicketDetailsPage";
 import { DirectoryPage } from "./modules/directory/DirectoryPage";
 import { OnboardingPage } from "./modules/onboarding/OnboardingPage";
 import { DocumentsPage } from "./modules/documents/DocumentsPage";
+
+import Dashboard from "./modules/assets/pages/Dashboard";
+import EmployeeDashboard from "./modules/assets/pages/EmployeeDashboard";
+import { assetRoutes } from "./modules/assets/routes";
+import { quoteRoutes } from "./modules/quotes/routes";
+
 
 // ─── NavLink ─────────────────────────────────────────────────────────────────
 const NavLink = ({
@@ -90,12 +96,21 @@ const NavLink = ({
           ? "bg-[#F37021] text-white shadow-md"
           : "text-gray-400 hover:bg-white/5 hover:text-white"
         }`}
+      className={`flex items-center justify-between px-3 py-2 mb-0.5 rounded-lg font-semibold transition-all duration-200
+                ${isSubItem ? "ml-6 text-sm py-1.5" : "text-[13px]"}
+                ${isActive
+          ? "bg-[#F37021] text-white shadow-md"
+          : "text-gray-200 hover:bg-white/10 hover:text-white"
+        }`}
     >
       <div className="flex items-center space-x-3">
-        <span className={isActive ? "text-white" : "text-gray-500"}>
+        <span className={isActive ? "text-white" : "text-gray-300"}>
           <Icon size={16} strokeWidth={2.5} />
         </span>
-        <span>{label}</span>
+
+        <span className={isActive ? "text-white" : "text-white"}>
+          {label}
+        </span>
       </div>
       {isActive && !isSubItem && (
         <ChevronDown size={16} className="text-white" />
@@ -104,28 +119,11 @@ const NavLink = ({
   );
 };
 
-// ─── Dashboard Router ────────────────────────────────────────────────────────
-// Dropdown nundi vachina activeView ni batti okate dashboard render avthundi
-const HomeDashboard = ({ view }: { view: string }) => {
-  if (view === "Manager") return <ManagerDashboard />;
-  if (view === "HR") return <HRDashboard />;
-  if (view === "Admin") return <AdminDashboard />;
-
-  // Default for "Employee" or anything else
-  return <LeaveDashboard />;
-};
-
 // ─── Authenticated layout ────────────────────────────────────────────────────
 function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { employee, logout } = useAuth();
-
-  // Actual backend role of the user
-  const actualRole = employee?.access_tier ?? "Employee";
-
-  // State for the dropdown view switcher
-  const [activeView, setActiveView] = useState(actualRole);
 
   const displayName = employee?.name ?? "Admin User";
   const initials = displayName
@@ -146,9 +144,12 @@ function AppLayout() {
     if (location.pathname.startsWith("/directory")) return "Directory";
     if (location.pathname.startsWith("/onboarding")) return "Onboarding";
     if (location.pathname.startsWith("/documents")) return "Documents";
+    if (location.pathname.startsWith("/assets")) return "Assets";
+    if (location.pathname.startsWith("/quotes")) return "Quotes";
     if (location.pathname === "/calendar") return "Company Calendar";
     if (location.pathname === "/dashboard") return "Announcements";
-    if (location.pathname === "/") return "Leave Dashboard";
+    if (location.pathname === "/" || location.pathname === "/dashboard")
+      return "Leave Dashboard";
     return "UZVI Workspace";
   };
 
@@ -160,9 +161,8 @@ function AppLayout() {
 
   return (
     <div className="flex h-screen bg-[#F4F6F8] font-sans overflow-hidden">
-      {/* ─── SIDEBAR ─────────────────────────────────────────────────────── */}
-      <aside className="w-[280px] bg-[#1A1614] flex flex-col justify-between shrink-0">
-        {/* Logo */}
+      {/* ─── SIDEBAR ─────────────────────────────────────────────────── */}
+      <aside className="w-[280px] bg-[#1A1614] flex flex-col justify-between shrink-0 transition-all">
         <div className="px-4 py-3 flex items-center justify-between border-b border-white/5">
           <div className="flex items-center space-x-3">
             <div className="w-9 h-9 bg-[#F37021] text-white rounded-full flex items-center justify-center font-black text-lg">
@@ -182,11 +182,21 @@ function AppLayout() {
 
         <div className="flex-1 overflow-hidden px-3 py-3">
           <div className="mb-0.5">
-            <NavLink to="/" icon={Briefcase} label="Leave Management" />
+            <NavLink to="/directory" icon={BookUser} label="Directory" />
+          </div>
+          <div className="mb-0.5">
+            <NavLink to="/onboarding" icon={ClipboardList} label="Onboarding" />
           </div>
           <div className="mb-0.5">
             <NavLink to="/calendar" icon={CalendarDays} label="Company Calendar" />
           </div>
+          <div className="mb-0.5">
+            <NavLink to="/documents" icon={FolderOpen} label="Documents" />
+          </div>
+          <div className="mb-0.5">
+            <NavLink to="/" icon={Briefcase} label="Leave Management" />
+          </div>
+
           <div className="mb-0.5">
             <NavLink to="/dashboard" icon={Megaphone} label="Announcements" />
           </div>
@@ -198,6 +208,9 @@ function AppLayout() {
             />
           </div>
           <div className="mb-0.5">
+            <NavLink to="/assets" icon={Package} label="Assets" />
+          </div>
+          <div className="mb-0.5">
             <NavLink to="/expenses" icon={CreditCard} label="Expense Claims" />
           </div>
           <div className="mb-0.5">
@@ -206,19 +219,15 @@ function AppLayout() {
           <div className="mb-0.5">
             <NavLink to="/helpdesk" icon={Headphones} label="Helpdesk" />
           </div>
+
+
           <div className="mb-0.5">
-            <NavLink to="/directory" icon={BookUser} label="Directory" />
-          </div>
-          <div className="mb-0.5">
-            <NavLink to="/onboarding" icon={ClipboardList} label="Onboarding" />
-          </div>
-          <div className="mb-0.5">
-            <NavLink to="/documents" icon={FolderOpen} label="Documents" />
+            <NavLink to="/quotes" icon={Quote} label="Quotes" />
           </div>
         </div>
 
-        {/* Logged in User */}
-        <div className="px-3 py-3 border-t border-white/5">
+        {/* Bottom user card */}
+        <div className="px-3 py-2.5 border-t border-white/5 flex items-center justify-between hover:bg-white/5 cursor-pointer transition">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-[#F37021] rounded-full flex items-center justify-center text-white font-bold">
               {initials}
@@ -332,6 +341,26 @@ function AppLayout() {
             <Route path="/" element={<HomeDashboard view={activeView} />} />
 
             <Route
+              path="/"
+              element={
+                activeRole === "Employee" ? (
+                  <LeaveDashboard />
+                ) : activeRole === "Manager" ? (
+                  <ManagerDashboard />
+                ) : activeRole === "Admin" ? (
+                  <AdminDashboard />
+                ) : activeRole === "HR" ? (
+                  <HRDashboard />
+                ) : null
+              }
+            />
+
+            <Route
+              path="/calendar"
+              element={<CalendarPage role={activeRole} />}
+            />
+
+            <Route
               path="/announcements"
               element={
                 <ProtectedRoute>
@@ -340,38 +369,56 @@ function AppLayout() {
               }
             />
             <Route
-              path="/assets/pending-returns"
-              element={<PendingReturnsPage />}
+              path="/announcements/new"
+              element={
+                <ProtectedRoute>
+                  <ComposeAnnouncementPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/announcements/acknowledgments"
+              element={
+                <ProtectedRoute>
+                  <AcknowledgmentsOverviewPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <AnnouncementsDashboardPage />
+                </ProtectedRoute>
+              }
             />
 
             <Route
-              path="/employee-dashboard"
-              element={<EmployeeDashboard />}
+              path="/utilization"
+              element={
+                <ProtectedRoute>
+                  <UtilizationModulePage />
+                </ProtectedRoute>
+              }
             />
 
-            {assetRoutes}
-            {quoteRoutes}
-
-            {allModules
-              .filter((module) => module.prefix !== "/announcements" &&
-                module.prefix !== "/assets" &&
-                module.prefix !== "/quotes"
-              )
-              .map((module) => (
             <Route
-              path="/calendar"
-              element={<CalendarPage role={activeRole} />}
+              path="/expenses"
+              element={
+                <ProtectedRoute>
+                  <ExpenseClaimsModulePage />
+                </ProtectedRoute>
+              }
             />
 
-            <Route path="/announcements" element={<ProtectedRoute><AnnouncementsPage /></ProtectedRoute>} />
-            <Route path="/announcements/new" element={<ProtectedRoute><ComposeAnnouncementPage /></ProtectedRoute>} />
-            <Route path="/announcements/acknowledgments" element={<ProtectedRoute><AcknowledgmentsOverviewPage /></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute><AnnouncementsDashboardPage /></ProtectedRoute>} />
-
-            <Route path="/utilization" element={<ProtectedRoute><UtilizationModulePage /></ProtectedRoute>} />
-            <Route path="/expenses" element={<ProtectedRoute><ExpenseClaimsModulePage /></ProtectedRoute>} />
-
-            <Route path="/recruiting" element={<ProtectedRoute><RecruitingModulePage /></ProtectedRoute>}>
+            <Route
+              path="/recruiting"
+              element={
+                <ProtectedRoute>
+                  <RecruitingModulePage />
+                </ProtectedRoute>
+              }
+            >
               <Route index element={<RecruitingHomePage />} />
               <Route path="funnel" element={<PipelineFunnelPage />} />
               <Route path="sourcing" element={<SourcingPage />} />
@@ -380,12 +427,60 @@ function AppLayout() {
               <Route path="candidates/:candidateId" element={<CandidateDetailPage />} />
             </Route>
 
-            <Route path="/helpdesk" element={<ProtectedRoute><HelpdeskModulePage /></ProtectedRoute>} />
-            <Route path="/helpdesk/tickets/:ticketId" element={<ProtectedRoute><TicketDetailsPage /></ProtectedRoute>} />
+            <Route
+              path="/helpdesk"
+              element={
+                <ProtectedRoute>
+                  <HelpdeskModulePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/helpdesk/tickets/:ticketId"
+              element={
+                <ProtectedRoute>
+                  <TicketDetailsPage />
+                </ProtectedRoute>
+              }
+            />
 
-            <Route path="/directory" element={<ProtectedRoute><DirectoryPage /></ProtectedRoute>} />
-            <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
-            <Route path="/documents" element={<ProtectedRoute><DocumentsPage /></ProtectedRoute>} />
+            <Route
+              path="/directory"
+              element={
+                <ProtectedRoute>
+                  <DirectoryPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="candidates/:candidateId"
+              element={<CandidateDetailPage />}
+            />
+
+            <Route
+              path="/documents"
+              element={
+                <ProtectedRoute>
+                  <DocumentsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/assets"
+              element={
+                <ProtectedRoute>
+                  {activeRole === "Employee" ? (
+                    <EmployeeDashboard />
+                  ) : (
+                    <Dashboard />
+                  )}
+                </ProtectedRoute>
+              }
+            />
+            {quoteRoutes}
+            {assetRoutes}
 
             <Route
               path="*"
@@ -419,10 +514,12 @@ function AuthGate() {
     );
   }
 
+  // Public route
   if (location.pathname === "/login") {
     return <LoginPage />;
   }
 
+  // Not logged in → force login
   if (!employee) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
@@ -443,5 +540,8 @@ export default function App() {
       </BrowserRouter>
     </Router>
     </AuthProvider >
+      </Router >
+    </AuthProvider >
   );
 }
+

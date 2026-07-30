@@ -49,8 +49,28 @@
   margin-bottom: 14px;
 }
 
+.entry-form__notes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 14px;
+}
+
+.entry-form__notes textarea {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #d7dbe0;
+  font-size: 14px;
+  color: #1f2430;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 48px;
+}
+
 .entry-form button {
-  background: #2f5d50;
+  background: #F37021;
   color: white;
   border: none;
   padding: 9px 18px;
@@ -59,7 +79,6 @@
   font-weight: 600;
   cursor: pointer;
 }
-
 .entry-form button:disabled {
   opacity: 0.6;
   cursor: default;

@@ -1,11 +1,9 @@
-
 import { useEffect, useState } from "react";
-import { utilizationApi, type Project, type PersonalDashboard } from "./api";
+import { utilizationApi, type Project, type PersonalDashboard, type TimeEntry } from "./api";
+import { useAuth } from "../../shared/auth/AuthContext";
 import { UtilizationSummaryCard } from "./components/UtilizationSummaryCard";
 import { TimeEntryForm } from "./components/TimeEntryForm";
 import "./ConsultantUtilizationPage.css";
-
-const CURRENT_EMPLOYEE_ID = "E1"; // TODO: replace once auth exists
 
 function isoDateNDaysAgo(n: number): string {
   const d = new Date();
@@ -14,8 +12,12 @@ function isoDateNDaysAgo(n: number): string {
 }
 
 export function ConsultantUtilizationPage() {
+  const { employee } = useAuth();
+  const currentEmployeeId = employee?.employee_id ?? "";
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [dashboard, setDashboard] = useState<PersonalDashboard | null>(null);
+  const [recentEntries, setRecentEntries] = useState<TimeEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -23,35 +25,40 @@ export function ConsultantUtilizationPage() {
   const periodEnd = isoDateNDaysAgo(0);
 
   async function loadDashboard() {
-    const [projectList, personalDashboard] = await Promise.all([
+    const [projectList, personalDashboard, entries] = await Promise.all([
       utilizationApi.listProjects(),
-      utilizationApi.getPersonalDashboard(CURRENT_EMPLOYEE_ID, periodStart, periodEnd),
+      utilizationApi.getPersonalDashboard(currentEmployeeId, periodStart, periodEnd),
+      utilizationApi.listTimeEntries(currentEmployeeId, periodStart, periodEnd),
     ]);
     setProjects(projectList);
     setDashboard(personalDashboard);
+    // Most recent first.
+    setRecentEntries([...entries].sort((a, b) => (a.date < b.date ? 1 : -1)));
   }
 
   useEffect(() => {
+    if (!currentEmployeeId) return;
     setLoading(true);
     loadDashboard()
       .catch((err) => setLoadError(err instanceof Error ? err.message : "Couldn't load your dashboard."))
       .finally(() => setLoading(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [currentEmployeeId]);
 
-  async function handleLogHours(entry: { projectId: string; date: string; hours: number; billable: boolean }) {
+  async function handleLogHours(entry: { projectId: string; date: string; hours: number; billable: boolean; notes: string }) {
     await utilizationApi.createTimeEntry({
-      entry_id: `TE-${CURRENT_EMPLOYEE_ID}-${entry.projectId}-${entry.date}-${Date.now()}`,
-      employee_id: CURRENT_EMPLOYEE_ID,
+      entry_id: `TE-${currentEmployeeId}-${entry.projectId}-${entry.date}-${Date.now()}`,
+      employee_id: currentEmployeeId,
       project_id: entry.projectId,
       date: entry.date,
       hours: entry.hours,
       billable_flag: entry.billable,
+      notes: entry.notes || undefined,
     });
     await loadDashboard(); // refresh summary + trend after logging
   }
 
-  if (loading) {
+  if (!currentEmployeeId || loading) {
     return <div className="cu-page cu-page--status">Loading your utilization…</div>;
   }
 
@@ -126,6 +133,38 @@ export function ConsultantUtilizationPage() {
       </div>
 
       <TimeEntryForm projects={projects} onSubmit={handleLogHours} />
+
+      <section className="cu-panel cu-panel--entries">
+        <h2 className="cu-panel__title">Recent entries</h2>
+        {recentEntries.length === 0 ? (
+          <p className="cu-panel__empty">No entries logged in this period yet.</p>
+        ) : (
+          <table className="cu-table cu-table--entries">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Project</th>
+                <th>Hours</th>
+                <th>Billable</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentEntries.map((entry) => (
+                <tr key={entry.entry_id}>
+                  <td>{entry.date}</td>
+                  <td>{projects.find((p: Project) => p.project_id === entry.project_id)?.name ?? entry.project_id}</td>
+                  <td>{entry.hours.toFixed(1)}h</td>
+                  <td>{entry.billable_flag ? "Yes" : "No"}</td>
+                  <td className="cu-table__notes" title={entry.notes ?? undefined}>
+                    {entry.notes ? entry.notes : <span className="cu-panel__empty-inline">—</span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
     </div>
   );
 }

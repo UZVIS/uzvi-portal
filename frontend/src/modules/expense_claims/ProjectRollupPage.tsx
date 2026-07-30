@@ -1,13 +1,27 @@
-
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { expenseClaimsApi, type ProjectExpenseRollup } from "./api";
+import { utilizationApi, type Project } from "../consultant_utilization/api";
 import "./ProjectRollupPage.css";
 
 export function ProjectRollupPage() {
+  const [projects, setProjects] = useState<Project[]>([]);
   const [projectId, setProjectId] = useState("");
   const [rollup, setRollup] = useState<ProjectExpenseRollup | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
+
+  useEffect(() => {
+    utilizationApi
+      .listProjects()
+      .then((list) => {
+        setProjects(list);
+        if (list.length > 0) setProjectId(list[0].project_id);
+      })
+      .catch(() => {
+        // If this fails, the dropdown just stays empty - lookup form still
+        // renders, just with nothing to pick from.
+      });
+  }, []);
 
   async function handleLookup(e: React.FormEvent) {
     e.preventDefault();
@@ -29,13 +43,15 @@ export function ProjectRollupPage() {
       <p className="pr-page__subtitle">Total expenses claimed against a project, broken down by status.</p>
 
       <form className="pr-form" onSubmit={handleLookup}>
-        <input
-          type="text"
-          placeholder="Project ID (e.g. P1)"
-          value={projectId}
-          onChange={(e) => setProjectId(e.target.value)}
-        />
-        <button type="submit" disabled={status === "loading"}>
+        <select value={projectId} onChange={(e) => setProjectId(e.target.value)}>
+          {projects.length === 0 && <option value="">No projects yet</option>}
+          {projects.map((p) => (
+            <option key={p.project_id} value={p.project_id}>
+              {p.name}
+            </option>
+          ))}
+        </select>
+        <button type="submit" disabled={status === "loading" || !projectId}>
           {status === "loading" ? "Loading…" : "Look up"}
         </button>
       </form>

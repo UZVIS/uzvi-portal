@@ -1,9 +1,4 @@
-/**
- * M4 - Expense Claims
- * frontend/src/modules/expense_claims/components/ClaimsTable.tsx
- *
- * FR-EXP-07: employees see their own claim history.
- */
+
 import type { ExpenseClaim, ExpenseCategory } from "../api";
 import "./ClaimsTable.css";
 
@@ -26,6 +21,7 @@ export function ClaimsTable({ claims, categories }: Props) {
           <th>Date</th>
           <th>Category</th>
           <th>Amount</th>
+          <th>Description</th>
           <th>Status</th>
           <th>Receipt</th>
         </tr>
@@ -38,10 +34,13 @@ export function ClaimsTable({ claims, categories }: Props) {
           const receiptUrl = filename ? "/receipts/" + filename : null;
 
           return (
-            <tr key={claim.claim_id} title={claim.description ?? undefined}>
+            <tr key={claim.claim_id}>
               <td>{claim.date}</td>
               <td>{categories.find((c) => c.category_id === claim.category_id)?.name ?? claim.category_id}</td>
               <td>₹{claim.amount.toLocaleString()}</td>
+              <td className="claims-table__description" title={claim.description ?? undefined}>
+                {claim.description ? claim.description : <span className="claims-table__receipt-none">—</span>}
+              </td>
               <td>
                 <span className={"claims-table__badge claims-table__badge--" + claim.status.toLowerCase()}>
                   {claim.status}

@@ -31,9 +31,9 @@ class TimeEntry(Base):
     date = Column(Date, nullable=False)
     hours = Column(Float, nullable=False)
     billable_flag = Column(Boolean, nullable=False, default=False)
-    # FR-UTL-07 / NFR-MNT-04: source field so bulk import can be added later
-    # without a schema change.
+
     source = Column(String, nullable=False, default="manual")  # manual | import
 
     employee = relationship("Employee")
     project = relationship("Project", back_populates="time_entries")
+    notes = Column(String, nullable=True)

@@ -75,13 +75,7 @@ export default function ScenarioTable({
           />
         </div>
 
-        <button className="filter-chip" disabled>
-          Status <span className="soon-tag">Soon</span>
-        </button>
-
-        <button className="filter-chip" disabled>
-          Output Type <span className="soon-tag">Soon</span>
-        </button>
+        
 
         <div className="toolbar-spacer" />
 

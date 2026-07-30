@@ -131,6 +131,7 @@ export default function ScenarioDialog({
         <div className="dialog-actions">
 
           <button
+           className="btn-secondary"
             onClick={onClose}
           >
             Cancel
