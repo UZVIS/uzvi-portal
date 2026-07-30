@@ -451,7 +451,32 @@ function AppLayout() {
                 </ProtectedRoute>
               }
             />
- 
+            <Route
+              path="/onboarding"
+              element={
+                <ProtectedRoute>
+                  <OnboardingPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/training"
+              element={
+                <ProtectedRoute>
+                  <TrainingModulePage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/training/programs/:programId"
+              element={
+                <ProtectedRoute>
+                  <ProgramDetailsPage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/assets"
               element={
