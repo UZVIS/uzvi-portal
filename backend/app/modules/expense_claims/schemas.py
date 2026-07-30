@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Optional, Dict
 
 from pydantic import BaseModel, Field
@@ -26,7 +26,6 @@ class ExpenseClaimCreate(BaseModel):
     amount: float = Field(gt=0)
     date: date
     description: Optional[str] = None
-    
 
 
 class ExpenseClaimRead(BaseModel):
@@ -39,6 +38,8 @@ class ExpenseClaimRead(BaseModel):
     status: str
     description: Optional[str] = None
     receipt_file_path: Optional[str] = None
+    decided_by_role: Optional[str] = None
+    decided_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
 

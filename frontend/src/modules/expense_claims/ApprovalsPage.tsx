@@ -1,17 +1,33 @@
-
 import { useEffect, useState } from "react";
 import { expenseClaimsApi, type ExpenseCategory, type ExpenseClaim } from "./api";
+import { useAuth } from "../../shared/auth/AuthContext";
 import "./ApprovalsPage.css";
 
-type ActingRole = "Manager" | "Admin" | "HR-Restricted";
+const APPROVER_TIERS = new Set(["Manager", "Admin/Leadership", "HR-Restricted"]);
+
+
+function formatDecidedAt(isoTimestamp: string): string {
+  const d = new Date(isoTimestamp);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 export function ApprovalsPage() {
+  const { employee } = useAuth();
   const [claims, setClaims] = useState<ExpenseClaim[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
-  const [actingAs, setActingAs] = useState<ActingRole>("Manager");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+
+
+  const canAct = employee ? APPROVER_TIERS.has(employee.access_tier) : false;
 
   async function loadAll() {
     const [claimList, categoryList] = await Promise.all([
@@ -32,7 +48,7 @@ export function ApprovalsPage() {
   async function handleApprove(claimId: string) {
     setActionError(null);
     try {
-      await expenseClaimsApi.approveClaim(claimId, actingAs);
+      await expenseClaimsApi.approveClaim(claimId);
       await loadAll();
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Couldn't approve this claim.");
@@ -71,18 +87,17 @@ export function ApprovalsPage() {
     <div className="ap-page">
       <h1 className="ap-page__title">Approvals</h1>
       <p className="ap-page__subtitle">
-        Not role-restricted yet (NFR-SEC-01) - anyone can act here for now. Use the selector below to test
-        threshold-based routing (claims above the admin threshold need Admin/HR-Restricted, not Manager).
+        Role-restricted per NFR-SEC-01: the backend checks your real access_tier from the Employee
+        Directory (M0) on every action - claims above the admin threshold need Admin/HR-Restricted,
+        not Manager.
       </p>
 
-      <label className="ap-page__acting">
-        Acting as:
-        <select value={actingAs} onChange={(e) => setActingAs(e.target.value as ActingRole)}>
-          <option value="Manager">Manager</option>
-          <option value="Admin">Admin</option>
-          <option value="HR-Restricted">HR-Restricted</option>
-        </select>
-      </label>
+      <p className="ap-page__acting">
+        Signed in as: <strong>{employee?.name ?? employee?.employee_id}</strong> ({employee?.access_tier})
+        {!canAct && (
+          <span className="ap-page__acting-note"> — this account can view claims but cannot act on them.</span>
+        )}
+      </p>
 
       {actionError && <p className="ap-page__error">{actionError}</p>}
 
@@ -97,6 +112,7 @@ export function ApprovalsPage() {
               <th>Amount</th>
               <th>Date</th>
               <th>Status</th>
+              <th>Decided by</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -110,8 +126,23 @@ export function ApprovalsPage() {
                 <td>
                   <span className={`ap-badge ap-badge--${claim.status.toLowerCase()}`}>{claim.status}</span>
                 </td>
+                <td>
+                  {claim.decided_by_role ? (
+                    <span className="ap-decided-by">
+                      {claim.status === "Rejected" ? "Rejected" : "Approved"} by {claim.decided_by_role}
+                      {claim.decided_at && (
+                        <>
+                          <br />
+                          <span className="ap-decided-by__time">{formatDecidedAt(claim.decided_at)}</span>
+                        </>
+                      )}
+                    </span>
+                  ) : (
+                    <span className="ap-table__done">—</span>
+                  )}
+                </td>
                 <td className="ap-table__actions">
-                  {claim.status === "Submitted" && (
+                  {claim.status === "Submitted" && canAct && (
                     <>
                       <button className="ap-btn ap-btn--approve" onClick={() => handleApprove(claim.claim_id)}>
                         Approve
@@ -121,12 +152,14 @@ export function ApprovalsPage() {
                       </button>
                     </>
                   )}
-                  {claim.status === "Approved" && (
+                  {claim.status === "Approved" && canAct && (
                     <button className="ap-btn ap-btn--reimburse" onClick={() => handleReimburse(claim.claim_id)}>
                       Mark reimbursed
                     </button>
                   )}
-                  {(claim.status === "Rejected" || claim.status === "Reimbursed") && (
+                  {(claim.status === "Rejected" ||
+                    claim.status === "Reimbursed" ||
+                    ((claim.status === "Submitted" || claim.status === "Approved") && !canAct)) && (
                     <span className="ap-table__done">—</span>
                   )}
                 </td>

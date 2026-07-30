@@ -27,12 +27,12 @@ import {
   FolderOpen,
 } from "lucide-react";
 
-// ─── Auth ────────────────────────────────────────────────────────────────────
+// ─── Auth ─────────────────────────────────────────────────────────────
 import { AuthProvider, useAuth } from "./shared/auth/AuthContext";
 import { LoginPage } from "./shared/auth/LoginPage";
 import { ProtectedRoute } from "./shared/components/ProtectedRoute";
 
-// ─── Leave & Calendar ────────────────────────────────────────────────────────
+// ─── Leave & Calendar ─────────────────────────────────────────────────
 import {
   LeaveDashboard,
   ManagerDashboard,
@@ -41,7 +41,7 @@ import {
 } from "./modules/leave";
 import { CalendarPage } from "./modules/calendar";
 
-// ─── Other modules ───────────────────────────────────────────────────────────
+// ─── Other modules ────────────────────────────────────────────────────
 import { AnnouncementsPage } from "./modules/announcements/AnnouncementsPage";
 import { assetRoutes } from "./modules/assets/routes";
 import { quoteRoutes } from "./modules/quotes/routes";
@@ -67,7 +67,7 @@ import { DirectoryPage } from "./modules/directory/DirectoryPage";
 import { OnboardingPage } from "./modules/onboarding/OnboardingPage";
 import { DocumentsPage } from "./modules/documents/DocumentsPage";
 
-// ─── NavLink ─────────────────────────────────────────────────────────────────
+// ─── NavLink ──────────────────────────────────────────────────────────
 const NavLink = ({
   to,
   icon: Icon,
@@ -107,7 +107,7 @@ const NavLink = ({
   );
 };
 
-// ─── Authenticated layout ────────────────────────────────────────────────────
+// ─── Authenticated layout ─────────────────────────────────────────────
 function AppLayout() {
   const [activeRole, setActiveRole] = useState("Employee");
   const location = useLocation();
@@ -147,7 +147,7 @@ function AppLayout() {
 
   return (
     <div className="flex h-screen bg-[#F4F6F8] font-sans overflow-hidden">
-      {/* ─── SIDEBAR ─────────────────────────────────────────────────────── */}
+      {/* ─── SIDEBAR ─────────────────────────────────────────────────── */}
       <aside className="w-[280px] bg-[#1A1614] flex flex-col justify-between shrink-0 transition-all">
         <div className="px-4 py-3 flex items-center justify-between border-b border-white/5">
           <div className="flex items-center space-x-3">
@@ -224,7 +224,7 @@ function AppLayout() {
         </div>
       </aside>
 
-      {/* ─── MAIN CONTENT ────────────────────────────────────────────────── */}
+      {/* ─── MAIN CONTENT ────────────────────────────────────────────── */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
         <header className="h-[72px] bg-[#1A1614] border-b border-white/5 flex items-center justify-between px-6 shrink-0">
           <div className="flex items-center space-x-4">
@@ -318,33 +318,6 @@ function AppLayout() {
               }
             />
 
-          <Route
-            path="/announcements"
-            element={
-              <ProtectedRoute>
-                <AnnouncementsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-    path="/assets/pending-returns"
-    element={<PendingReturnsPage />}
-/>
-     
-      <Route
-    path="/employee-dashboard"
-    element={<EmployeeDashboard />}
-/>
-
-          {assetRoutes}
-          {quoteRoutes}
-
-          {allModules
-            .filter((module) => module.prefix !== "/announcements" &&
-             module.prefix !== "/assets" &&
-             module.prefix !== "/quotes"
-)
-            .map((module) => (
             <Route
               path="/calendar"
               element={<CalendarPage role={activeRole} />}
@@ -455,7 +428,6 @@ function AppLayout() {
               </ProtectedRoute>
             }
           />
-
           <Route
             path="/directory"
             element={
@@ -484,6 +456,19 @@ function AppLayout() {
           />
 
           <Route
+            path="/assets/pending-returns"
+            element={<PendingReturnsPage />}
+          />
+
+          <Route
+            path="/employee-dashboard"
+            element={<EmployeeDashboard />}
+          />
+
+          {assetRoutes}
+          {quoteRoutes}
+
+          <Route
             path="*"
             element={
               <div className="flex flex-col items-center justify-center h-64 bg-white rounded-2xl border border-gray-200 shadow-sm p-8 text-center">
@@ -504,7 +489,7 @@ function AppLayout() {
 );
 }
 
-// ─── Gate: show login or app ─────────────────────────────────────────────────
+// ─── Gate: show login or app ──────────────────────────────────────────
 function AuthGate() {
 const { employee, isLoading } = useAuth();
 const location = useLocation();
@@ -530,7 +515,7 @@ if (isLoading) {
   return <AppLayout />;
 }
 
-// ─── Root ────────────────────────────────────────────────────────────────────
+// ─── Root ──────────────────────────────────────────────────────────────
 export default function App() {
   return (
     <AuthProvider>
@@ -539,9 +524,8 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/*" element={<AuthGate />} />
         </Routes>
-        
-      </BrowserRouter>
       </Router>
     </AuthProvider>
   );
 }
+

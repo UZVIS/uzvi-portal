@@ -21,8 +21,11 @@ OVER_ALLOCATED_THRESHOLD = 1.05  # FR-UTL-03
 class NotFoundError(Exception):
     pass
 
+class FutureDateError(Exception):
+    pass
 
-# --- Projects ---
+
+
 
 def create_project(db: Session, data: schemas.ProjectCreate) -> models.Project:
     project = models.Project(**data.model_dump())
@@ -48,6 +51,11 @@ def get_project(db: Session, project_id: str) -> models.Project:
 def create_time_entry(db: Session, data: schemas.TimeEntryCreate) -> models.TimeEntry:
     # FR-UTL-01: confirm the project exists before logging hours against it.
     get_project(db, data.project_id)
+    if data.date > date.today():
+        raise FutureDateError(
+            f"Cannot log hours for {data.date} - it's in the future. "
+            "Log hours for today or an earlier date."
+        )
     entry = models.TimeEntry(**data.model_dump())
     db.add(entry)
     db.commit()
@@ -76,7 +84,7 @@ def _weeks_in_period(start_date: date, end_date: date) -> float:
     return max(days / 7.0, 1 / 7.0)
 
 
-# --- Utilization (FR-UTL-02, FR-UTL-03) ---
+
 
 def compute_utilization(
     db: Session,
@@ -113,7 +121,7 @@ def compute_org_utilization(
     end_date: date,
     capacity_hours_per_week: float = DEFAULT_CAPACITY_HOURS_PER_WEEK,
 ) -> schemas.OrgUtilizationDashboard:
-    """FR-UTL-05: org-wide utilization, bench-risk list, over-allocation list, project margins."""
+
     entries = list_time_entries(db, start_date=start_date, end_date=end_date)
     employee_ids = sorted({e.employee_id for e in entries})
 
@@ -142,7 +150,6 @@ def compute_personal_dashboard(
     end_date: date,
     capacity_hours_per_week: float = DEFAULT_CAPACITY_HOURS_PER_WEEK,
 ) -> schemas.PersonalUtilizationDashboard:
-    """FR-UTL-06: own utilization %, hours-by-project breakdown, weekly trend."""
     summary = compute_utilization(db, employee_id, start_date, end_date, capacity_hours_per_week)
     entries = list_time_entries(db, employee_id=employee_id, start_date=start_date, end_date=end_date)
 
