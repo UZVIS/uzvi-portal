@@ -2,6 +2,7 @@ export interface Opportunity {
     opportunity_id: string;
     name: string;
     client: string;
+    scenarioCount?: number;
 }
 
 export interface OpportunityCreate {

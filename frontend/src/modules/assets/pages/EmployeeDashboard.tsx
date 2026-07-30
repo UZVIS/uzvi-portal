@@ -16,11 +16,11 @@ export default function EmployeeDashboard() {
 
         <div className="dashboard-layout">
 
-            <EmployeeSidebar />
+            {/* <EmployeeSidebar /> */}
 
             <div className="dashboard-page">
 
-                <EmployeeHeader />
+                {/* <EmployeeHeader /> */}
 
                 <main className="dashboard-body">
 
