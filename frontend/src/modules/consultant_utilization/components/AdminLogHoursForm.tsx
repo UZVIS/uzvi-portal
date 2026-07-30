@@ -90,6 +90,7 @@ export function AdminLogHoursForm({ projects, onSubmit }: Props) {
               className="field__input"
               type="date"
               value={date}
+              max={new Date().toISOString().slice(0, 10)}
               onChange={(e) => setDate(e.target.value)}
             />
           </label>

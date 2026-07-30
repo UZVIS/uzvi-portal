@@ -5,8 +5,7 @@ import "./ApprovalsPage.css";
 
 const APPROVER_TIERS = new Set(["Manager", "Admin/Leadership", "HR-Restricted"]);
 
-// Backend stores decided_at as a UTC ISO timestamp; render it in the
-// viewer's local time in a compact, readable form.
+
 function formatDecidedAt(isoTimestamp: string): string {
   const d = new Date(isoTimestamp);
   if (Number.isNaN(d.getTime())) return "";

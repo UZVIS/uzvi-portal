@@ -1,16 +1,19 @@
 
 import os
 import uuid
-from datetime import datetime, timezone
 from typing import List, Optional
 from collections import defaultdict
 
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
+from datetime import datetime, timezone, timedelta
+
+
 
 from app.modules.expense_claims import models, schemas
 
 ADMIN_APPROVAL_THRESHOLD = 25000.0
+IST = timezone(timedelta(hours=5, minutes=30))
 
 VALID_TRANSITIONS = {
     "Submitted": {"Approved", "Rejected"},
@@ -64,8 +67,9 @@ def get_category(db: Session, category_id: str) -> models.ExpenseCategory:
 
 
 def create_claim(db: Session, data: schemas.ExpenseClaimCreate) -> models.ExpenseClaim:
-    """FR-EXP-01, FR-EXP-02 (cap enforcement)."""
+
     category = get_category(db, data.category_id)
+
     if category.cap_amount is not None and data.amount > category.cap_amount:
         raise CapExceededError(
             f"Amount {data.amount} exceeds cap {category.cap_amount} for category {category.category_id}"
@@ -89,7 +93,6 @@ def create_claim(db: Session, data: schemas.ExpenseClaimCreate) -> models.Expens
 
 
 def upload_receipt(db: Session, claim_id: str, file: UploadFile) -> models.ExpenseClaim:
-    """Saves an uploaded receipt file to disk and links it to the claim."""
     claim = get_claim(db, claim_id)
 
     ext = os.path.splitext(file.filename or "")[1].lower()
@@ -136,7 +139,7 @@ def _transition(
     claim.status = new_status
     if new_status in ("Approved", "Rejected"):
         claim.decided_by_role = decided_by_role
-        claim.decided_at = datetime.now(timezone.utc)
+        claim.decided_at = datetime.now(IST)
     db.commit()
     db.refresh(claim)
     return claim

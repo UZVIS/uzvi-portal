@@ -33,7 +33,7 @@ class ExpenseClaim(Base):
     receipt_file_path = Column(String, nullable=True)
 
     decided_by_role = Column(String, nullable=True)
-    decided_at = Column(DateTime, nullable=True)
+    decided_at = Column(DateTime(timezone=True), nullable=True)
 
     employee = relationship("Employee")
     category = relationship("ExpenseCategory", back_populates="claims")

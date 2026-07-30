@@ -39,6 +39,9 @@
   color: #6b7280;
   margin-bottom: 16px;
 }
+.ap-page__acting-note {
+  color: #9a5a1c;
+}
 
 .ap-page__acting select {
   padding: 6px 10px;

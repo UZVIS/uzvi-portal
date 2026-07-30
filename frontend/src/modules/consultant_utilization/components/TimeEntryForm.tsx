@@ -54,7 +54,12 @@ export function TimeEntryForm({ projects, onSubmit }: Props) {
 
         <label>
           Date
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          <input
+            type="date"
+            value={date}
+            max={new Date().toISOString().slice(0, 10)}
+            onChange={(e) => setDate(e.target.value)}
+          />
         </label>
 
         <label>

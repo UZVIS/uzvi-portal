@@ -70,7 +70,7 @@
 }
 
 .entry-form button {
-  background: #2f5d50;
+  background: #F37021;
   color: white;
   border: none;
   padding: 9px 18px;
@@ -79,7 +79,6 @@
   font-weight: 600;
   cursor: pointer;
 }
-
 .entry-form button:disabled {
   opacity: 0.6;
   cursor: default;
