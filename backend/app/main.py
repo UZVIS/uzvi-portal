@@ -15,6 +15,7 @@ from app.modules.assets.router import router as asset_router
 from app.modules.announcements.router import router as announcement_router
 from app.modules.helpdesk.router import router as helpdesk_router
 from app.modules.training.router import router as training_router
+from app.modules.quotes.routes import router as quote_router
 from app.modules.recruiting.router import router as recruiting_router
 from app.modules.recruiting.router import interview_stage_router
 
@@ -59,6 +60,8 @@ app.include_router(leave_router)
 app.include_router(calendar_router)
 app.include_router(asset_router)
 app.include_router(announcement_router)
+app.include_router(quote_router)
+# M6 Training Module: Register training endpoints with the main FastAPI app
 app.include_router(helpdesk_router)
 app.include_router(training_router)
 app.include_router(recruiting_router)

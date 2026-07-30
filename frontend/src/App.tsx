@@ -43,6 +43,10 @@ import { CalendarPage } from "./modules/calendar";
 
 // ─── Other modules ────────────────────────────────────────────────────
 import { AnnouncementsPage } from "./modules/announcements/AnnouncementsPage";
+import { assetRoutes } from "./modules/assets/routes";
+import { quoteRoutes } from "./modules/quotes/routes";
+import PendingReturnsPage from "./modules/assets/pages/pendingReturnsPage";
+import EmployeeDashboard from "./modules/assets/pages/EmployeeDashboard";
 import { ComposeAnnouncementPage } from "./modules/announcements/ComposeAnnouncementPage";
 import { AcknowledgmentsOverviewPage } from "./modules/announcements/AcknowledgmentsOverviewPage";
 import { AnnouncementsDashboardPage } from "./modules/dashboard/AnnouncementsDashboardPage";
@@ -119,7 +123,6 @@ function AppLayout() {
 
   const getHeaderTitle = () => {
     if (location.pathname.startsWith("/announcements")) return "Announcements";
-    if (location.pathname === "/dashboard") return "Announcements";
     if (location.pathname.startsWith("/utilization"))
       return "Consultant Utilization";
     if (location.pathname.startsWith("/expenses")) return "Expense Claims";
@@ -129,6 +132,7 @@ function AppLayout() {
     if (location.pathname.startsWith("/onboarding")) return "Onboarding";
     if (location.pathname.startsWith("/documents")) return "Documents";
     if (location.pathname === "/calendar") return "Company Calendar";
+    if (location.pathname === "/dashboard") return "Announcements";
     if (location.pathname === "/") return "Leave Dashboard";
     return "UZVI Workspace";
   };
@@ -170,7 +174,7 @@ function AppLayout() {
             <NavLink to="/calendar" icon={CalendarDays} label="Company Calendar" />
           </div>
           <div className="mb-0.5">
-            <NavLink to="/announcements" icon={Megaphone} label="Announcements" />
+            <NavLink to="/dashboard" icon={Megaphone} label="Announcements" />
           </div>
           <div className="mb-0.5">
             <NavLink
@@ -430,6 +434,19 @@ function AppLayout() {
                 </ProtectedRoute>
               }
             />
+
+            <Route
+              path="/assets/pending-returns"
+              element={<PendingReturnsPage />}
+            />
+
+            <Route
+              path="/employee-dashboard"
+              element={<EmployeeDashboard />}
+            />
+
+            {assetRoutes}
+            {quoteRoutes}
 
             <Route
               path="*"
