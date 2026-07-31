@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+
 import { useAuth } from "../../shared/auth/AuthContext";
 import { listActiveEmployees, type Employee } from "../directory/api";
 import {
@@ -32,8 +32,8 @@ const START_INSTANCE_TIERS = new Set(["Admin/Leadership"]);
 const COHORT_VIEW_TIERS = new Set(["Admin/Leadership", "HR-Restricted"]);
 
 export function OnboardingPage() {
-  const { employee, logout } = useAuth();
-  const navigate = useNavigate();
+  const { employee } = useAuth();
+  
   const canManageTemplates = employee ? TEMPLATE_MANAGE_TIERS.has(employee.access_tier) : false;
   const canStartInstances = employee ? START_INSTANCE_TIERS.has(employee.access_tier) : false;
   const canViewCohort = employee ? COHORT_VIEW_TIERS.has(employee.access_tier) : false;
@@ -169,28 +169,11 @@ export function OnboardingPage() {
     <div className="directory-page uzvi-portal-theme">
       <header className="directory-page__header">
         <div>
-          <button className="button-secondary" onClick={() => navigate("/")}>
-            ← Modules
-          </button>
           <h1>Onboarding</h1>
           <p className="directory-page__subtitle">
             Structured checklists for new joiners — build a template once, track every new hire against it.
           </p>
         </div>
-        {employee && (
-          <div className="directory-page__me">
-            <div className="directory-page__me-avatar">
-              {employee.name.charAt(0).toUpperCase()}
-            </div>
-            <div className="directory-page__me-info">
-              <span className="directory-page__me-name">{employee.name}</span>
-              <span className="directory-page__me-tier">{employee.access_tier}</span>
-            </div>
-            <button className="button-secondary" onClick={logout}>
-              Log out
-            </button>
-          </div>
-        )}
       </header>
 
       {error && <div className="error-banner">{error}</div>}
