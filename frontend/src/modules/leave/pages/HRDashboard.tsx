@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { apiGet } from "../../../api/client";
+import { useAuth } from "../../../shared/auth/AuthContext"; // Added import
 // 🌟 Premium Icons
 import { ShieldAlert, CheckCircle, Paperclip, X, Check } from "lucide-react";
 
@@ -7,6 +8,17 @@ export default function HRDashboard() {
     const [requests, setRequests] = useState<any[]>([]);
     const [leaveTypes, setLeaveTypes] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+
+    // Dynamic Employee ID from Context
+    const { employee } = useAuth();
+    const hrId = employee?.employee_id;
+
+    // Moved duration calculation up so it can be used in filtering
+    const getDurationDays = (start: string, end: string) => {
+        if (!start || !end) return 0;
+        const diffTime = Math.abs(new Date(end).getTime() - new Date(start).getTime());
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    };
 
     useEffect(() => {
         fetchHRData();
@@ -16,14 +28,33 @@ export default function HRDashboard() {
         setIsLoading(true);
         try {
             const typesData = await apiGet('/v1/leave/leave-types');
-            setLeaveTypes(Array.isArray(typesData) ? typesData : []);
+            const validTypes = Array.isArray(typesData) ? typesData : [];
+            setLeaveTypes(validTypes);
 
             const appsData = await apiGet('/v1/leave/applications');
             if (Array.isArray(appsData)) {
-                const hrPendingApps = appsData.filter(app =>
-                    app?.status?.toUpperCase() === "PENDING_HR" ||
-                    app?.status?.toUpperCase() === "PENDING"
-                );
+                const hrPendingApps = appsData.filter(app => {
+                    const status = app?.status?.toUpperCase();
+
+                    // Always show if explicitly marked for HR
+                    if (status === "PENDING_HR") return true;
+
+                    // If it's just PENDING, check if it crosses the threshold
+                    if (status === "PENDING") {
+                        const type = validTypes.find(t => t.leave_type_id === app.leave_type_id);
+                        const typeNameLower = type?.name?.toLowerCase() || "";
+                        const threshold = type?.doc_required_threshold ?? 0;
+                        const duration = getDurationDays(app.start_date, app.end_date);
+
+                        const isSpecialLeave = typeNameLower.includes("maternity") || typeNameLower.includes("paternity");
+
+                        // Show in HR dashboard ONLY if it crosses the document threshold or is a special leave
+                        return isSpecialLeave || (threshold > 0 && duration > threshold);
+                    }
+
+                    return false;
+                });
+
                 setRequests(hrPendingApps);
             }
         } catch (error) {
@@ -38,12 +69,6 @@ export default function HRDashboard() {
         return type ? type.name : "Special Leave";
     };
 
-    const getDurationDays = (start: string, end: string) => {
-        if (!start || !end) return 0;
-        const diffTime = Math.abs(new Date(end).getTime() - new Date(start).getTime());
-        return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-    };
-
     const formatDate = (dateString: string) => {
         if (!dateString) return "";
         const options: Intl.DateTimeFormatOptions = { month: 'short', day: '2-digit', year: 'numeric' };
@@ -51,10 +76,15 @@ export default function HRDashboard() {
     };
 
     const handleAction = async (applicationId: string, actionType: 'APPROVED' | 'REJECTED') => {
+        if (!hrId) {
+            alert("User identity not found. Please log in again.");
+            return;
+        }
+
         try {
             const payload = {
                 status: actionType,
-                approver_id: "HR001"
+                approver_id: hrId // Dynamic HR ID
             };
 
             const response = await fetch(`http://127.0.0.1:8000/api/v1/leave/applications/${applicationId}/status`, {

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { apiGet } from "../../../api/client";
+import { useAuth } from "../../../shared/auth/AuthContext"; // Added import
 // 🌟 Premium Icons
 import { Users, CheckCircle, X, Check } from "lucide-react";
 
@@ -8,7 +9,9 @@ export default function ManagerDashboard() {
     const [leaveTypes, setLeaveTypes] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    const managerId = "EMP001";
+    // Dynamic Employee ID from Context
+    const { employee } = useAuth();
+    const managerId = employee?.employee_id;
 
     useEffect(() => {
         fetchManagerData();
@@ -52,6 +55,11 @@ export default function ManagerDashboard() {
     };
 
     const handleAction = async (applicationId: string, actionType: 'APPROVED' | 'REJECTED') => {
+        if (!managerId) {
+            alert("User identity not found. Please log in again.");
+            return;
+        }
+
         try {
             const payload = {
                 status: actionType,
