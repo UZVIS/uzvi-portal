@@ -6,7 +6,7 @@ from collections import defaultdict
 
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
-from datetime import datetime, timezone, timedelta
+from datetime import date, datetime, timezone, timedelta
 
 
 
@@ -31,6 +31,7 @@ class NotFoundError(Exception):
     pass
 
 
+
 class InvalidTransitionError(Exception):
     pass
 
@@ -38,6 +39,8 @@ class InvalidTransitionError(Exception):
 class CapExceededError(Exception):
     pass
 
+class FutureDateError(Exception):
+    pass
 
 class InvalidReceiptError(Exception):
     pass
@@ -73,6 +76,12 @@ def create_claim(db: Session, data: schemas.ExpenseClaimCreate) -> models.Expens
     if category.cap_amount is not None and data.amount > category.cap_amount:
         raise CapExceededError(
             f"Amount {data.amount} exceeds cap {category.cap_amount} for category {category.category_id}"
+        )
+
+    if data.date > date.today():
+        raise FutureDateError(
+            f"Cannot submit a claim dated {data.date} - it's in the future. "
+            "Use today's date or an earlier date."
         )
 
     claim = models.ExpenseClaim(

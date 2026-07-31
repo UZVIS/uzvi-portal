@@ -80,8 +80,13 @@
   border-bottom: 1px solid #f3f4f6;
 }
 
+/* .cu-panel--entries {
+  margin-top: 24px;
+} */
+
 .cu-panel--entries {
   margin-top: 24px;
+  overflow-x: auto;
 }
 
 .cu-panel__empty-inline {

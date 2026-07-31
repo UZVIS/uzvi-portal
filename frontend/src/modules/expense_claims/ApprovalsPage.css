@@ -61,7 +61,7 @@
   color: #9aa1ab;
 }
 
-.ap-table {
+/* .ap-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
@@ -69,6 +69,20 @@
   border: 1px solid #e3e6ea;
   border-radius: 10px;
   overflow: hidden;
+} */
+
+.ap-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #e3e6ea;
+  border-radius: 10px;
+}
+
+.ap-table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: #ffffff;
 }
 
 .ap-table th {

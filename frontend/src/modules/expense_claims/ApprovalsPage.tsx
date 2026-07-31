@@ -104,6 +104,7 @@ export function ApprovalsPage() {
       {claims.length === 0 ? (
         <p className="ap-page__empty">No claims in the system yet.</p>
       ) : (
+        <div className="ap-table-wrap">
         <table className="ap-table">
           <thead>
             <tr>
@@ -167,6 +168,7 @@ export function ApprovalsPage() {
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </div>
   );

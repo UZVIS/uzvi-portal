@@ -1,5 +1,12 @@
+/* .claims-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+} */
+
 .claims-table {
   width: 100%;
+  min-width: 600px;
   border-collapse: collapse;
   font-size: 13px;
 }

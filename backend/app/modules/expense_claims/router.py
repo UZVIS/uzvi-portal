@@ -36,6 +36,8 @@ def create_claim(
         raise HTTPException(status_code=422, detail=str(exc))
     except service.CapExceededError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
+    except service.FutureDateError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
 
 
 @router.post("/claims/{claim_id}/receipt", response_model=schemas.ExpenseClaimRead)

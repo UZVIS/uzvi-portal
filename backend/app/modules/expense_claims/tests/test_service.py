@@ -1,5 +1,5 @@
 
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 from sqlalchemy import create_engine
@@ -53,7 +53,25 @@ def test_create_claim_over_cap_rejected(db, employee, category):
                 claim_id="CL2", employee_id="E1", category_id="C1", amount=15000, date=date(2026, 1, 5)
             ),
         )
+def test_create_claim_rejects_future_date(db, employee, category):
+    tomorrow = date.today() + timedelta(days=1)
+    with pytest.raises(service.FutureDateError):
+        service.create_claim(
+            db,
+            schemas.ExpenseClaimCreate(
+                claim_id="CL_FUTURE", employee_id="E1", category_id="C1", amount=500, date=tomorrow
+            ),
+        )
 
+
+def test_create_claim_allows_today(db, employee, category):
+    claim = service.create_claim(
+        db,
+        schemas.ExpenseClaimCreate(
+            claim_id="CL_TODAY", employee_id="E1", category_id="C1", amount=500, date=date.today()
+        ),
+    )
+    assert claim.date == date.today()
 
 def test_status_transitions_submitted_to_reimbursed(db, employee, category):
     service.create_claim(
