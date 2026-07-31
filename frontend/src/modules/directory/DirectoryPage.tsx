@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../shared/auth/AuthContext";
 import {
   listActiveEmployees,
@@ -17,12 +16,10 @@ import { TeamManager } from "./components/TeamManager";
 import "../shared-theme.css";
 import "./DirectoryPage.css";
 
-// FR-DIR-05: only these tiers may add employees, edit profiles, or mark exits.
 const MANAGE_TIERS = new Set(["Admin/Leadership", "HR-Restricted"]);
 
 export function DirectoryPage() {
-  const { employee, logout } = useAuth();
-  const navigate = useNavigate();
+  const { employee } = useAuth();
   const canManage = employee ? MANAGE_TIERS.has(employee.access_tier) : false;
 
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -82,44 +79,40 @@ export function DirectoryPage() {
     }
   }
 
-  const filtered = employees.filter((e) => {
-    const q = search.trim().toLowerCase();
-    if (!q) return true;
-    const teamName = teamNameFor(e.team_id, teams) ?? "";
-    return (
-      e.name.toLowerCase().includes(q) ||
-      e.employee_id.toLowerCase().includes(q) ||
-      (e.designation ?? "").toLowerCase().includes(q) ||
-      teamName.toLowerCase().includes(q)
-    );
-  });
+  const TIER_ORDER: Record<string, number> = {
+    "Admin/Leadership": 0,
+    "HR-Restricted": 1,
+    "Manager": 2,
+    "Employee": 3,
+  };
+
+  const filtered = employees
+    .filter((e) => {
+      const q = search.trim().toLowerCase();
+      if (!q) return true;
+      const teamName = teamNameFor(e.team_id, teams) ?? "";
+      return (
+        e.name.toLowerCase().includes(q) ||
+        e.employee_id.toLowerCase().includes(q) ||
+        (e.designation ?? "").toLowerCase().includes(q) ||
+        teamName.toLowerCase().includes(q)
+      );
+    })
+    .sort((a, b) => {
+      const orderA = TIER_ORDER[a.access_tier] ?? 99;
+      const orderB = TIER_ORDER[b.access_tier] ?? 99;
+      return orderA - orderB;
+    });
 
   return (
     <div className="directory-page uzvi-portal-theme">
       <header className="directory-page__header">
         <div>
-          <button className="button-secondary" onClick={() => navigate("/")}>
-            ← Modules
-          </button>
           <h1>Employee Directory</h1>
           <p className="directory-page__subtitle">
             The single source of truth for who exists — every other module references this list.
           </p>
         </div>
-        {employee && (
-          <div className="directory-page__me">
-            <div className="directory-page__me-avatar">
-              {employee.name.charAt(0).toUpperCase()}
-            </div>
-            <div className="directory-page__me-info">
-              <span className="directory-page__me-name">{employee.name}</span>
-              <span className="directory-page__me-tier">{employee.access_tier}</span>
-            </div>
-            <button className="button-secondary" onClick={logout}>
-              Log out
-            </button>
-          </div>
-        )}
       </header>
 
       {error && <div className="error-banner">{error}</div>}

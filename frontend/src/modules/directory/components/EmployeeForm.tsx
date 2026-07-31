@@ -3,7 +3,7 @@ import type { Team } from "../api";
 
 interface EmployeeFormProps {
   teams: Team[];
-  employees: { employee_id: string; name: string }[];
+  employees: { employee_id: string; name: string; access_tier: string }[];
   onSubmit: (input: {
     employee_id: string;
     name: string;
@@ -120,11 +120,13 @@ export function EmployeeForm({ teams, employees, onSubmit }: EmployeeFormProps) 
             onChange={(e) => setManagerId(e.target.value)}
           >
             <option value="">No manager</option>
-            {employees.map((e) => (
-              <option key={e.employee_id} value={e.employee_id}>
-                {e.name} ({e.employee_id})
-              </option>
-            ))}
+            {employees
+              .filter((e) => e.access_tier === "Manager" || e.access_tier === "Admin/Leadership")
+              .map((e) => (
+                <option key={e.employee_id} value={e.employee_id}>
+                  {e.name} ({e.employee_id})
+                </option>
+              ))}
           </select>
         </label>
         <label className="field">

@@ -104,6 +104,7 @@ export function EmployeeRow({
             <option value="">No manager</option>
             {employees
               .filter((e) => e.employee_id !== employee.employee_id)
+              .filter((e) => e.access_tier === "Manager" || e.access_tier === "Admin/Leadership")
               .map((e) => (
                 <option key={e.employee_id} value={e.employee_id}>
                   {e.name} ({e.employee_id})
