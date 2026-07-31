@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 
-import Header from "../components/Header";
+
 import DashboardCards from "../components/DashboardCards";
 import SearchBar from "../components/SearchBar";
 import AssetTable from "../components/AssetTable";

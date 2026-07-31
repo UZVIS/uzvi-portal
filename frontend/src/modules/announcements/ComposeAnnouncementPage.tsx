@@ -3,10 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../shared/auth/AuthContext";
 import { createAnnouncement } from "./api";
 import type { TargetType } from "./types";
-import { IconArrowLeft, IconSend } from "./components/icons";
+import { IconSend } from "./components/icons";
 import "./ComposeAnnouncementPage.css";
 
-export function ComposeAnnouncementPage() {
+interface ComposeAnnouncementPageProps {
+  onPosted?: () => void;
+}
+
+export function ComposeAnnouncementPage({ onPosted }: ComposeAnnouncementPageProps = {}) {
   const { employee } = useAuth();
   const navigate = useNavigate();
 
@@ -49,7 +53,11 @@ export function ComposeAnnouncementPage() {
         expiry_date: expiryDate || undefined,
         posted_by: employee!.employee_id,
       });
-      navigate("/announcements");
+      if (onPosted) {
+        onPosted();
+      } else {
+        navigate("/announcements");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not post announcement.");
     } finally {
@@ -59,10 +67,6 @@ export function ComposeAnnouncementPage() {
 
   return (
     <div className="compose-page">
-      <button className="compose-back" onClick={() => navigate("/dashboard")}>
-        <IconArrowLeft size={14} /> Back to dashboard
-      </button>
-
       <div className="compose-card">
         <div className="compose-header">
           <h2>New Announcement</h2>
@@ -147,7 +151,7 @@ export function ComposeAnnouncementPage() {
             <button
               type="button"
               className="cancel-btn"
-              onClick={() => navigate("/announcements")}
+              onClick={() => (onPosted ? onPosted() : navigate("/announcements"))}
               disabled={isSubmitting}
             >
               Cancel
