@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../../shared/auth/AuthContext";
 import { listAllAnnouncements, listFeedForEmployee, acknowledgeAnnouncement } from "./api";
 import type { Announcement } from "./types";
 import { AnnouncementCard } from "./components/AnnouncementCard";
 import { AcknowledgmentDrawer } from "./components/AcknowledgmentDrawer";
 import {
-  IconArrowLeft,
   IconInbox,
   IconLayers,
   IconMegaphone,
@@ -18,13 +17,17 @@ const POSTER_TIERS = new Set(["Admin/Leadership", "Manager"]);
 
 type ViewMode = "feed" | "all";
 
-export function AnnouncementsPage() {
+interface AnnouncementsPageProps {
+  initialView?: ViewMode;
+}
+
+export function AnnouncementsPage({ initialView: initialViewProp }: AnnouncementsPageProps = {}) {
   const { employee } = useAuth();
-  const navigate = useNavigate();
   const canManage = employee ? POSTER_TIERS.has(employee.access_tier) : false;
 
   const [searchParams] = useSearchParams();
-  const initialView: ViewMode = searchParams.get("view") === "all" ? "all" : "feed";
+  const initialView: ViewMode =
+    initialViewProp ?? (searchParams.get("view") === "all" ? "all" : "feed");
   const [view, setView] = useState<ViewMode>(initialView);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -71,10 +74,6 @@ export function AnnouncementsPage() {
   return (
     <div className="announcements-page">
       <div className="announcements-header">
-        <button className="announcements-back" onClick={() => navigate("/dashboard")}>
-          <IconArrowLeft size={14} /> Back
-        </button>
-
         <div className="announcements-header__row">
           <div>
             <h1>Announcements</h1>

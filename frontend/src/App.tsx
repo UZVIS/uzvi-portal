@@ -27,6 +27,7 @@ import {
   FolderOpen,
   Package,
   Quote,
+  GraduationCap,
 } from "lucide-react";
  
 // ─── Auth ────────────────────────────────────────────────────────────────────
@@ -142,6 +143,7 @@ function AppLayout() {
     if (location.pathname.startsWith("/documents")) return "Documents";
     if (location.pathname.startsWith("/assets")) return "Assets";
     if (location.pathname.startsWith("/quotes")) return "Quotes";
+    if (location.pathname.startsWith("/training")) return "Training";
     if (location.pathname === "/calendar") return "Company Calendar";
     if (location.pathname === "/dashboard") return "Announcements";
     if (location.pathname === "/" || location.pathname === "/dashboard")
@@ -217,29 +219,13 @@ function AppLayout() {
           <div className="mb-0.5">
             <NavLink to="/helpdesk" icon={Headphones} label="Helpdesk" />
           </div>
-          
+          <div className="mb-0.5">
+            <NavLink to="/training" icon={GraduationCap} label="Training" />
+          </div>
          
           <div className="mb-0.5">
             <NavLink to="/quotes" icon={Quote} label="Quotes" />
           </div>
-        </div>
- 
-        {/* Bottom user card */}
-        <div className="px-3 py-2.5 border-t border-white/5 flex items-center justify-between hover:bg-white/5 cursor-pointer transition">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-[#F37021] text-white rounded-full flex items-center justify-center font-bold text-sm shadow-md">
-              {initials}
-            </div>
-            <div>
-              <p className="text-sm font-bold text-white leading-tight">
-                {displayName}
-              </p>
-              <p className="text-[11px] text-[#F37021] font-semibold">
-                {tierLabel}
-              </p>
-            </div>
-          </div>
-          <ChevronDown size={16} className="text-gray-500" />
         </div>
       </aside>
  
@@ -552,4 +538,3 @@ export default function App() {
     </AuthProvider>
   );
 }
- 

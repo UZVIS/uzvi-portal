@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { fetchEmployee, type Employee } from "../../shared/auth/api";
 import { listAllAnnouncements, getAcknowledgmentStatus } from "./api";
 import type { Announcement } from "./types";
@@ -62,7 +61,6 @@ function formatAckAt(iso: string | null): string {
 }
 
 export function AcknowledgmentsOverviewPage() {
-  const navigate = useNavigate();
   const employeeCache = useRef(new Map<string, Employee>());
 
   const [summaries, setSummaries] = useState<AnnouncementSummary[] | null>(null);
@@ -171,12 +169,11 @@ export function AcknowledgmentsOverviewPage() {
 
   return (
     <div className="ack-overview-page">
-      <button
-        className="ack-overview-back"
-        onClick={() => (selected ? closeAnnouncement() : navigate("/dashboard"))}
-      >
-        <IconArrowLeft size={14} /> {selected ? "Back to announcements" : "Back to dashboard"}
-      </button>
+      {selected && (
+        <button className="ack-overview-back" onClick={closeAnnouncement}>
+          <IconArrowLeft size={14} /> Back to announcements
+        </button>
+      )}
 
       {!selected && (
         <>
