@@ -224,6 +224,20 @@ export default function TicketDetailsPage() {
           </div>
 
           <div className="detail-item">
+            <span>SLA Status</span>
+
+            {ticket.sla_breached ? (
+              <span className="sla-badge breached">
+                SLA Breached
+              </span>
+            ) : (
+              <span className="status-badge resolved">
+                Within SLA
+              </span>
+            )}
+          </div>
+
+          <div className="detail-item">
             <span>Raised By</span>
 
             <strong>

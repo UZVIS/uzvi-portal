@@ -9,6 +9,7 @@ export interface Ticket {
   created_at: string;
   updated_at: string;
   comments: TicketComment[];
+  sla_breached: boolean;
 }
 
 export interface TicketCreate {

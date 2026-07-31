@@ -9,3 +9,24 @@
 .program-details-page h2 {
   margin-bottom: 20px;
 }
+
+.units-table-header,
+.units-table-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  align-items: center;
+  padding: 16px 18px;
+}
+
+.units-table-header {
+  font-weight: 600;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.units-table-row {
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.units-table-row:last-child {
+  border-bottom: none;
+}

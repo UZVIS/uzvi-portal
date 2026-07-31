@@ -47,6 +47,10 @@
   background: #10b981;
 }
 
+.stat-dot.sla-breached {
+  background: #dc2626;
+}
+
 .stat-heading {
   font-size: 14px;
   font-weight: 600;
@@ -106,7 +110,7 @@
   font-size: 14px;
 }
 
-.table-header,
+.ticket-table-header,
 .ticket-item {
   display: grid;
   grid-template-columns: 1fr 2fr 1.2fr 1.2fr;
@@ -114,7 +118,7 @@
   gap: 20px;
 }
 
-.table-header {
+.ticket-table-header {
   background: #f8fafc;
   padding: 14px 24px;
   font-size: 13px;
@@ -184,6 +188,19 @@
   color: #15803d;
 }
 
+.sla-badge.breached {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+
 .ticket-status {
   display: flex;
   align-items: center;
@@ -227,7 +244,7 @@
     grid-template-columns: 1fr;
   }
 
-  .table-header {
+  .ticket-table-header {
     display: none;
   }
 

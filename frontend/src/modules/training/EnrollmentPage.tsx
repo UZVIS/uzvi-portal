@@ -175,7 +175,7 @@ export default function EnrollmentPage() {
             </button>
           </div>
         )}
-        <div className="table-header">
+        <div className="enrollment-table-header">
           <span>Employee ID</span>
           <span>Program</span>
           <span>Enrolled At</span>
@@ -189,7 +189,7 @@ export default function EnrollmentPage() {
           enrollments.map((enrollment) => (
             <div
               key={enrollment.enrollment_id}
-              className="training-item"
+              className="enrollment-table-row"
             >
               <div>
                 {enrollment.employee_id}
