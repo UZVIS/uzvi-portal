@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 
-import Sidebar from "../../assets/components/Sidebar";
-import Header from "../../assets/components/Header";
+
 
 import OpportunityTable from "../components/opportunityTable";
 import OpportunityDialog from "../components/opportunityDialog";

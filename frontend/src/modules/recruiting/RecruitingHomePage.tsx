@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { recruitingApi } from "./api";
 import type { Candidate, DuplicateFlag } from "./api";
+import { PipelineFunnelPage } from "./PipelineFunnelPage";
+import { CandidatePipelinePage } from "./CandidatePipelinePage";
+import { SourcingPage } from "./SourcingPage";
+import { DuplicatesPage } from "./DuplicatesPage";
 import {
-  IconSparkles,
   IconUsers,
   IconClock,
   IconCheckCircle,
@@ -15,14 +17,10 @@ import {
 } from "./components/icons";
 import "./RecruitingHomePage.css";
 
-function greetingForHour(hour: number): string {
-  if (hour < 12) return "Good morning";
-  if (hour < 17) return "Good afternoon";
-  return "Good evening";
-}
+type ActiveView = "funnel" | "pipeline" | "sourcing" | "duplicates" | null;
 
 export function RecruitingHomePage() {
-  const navigate = useNavigate();
+  const [activeView, setActiveView] = useState<ActiveView>(null);
 
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [duplicates, setDuplicates] = useState<DuplicateFlag[]>([]);
@@ -65,7 +63,9 @@ export function RecruitingHomePage() {
     return { total, hired, active, conversion };
   }, [candidates]);
 
-  const greeting = greetingForHour(new Date().getHours());
+  function toggleView(view: Exclude<ActiveView, null>) {
+    setActiveView((current) => (current === view ? null : view));
+  }
 
   return (
     <div className="rhub">
@@ -74,20 +74,6 @@ export function RecruitingHomePage() {
           {error}
         </div>
       )}
-
-      {/* ── Header card ─────────────────────────────────────────────── */}
-      <section className="rhub-hero">
-        <div className="rhub-hero__left">
-          <p className="rhub-hero__eyebrow">
-            <IconSparkles size={14} /> {greeting}
-          </p>
-          <h1 className="rhub-hero__title">Recruiting Hub</h1>
-          <p className="rhub-hero__sub">
-            Application to offer — sourcing, the candidate pipeline, and hire
-            conversion, all in one place.
-          </p>
-        </div>
-      </section>
 
       {/* ── Stat cards ──────────────────────────────────────────────── */}
       <section className="rhub-stats">
@@ -134,8 +120,8 @@ export function RecruitingHomePage() {
       {/* ── Module cards ────────────────────────────────────────────── */}
       <section className="rhub-grid">
         <button
-          className="rhub-card"
-          onClick={() => navigate("/recruiting/funnel")}
+          className={`rhub-card ${activeView === "funnel" ? "rhub-card--active" : ""}`}
+          onClick={() => toggleView("funnel")}
         >
           <div className="rhub-card__icon rhub-card__icon--indigo">
             <IconTrendingUp size={22} />
@@ -143,13 +129,13 @@ export function RecruitingHomePage() {
           <h3>Pipeline Funnel</h3>
           <p>Stage-by-stage drop-off from application to hire.</p>
           <span className="rhub-card__go">
-            Open <IconArrowRight size={14} />
+            {activeView === "funnel" ? "Close" : "Open"} <IconArrowRight size={14} />
           </span>
         </button>
 
         <button
-          className="rhub-card"
-          onClick={() => navigate("/recruiting/pipeline")}
+          className={`rhub-card ${activeView === "pipeline" ? "rhub-card--active" : ""}`}
+          onClick={() => toggleView("pipeline")}
         >
           <div className="rhub-card__icon rhub-card__icon--violet">
             <IconLayoutGrid size={22} />
@@ -157,13 +143,13 @@ export function RecruitingHomePage() {
           <h3>Candidate Pipeline</h3>
           <p>Drag-and-drop board — move candidates between stages.</p>
           <span className="rhub-card__go">
-            Open <IconArrowRight size={14} />
+            {activeView === "pipeline" ? "Close" : "Open"} <IconArrowRight size={14} />
           </span>
         </button>
 
         <button
-          className="rhub-card"
-          onClick={() => navigate("/recruiting/sourcing")}
+          className={`rhub-card ${activeView === "sourcing" ? "rhub-card--active" : ""}`}
+          onClick={() => toggleView("sourcing")}
         >
           <div className="rhub-card__icon rhub-card__icon--teal">
             <IconUsers size={22} />
@@ -171,13 +157,13 @@ export function RecruitingHomePage() {
           <h3>Sourcing &amp; Roles</h3>
           <p>Where candidates come from, and which roles are hottest.</p>
           <span className="rhub-card__go">
-            Open <IconArrowRight size={14} />
+            {activeView === "sourcing" ? "Close" : "Open"} <IconArrowRight size={14} />
           </span>
         </button>
 
         <button
-          className="rhub-card rhub-card--alert"
-          onClick={() => navigate("/recruiting/duplicates")}
+          className={`rhub-card rhub-card--alert ${activeView === "duplicates" ? "rhub-card--active" : ""}`}
+          onClick={() => toggleView("duplicates")}
         >
           <div className="rhub-card__icon rhub-card__icon--rose">
             <IconCopyWarn size={22} />
@@ -191,10 +177,20 @@ export function RecruitingHomePage() {
                 : `${duplicates.length} likely duplicate pair(s) to review.`}
           </p>
           <span className="rhub-card__go">
-            Open <IconArrowRight size={14} />
+            {activeView === "duplicates" ? "Close" : "Open"} <IconArrowRight size={14} />
           </span>
         </button>
       </section>
+
+      {/* ── Inline content for the selected card, shown on this same page ── */}
+      {activeView && (
+        <section className="rhub-inline">
+          {activeView === "funnel" && <PipelineFunnelPage key="funnel" />}
+          {activeView === "pipeline" && <CandidatePipelinePage key="pipeline" />}
+          {activeView === "sourcing" && <SourcingPage key="sourcing" />}
+          {activeView === "duplicates" && <DuplicatesPage key="duplicates" />}
+        </section>
+      )}
     </div>
   );
 }

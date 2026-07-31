@@ -19,44 +19,6 @@
   border-radius: 12px;
 }
 
-/* ── Hero header ──────────────────────────────────────────────────────── */
-
-.ahub-hero {
-  background: linear-gradient(135deg, #1e293b 0%, #334155 55%, #1e3a5f 100%);
-  border-radius: 16px;
-  padding: 22px 28px;
-  color: #fff;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18);
-}
-
-.ahub-hero__eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: #93c5fd;
-  font-weight: 700;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin: 0 0 6px;
-}
-
-.ahub-hero__title {
-  color: #fff;
-  font-size: 24px;
-  font-weight: 800;
-  margin: 0 0 4px;
-  letter-spacing: -0.02em;
-}
-
-.ahub-hero__sub {
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 13.5px;
-  max-width: 560px;
-  margin: 0;
-  line-height: 1.45;
-}
-
 /* ── Stat cards ───────────────────────────────────────────────────────── */
 
 .ahub-stats {
@@ -227,4 +189,26 @@
 .ahub-card--alert:hover {
   border-color: #e11d48;
   box-shadow: 0 8px 24px -8px rgba(225, 29, 72, 0.18);
+}
+
+.ahub-card--active {
+  border-color: #f37021;
+  box-shadow: 0 8px 24px -8px rgba(243, 112, 33, 0.28);
+}
+
+.ahub-card--active .ahub-card__go {
+  color: #f37021;
+  background: #fff7ed;
+}
+
+/* ── Inline content (My Feed / All Announcements / Acknowledgments /
+   New Announcement) rendered below the cards on this same page ────────── */
+
+.ahub-inline {
+  background: #fff;
+  border: 1px solid #e8eaed;
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  padding: 4px;
+  overflow: hidden;
 }

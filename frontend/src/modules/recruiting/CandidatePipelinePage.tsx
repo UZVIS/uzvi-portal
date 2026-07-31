@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { recruitingApi, PIPELINE_STAGES } from "./api";
 import type { Candidate, CandidateInput, CandidateStage, CandidateUpdateInput } from "./api";
 import { initialsOf, STAGE_META, colorForIndex } from "./stageMeta";
@@ -7,7 +7,6 @@ import { AddCandidateModal } from "./components/AddCandidateModal";
 import { EditCandidateModal } from "./components/EditCandidateModal";
 import { DeleteCandidateModal } from "./components/DeleteCandidateModal";
 import { IconPlus, IconFilter, IconUsers, IconEdit, IconTrash } from "./components/icons";
-import type { RecruitingOutletContext } from "./RecruitingModulePage";
 import "./CandidatePipelinePage.css";
 
 const STAGE_SELECT_CLASS: Record<CandidateStage, string> = {
@@ -37,7 +36,9 @@ function avatarColorFor(id: string): string {
 
 export function CandidatePipelinePage() {
   const navigate = useNavigate();
-  const { openCandidate } = useOutletContext<RecruitingOutletContext>();
+  function openCandidate(id: string) {
+    navigate(`/recruiting/candidates/${id}`);
+  }
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -113,9 +114,6 @@ export function CandidatePipelinePage() {
 
   return (
     <div className="pipeline">
-      <button type="button" className="rec-back-top" onClick={() => navigate("/recruiting")}>
-        ← Back
-      </button>
       <div className="pipeline__hero">
         <div className="pipeline__hero-icon">
           <IconUsers size={20} />

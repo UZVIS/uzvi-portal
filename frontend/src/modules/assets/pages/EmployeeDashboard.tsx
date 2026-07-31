@@ -1,5 +1,4 @@
-import EmployeeSidebar from "../components/EmployeeSidebar";
-import EmployeeHeader from "../components/EmployeeHeader";
+
 import EmployeeAssetTable from "../components/EmployeeAssetTable";
 
 import { useAuth } from "../../../shared/auth/AuthContext";

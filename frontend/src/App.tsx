@@ -27,6 +27,7 @@ import {
   FolderOpen,
   Package,
   Quote,
+  GraduationCap,
 } from "lucide-react";
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
@@ -146,6 +147,7 @@ function AppLayout() {
     if (location.pathname.startsWith("/documents")) return "Documents";
     if (location.pathname.startsWith("/assets")) return "Assets";
     if (location.pathname.startsWith("/quotes")) return "Quotes";
+    if (location.pathname.startsWith("/training")) return "Training";
     if (location.pathname === "/calendar") return "Company Calendar";
     if (location.pathname === "/dashboard") return "Announcements";
     if (location.pathname === "/" || location.pathname === "/dashboard")
@@ -222,21 +224,11 @@ function AppLayout() {
 
 
           <div className="mb-0.5">
-            <NavLink to="/quotes" icon={Quote} label="Quotes" />
+            <NavLink to="/training" icon={GraduationCap} label="Training" />
           </div>
-        </div>
 
-        {/* Bottom user card */}
-        <div className="px-3 py-2.5 border-t border-white/5 flex items-center justify-between hover:bg-white/5 cursor-pointer transition">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-[#F37021] rounded-full flex items-center justify-center text-white font-bold">
-              {initials}
-            </div>
-
-            <div>
-              <p className="text-white font-bold">{employee?.name}</p>
-              <p className="text-xs text-[#F37021]">{employee?.access_tier}</p>
-            </div>
+          <div className="mb-0.5">
+            <NavLink to="/quotes" icon={Quote} label="Quotes" />
           </div>
         </div>
       </aside>
@@ -467,6 +459,32 @@ function AppLayout() {
               }
             />
 
+            <Route
+              path="/onboarding"
+              element={
+                <ProtectedRoute>
+                  <OnboardingPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/training"
+              element={
+                <ProtectedRoute>
+                  <TrainingModulePage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/training/programs/:programId"
+              element={
+                <ProtectedRoute>
+                  <ProgramDetailsPage />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/assets"
               element={
