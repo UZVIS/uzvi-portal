@@ -1,0 +1,139 @@
+/* =====================================================
+   SEARCH BAR / TOOLBAR
+   Scoped styles for the Assets page SearchBar component
+===================================================== */
+
+.toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    width: 100%;
+    margin-bottom: 24px;
+
+    flex-wrap: nowrap;
+}
+
+/* ---------- Search ---------- */
+
+
+.search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+
+    color: #b5afa9;
+    width: 17px;
+    height: 17px;
+    pointer-events: none;
+}
+
+
+
+
+
+/* ---------- Dropdowns ---------- */
+
+.filter-select {
+    accent-color: var(--uz-orange);
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+
+    width: 160px;
+    height: 42px;
+    box-sizing: border-box;
+
+    border-width: 1px;
+    border-style: solid;
+    border-color: var(--uz-border);
+    border-radius: var(--uz-radius-md);
+    background-clip: padding-box;
+
+    background-color: var(--uz-surface);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238a8580' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    background-size: 14px;
+
+    color: var(--uz-text);
+
+    padding: 0 36px 0 14px;
+
+    font-size: 13.5px;
+    font-weight: 500;
+
+    flex-shrink: 0;
+    cursor: pointer;
+
+    box-shadow: var(--uz-shadow-sm);
+    transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+.filter-select:hover {
+    border-color: #ddd8d3;
+    background-color: #faf8f6;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: var(--uz-orange);
+    box-shadow: 0 0 0 3px var(--uz-orange-soft);
+    background-color: var(--uz-surface);
+}
+
+.filter-select:disabled {
+    background-color: #faf8f6;
+    color: #b5afa9;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.filter-select option {
+    color: var(--uz-text);
+    background: var(--uz-surface);
+}
+
+/* ---------- Add Asset button ---------- */
+
+.add-btn {
+    height: 42px;
+    padding: 0 20px;
+    box-sizing: border-box;
+
+    border: none;
+    border-radius: var(--uz-radius-md);
+
+    background: var(--uz-orange);
+    color: #ffffff;
+
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    cursor: pointer;
+    flex-shrink: 0;
+
+    font-size: 13.5px;
+    font-weight: 600;
+
+    box-shadow: 0 2px 6px rgba(239, 108, 34, .28);
+    transition: background .15s ease, box-shadow .15s ease;
+}
+
+.add-btn:hover {
+    background: var(--uz-orange-dark);
+    box-shadow: 0 4px 10px rgba(239, 108, 34, .32);
+}
+
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 720px) {
+    .toolbar {
+        flex-wrap: wrap;
+    }
+
+   
+}

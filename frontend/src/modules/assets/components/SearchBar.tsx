@@ -4,7 +4,7 @@ import {
     Plus
 } from "lucide-react";
 
-import "../styles/dashboard.css";
+import "../styles/searchbar.css";
 
 interface SearchBarProps {
 
