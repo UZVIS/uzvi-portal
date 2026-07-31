@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "../../../shared/auth/AuthContext"; // Added import
 // 🌟 Premium Icons
 import { Lightbulb, Plus, Activity, Settings2, Wallet } from "lucide-react";
 
@@ -12,14 +13,19 @@ export default function AdminDashboard() {
     const [carryForwardLimit, setCarryForwardLimit] = useState("");
     const [docThreshold, setDocThreshold] = useState("");
 
-    const [targetEmployeeId, setTargetEmployeeId] = useState("EMP123");
+    // Removed hardcoded "EMP123", set to empty so Admin can type any Employee ID
+    const [targetEmployeeId, setTargetEmployeeId] = useState("");
     const [selectedLeaveTypeId, setSelectedLeaveTypeId] = useState("");
     const [allocateBalanceValue, setAllocateBalanceValue] = useState("");
-    const [allocateYear, setAllocateYear] = useState("2026");
+    const [allocateYear, setAllocateYear] = useState(new Date().getFullYear().toString()); // Dynamically defaults to current year
 
     const [allLeaves, setAllLeaves] = useState<any[]>([]);
     const [leaveTypes, setLeaveTypes] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+
+    // Fetching logged-in Admin's details (Can be used for audit logs/headers if needed)
+    const { employee } = useAuth();
+    const adminId = employee?.employee_id;
 
     useEffect(() => {
         fetchAdminData();
@@ -122,9 +128,10 @@ export default function AdminDashboard() {
             });
 
             if (response.ok) {
-                alert("Leave balance allocated successfully!");
+                alert(`Leave balance allocated successfully to ${targetEmployeeId}!`);
                 setIsBalanceModalOpen(false);
                 setAllocateBalanceValue("");
+                setTargetEmployeeId(""); // Reset after successful allocation
                 fetchAdminData();
             } else {
                 const err = await response.json();
@@ -253,7 +260,6 @@ export default function AdminDashboard() {
                 </div>
             )}
 
-            {/* Modals are kept exactly the same (logic wise) */}
             {isAddLeaveModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]">
                     <div className="bg-white rounded-3xl shadow-2xl w-full max-w-[480px] overflow-hidden">
@@ -282,7 +288,7 @@ export default function AdminDashboard() {
                         <div className="p-6 space-y-4">
                             <div>
                                 <label className="block text-xs font-bold text-gray-700 mb-1">Employee ID</label>
-                                <input type="text" value={targetEmployeeId} onChange={(e) => setTargetEmployeeId(e.target.value)} placeholder="e.g. EMP123" className="w-full border rounded-xl px-4 py-2 text-sm outline-none focus:border-indigo-600" />
+                                <input type="text" value={targetEmployeeId} onChange={(e) => setTargetEmployeeId(e.target.value)} placeholder="e.g. EMP001" className="w-full border rounded-xl px-4 py-2 text-sm outline-none focus:border-indigo-600" />
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-gray-700 mb-1">Leave Type</label>

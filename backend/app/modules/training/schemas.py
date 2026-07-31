@@ -69,7 +69,6 @@ class EnrollmentResponse(BaseModel):
 class UnitCompletionCreate(BaseModel):
     enrollment_id: int = Field(..., gt=0)
     unit_id: int = Field(..., gt=0)
-    completed: bool
     score: Optional[float] = Field(default=None, ge=0, le=100)
 
 
@@ -99,9 +98,16 @@ class ProgressResponse(BaseModel):
 # Cohort Progress
 # -------------------------
 
+class LaggingEnrollee(BaseModel):
+    employee_id: str
+    completion_percentage: float
+    points_behind_average: float
+
+
 class CohortProgressResponse(BaseModel):
     program_id: int
     program_name: str
     total_enrollments: int
     completed_enrollments: int
     average_completion_percentage: float
+    lagging_employees: list[LaggingEnrollee] = []

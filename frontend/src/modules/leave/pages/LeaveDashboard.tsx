@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { apiPost, apiGet } from "../../../api/client";
+import { useAuth } from "../../../shared/auth/AuthContext"; // Added import
 // Premium Icons imported
 import { CalendarPlus, Paperclip, Lock, Check, X, Clock } from "lucide-react";
 
@@ -15,11 +16,14 @@ export default function LeaveDashboard() {
     const [attachment, setAttachment] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Hardcoded for now until Global Context/Auth is integrated
-    const employeeId = "EMP001";
+    // Dynamic Employee ID from Context
+    const { employee } = useAuth();
+    const employeeId = employee?.employee_id;
 
     useEffect(() => {
         async function fetchDashboardData() {
+            if (!employeeId) return; // Guard clause in case it's loading
+
             try {
                 const typesData = await apiGet('/v1/leave/leave-types');
                 const validTypes = Array.isArray(typesData) ? typesData : [];
@@ -43,7 +47,7 @@ export default function LeaveDashboard() {
             }
         }
         fetchDashboardData();
-    }, []);
+    }, [employeeId]); // Added employeeId to dependency array
 
     const getBalanceFor = (leaveName: string) => {
         if (!leaveTypes.length || !leaveBalances.length) return "0";
@@ -117,9 +121,13 @@ export default function LeaveDashboard() {
             return;
         }
 
+        if (!employeeId) {
+            alert("User identity not found. Please log in again.");
+            return;
+        }
+
         setIsSubmitting(true);
 
-        // Reason field removed to align with backend schema
         const leaveData = {
             employee_id: employeeId,
             leave_type_id: leaveTypeId,
@@ -131,7 +139,6 @@ export default function LeaveDashboard() {
             await apiPost('/v1/leave/applications', leaveData);
             alert("Leave request submitted successfully!");
 
-            // Refresh leave history after successful submission
             const updatedAllApps = await apiGet('/v1/leave/applications');
             if (Array.isArray(updatedAllApps)) {
                 setLeaveHistory(updatedAllApps.filter(app => app.employee_id === employeeId));

@@ -36,6 +36,10 @@ class TicketResponse(BaseModel):
 
     comments: list[TicketCommentResponse] = []
 
+    # FR-HLP-06: true when the ticket is still open and has been sitting
+    # longer than the configured SLA threshold for its priority.
+    sla_breached: bool = False
+
     class Config:
         from_attributes = True
 

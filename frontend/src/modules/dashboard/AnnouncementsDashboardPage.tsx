@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../shared/auth/AuthContext";
 import { listFeedForEmployee } from "../announcements/api";
 import type { Announcement } from "../announcements/types";
+import { AnnouncementsPage } from "../announcements/AnnouncementsPage";
+import { AcknowledgmentsOverviewPage } from "../announcements/AcknowledgmentsOverviewPage";
+import { ComposeAnnouncementPage } from "../announcements/ComposeAnnouncementPage";
 import {
   IconArrowRight,
   IconBell,
@@ -10,23 +12,19 @@ import {
   IconLayers,
   IconMegaphone,
   IconPlus,
-  IconSparkles,
   IconUsers,
 } from "../announcements/components/icons";
 import "./AnnouncementsDashboardPage.css";
 
 const POSTER_TIERS = new Set(["Admin/Leadership", "Manager"]);
 
-function greetingForHour(hour: number): string {
-  if (hour < 12) return "Good morning";
-  if (hour < 17) return "Good afternoon";
-  return "Good evening";
-}
+type ActiveView = "feed" | "all" | "ack" | "new" | null;
 
 export function AnnouncementsDashboardPage() {
   const { employee } = useAuth();
-  const navigate = useNavigate();
   const canManage = employee ? POSTER_TIERS.has(employee.access_tier) : false;
+
+  const [activeView, setActiveView] = useState<ActiveView>(null);
 
   const [feed, setFeed] = useState<Announcement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -64,7 +62,9 @@ export function AnnouncementsDashboardPage() {
 
   if (!employee) return null;
 
-  const greeting = greetingForHour(new Date().getHours());
+  function closeView() {
+    setActiveView(null);
+  }
 
   return (
     <div className="ahub">
@@ -73,18 +73,6 @@ export function AnnouncementsDashboardPage() {
           {error}
         </div>
       )}
-
-      {/* ── Header card ─────────────────────────────────────────────── */}
-      <section className="ahub-hero">
-        <p className="ahub-hero__eyebrow">
-          <IconSparkles size={14} /> {greeting}
-        </p>
-        <h1 className="ahub-hero__title">Notice Board</h1>
-        <p className="ahub-hero__sub">
-          Everything for company announcements — your feed, posting new notices,
-          and tracking who's acknowledged what, all in one place.
-        </p>
-      </section>
 
       {/* ── Stat cards ──────────────────────────────────────────────── */}
       <section className="ahub-stats">
@@ -119,19 +107,25 @@ export function AnnouncementsDashboardPage() {
 
       {/* ── Module cards ────────────────────────────────────────────── */}
       <section className="ahub-grid">
-        <button className="ahub-card" onClick={() => navigate("/announcements")}>
+        <button
+          className={`ahub-card ${activeView === "feed" ? "ahub-card--active" : ""}`}
+          onClick={() => setActiveView(activeView === "feed" ? null : "feed")}
+        >
           <div className="ahub-card__icon ahub-card__icon--indigo">
             <IconInbox size={22} />
           </div>
           <h3>My Feed</h3>
           <p>Company-wide notices, plus anything for your team or role.</p>
           <span className="ahub-card__go">
-            Open <IconArrowRight size={14} />
+            {activeView === "feed" ? "Close" : "Open"} <IconArrowRight size={14} />
           </span>
         </button>
 
         {!canManage && (
-          <button className="ahub-card ahub-card--alert" onClick={() => navigate("/announcements")}>
+          <button
+            className={`ahub-card ahub-card--alert ${activeView === "feed" ? "ahub-card--active" : ""}`}
+            onClick={() => setActiveView(activeView === "feed" ? null : "feed")}
+          >
             <div className="ahub-card__icon ahub-card__icon--rose">
               <IconBell size={22} />
             </div>
@@ -144,39 +138,49 @@ export function AnnouncementsDashboardPage() {
                   : "You're all caught up — nothing pending right now."}
             </p>
             <span className="ahub-card__go">
-              {stats.needsAck > 0 ? "Review" : "Open"} <IconArrowRight size={14} />
+              {activeView === "feed" ? "Close" : stats.needsAck > 0 ? "Review" : "Open"}{" "}
+              <IconArrowRight size={14} />
             </span>
           </button>
         )}
 
         {canManage && (
-          <button className="ahub-card" onClick={() => navigate("/announcements?view=all")}>
+          <button
+            className={`ahub-card ${activeView === "all" ? "ahub-card--active" : ""}`}
+            onClick={() => setActiveView(activeView === "all" ? null : "all")}
+          >
             <div className="ahub-card__icon ahub-card__icon--violet">
               <IconLayers size={22} />
             </div>
             <h3>All Announcements</h3>
             <p>Every notice across the company — active and archived.</p>
             <span className="ahub-card__go">
-              Open <IconArrowRight size={14} />
+              {activeView === "all" ? "Close" : "Open"} <IconArrowRight size={14} />
             </span>
           </button>
         )}
 
         {canManage && (
-          <button className="ahub-card" onClick={() => navigate("/announcements/acknowledgments")}>
+          <button
+            className={`ahub-card ${activeView === "ack" ? "ahub-card--active" : ""}`}
+            onClick={() => setActiveView(activeView === "ack" ? null : "ack")}
+          >
             <div className="ahub-card__icon ahub-card__icon--teal">
               <IconUsers size={22} />
             </div>
             <h3>View Acknowledgments</h3>
             <p>See exactly who has (and hasn't) acknowledged each notice.</p>
             <span className="ahub-card__go">
-              Open <IconArrowRight size={14} />
+              {activeView === "ack" ? "Close" : "Open"} <IconArrowRight size={14} />
             </span>
           </button>
         )}
 
         {canManage && (
-          <button className="ahub-card" onClick={() => navigate("/announcements/new")}>
+          <button
+            className={`ahub-card ${activeView === "new" ? "ahub-card--active" : ""}`}
+            onClick={() => setActiveView(activeView === "new" ? null : "new")}
+          >
             <div className="ahub-card__icon ahub-card__icon--orange">
               <IconMegaphone size={22} />
             </div>
@@ -185,11 +189,24 @@ export function AnnouncementsDashboardPage() {
             </h3>
             <p>Post a notice to the company, a team, or a specific role.</p>
             <span className="ahub-card__go">
-              Compose <IconArrowRight size={14} />
+              {activeView === "new" ? "Close" : "Compose"} <IconArrowRight size={14} />
             </span>
           </button>
         )}
       </section>
+
+      {/* ── Inline content for the selected card, shown on this same page ── */}
+      {activeView && (
+        <section className="ahub-inline">
+          {(activeView === "feed" || activeView === "all") && (
+            <AnnouncementsPage key={activeView} initialView={activeView} />
+          )}
+          {activeView === "ack" && <AcknowledgmentsOverviewPage key="ack" />}
+          {activeView === "new" && (
+            <ComposeAnnouncementPage key="new" onPosted={closeView} />
+          )}
+        </section>
+      )}
     </div>
   );
 }

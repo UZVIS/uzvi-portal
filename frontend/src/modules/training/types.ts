@@ -52,10 +52,17 @@ export interface Progress {
   completion_percentage: number;
 }
 
+export interface LaggingEnrollee {
+  employee_id: string;
+  completion_percentage: number;
+  points_behind_average: number;
+}
+
 export interface CohortProgress {
   program_id: number;
   program_name: string;
   total_enrollments: number;
   completed_enrollments: number;
   average_completion_percentage: number;
+  lagging_employees: LaggingEnrollee[];
 }
