@@ -214,6 +214,7 @@ export default function ScenarioWorkspace() {
 
                     <OutputTabs
                         scenarioId={scenario.scenario_id}
+                         reload={reload}
                     />
 
                     <AddLineItemDialog
