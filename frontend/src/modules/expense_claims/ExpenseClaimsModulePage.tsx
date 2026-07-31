@@ -1,37 +1,82 @@
-/**
- * M4 - Expense Claims
- * frontend/src/modules/expense_claims/ExpenseClaimsModulePage.tsx
- *
- * Wraps the 3 M4 views (My Claims, Approvals, Project Rollup) under the
- * single /expenses route that modules.data.ts registers for M4.
- */
 import { useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
+import { useAuth } from '../../shared/auth/AuthContext'
 import { ExpenseClaimsPage } from './ExpenseClaimsPage'
 import { ApprovalsPage } from './ApprovalsPage'
 import { ProjectRollupPage } from './ProjectRollupPage'
 
 type Tab = 'my' | 'approvals' | 'rollup'
 
+const APPROVAL_TIERS = ['manager', 'admin/leadership', 'hr-restricted']
+
+function canApprove(accessTier: string): boolean {
+  return APPROVAL_TIERS.includes((accessTier || '').trim().toLowerCase())
+}
+
+
+function tabButtonStyle(active: boolean): CSSProperties {
+  return {
+    background: active ? '#F37021' : '#ffffff',
+    color: active ? '#ffffff' : '#1f2430',
+    border: '1px solid ' + (active ? '#F37021' : '#d0d0d0'),
+    borderRadius: 6,
+    padding: '6px 14px',
+    cursor: 'pointer',
+    fontWeight: 600,
+    fontSize: 14,
+  }
+}
+
 export default function ExpenseClaimsModulePage() {
   const navigate = useNavigate()
+  const { employee } = useAuth()
   const [tab, setTab] = useState<Tab>('my')
 
+  const canSeePrivileged = employee ? canApprove(employee.access_tier) : false
+
   return (
-    <div>
-      <div style={{ padding: '12px 24px', borderBottom: '1px solid #e3e6ea' }}>
-        <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}>
-          ← Directory
+    <div style={{ background: '#f7f5f2', minHeight: '100vh' }}>
+      <div
+        style={{
+          padding: '12px 24px',
+          borderBottom: '1px solid #e3e6ea',
+        }}
+      >
+        <button
+          onClick={() => navigate(-1)}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}
+        >
+          ← Back
         </button>
       </div>
       <nav style={{ display: 'flex', gap: 8, padding: '12px 24px', borderBottom: '1px solid #e3e6ea' }}>
-        <button onClick={() => setTab('my')}>My Claims</button>
-        <button onClick={() => setTab('approvals')}>Approvals</button>
-        <button onClick={() => setTab('rollup')}>Project Rollup</button>
+        <button onClick={() => setTab('my')} style={tabButtonStyle(tab === 'my')}>
+          My Claims
+        </button>
+        {canSeePrivileged && (
+          <button onClick={() => setTab('approvals')} style={tabButtonStyle(tab === 'approvals')}>
+            Approvals
+          </button>
+        )}
+        {canSeePrivileged && (
+          <button onClick={() => setTab('rollup')} style={tabButtonStyle(tab === 'rollup')}>
+            Project Rollup
+          </button>
+        )}
       </nav>
       {tab === 'my' && <ExpenseClaimsPage />}
-      {tab === 'approvals' && <ApprovalsPage />}
-      {tab === 'rollup' && <ProjectRollupPage />}
+      {tab === 'approvals' && canSeePrivileged && <ApprovalsPage />}
+      {tab === 'approvals' && !canSeePrivileged && (
+        <div style={{ padding: 24, color: '#6b7280' }}>
+          This area is limited to Manager, Admin/Leadership, or HR-Restricted accounts.
+        </div>
+      )}
+      {tab === 'rollup' && canSeePrivileged && <ProjectRollupPage />}
+      {tab === 'rollup' && !canSeePrivileged && (
+        <div style={{ padding: 24, color: '#6b7280' }}>
+          This area is limited to Manager, Admin/Leadership, or HR-Restricted accounts.
+        </div>
+      )}
     </div>
   )
 }

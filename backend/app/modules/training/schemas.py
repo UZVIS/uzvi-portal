@@ -69,6 +69,7 @@ class EnrollmentResponse(BaseModel):
 class UnitCompletionCreate(BaseModel):
     enrollment_id: int = Field(..., gt=0)
     unit_id: int = Field(..., gt=0)
+    completed: bool
     score: Optional[float] = Field(default=None, ge=0, le=100)
 
 

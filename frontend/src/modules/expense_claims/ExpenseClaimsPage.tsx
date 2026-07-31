@@ -1,36 +1,44 @@
 import { useEffect, useState } from "react";
 import { expenseClaimsApi, type ExpenseCategory, type ExpenseClaim, type PendingTotal } from "./api";
+import { utilizationApi, type Project } from "../consultant_utilization/api";
+import { useAuth } from "../../shared/auth/AuthContext";
 import { ExpenseClaimForm } from "./components/ExpenseClaimForm";
 import { ClaimsTable } from "./components/ClaimsTable";
 import { AddCategoryForm } from "./components/AddCategoryForm";
 import "./ExpenseClaimsPage.css";
 
-const CURRENT_EMPLOYEE_ID = "E1"; // TODO: replace once auth exists
-
 export function ExpenseClaimsPage() {
+  const { employee } = useAuth();
+  const currentEmployeeId = employee?.employee_id ?? "";
+
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [claims, setClaims] = useState<ExpenseClaim[]>([]);
   const [pendingTotal, setPendingTotal] = useState<PendingTotal | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   async function loadAll() {
-    const [categoryList, claimList, total] = await Promise.all([
+    const [categoryList, projectList, claimList, total] = await Promise.all([
       expenseClaimsApi.listCategories(),
-      expenseClaimsApi.listClaims(CURRENT_EMPLOYEE_ID),
-      expenseClaimsApi.getPendingTotal(CURRENT_EMPLOYEE_ID),
+      utilizationApi.listProjects(),
+      expenseClaimsApi.listClaims(currentEmployeeId),
+      expenseClaimsApi.getPendingTotal(currentEmployeeId),
     ]);
     setCategories(categoryList);
+    setProjects(projectList);
     setClaims(claimList);
     setPendingTotal(total);
   }
 
   useEffect(() => {
+    if (!currentEmployeeId) return;
     setLoading(true);
     loadAll()
       .catch((err) => setLoadError(err instanceof Error ? err.message : "Couldn't load your claims."))
       .finally(() => setLoading(false));
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentEmployeeId]);
 
   async function handleSubmitClaim(input: {
     categoryId: string;
@@ -38,12 +46,14 @@ export function ExpenseClaimsPage() {
     date: string;
     description: string;
     receiptFile: File | null;
+    projectId: string | null;
   }) {
-    // Step 1: create the claim (JSON body - category, amount, date, description).
+    // Step 1: create the claim (JSON body - category, amount, date, description, project).
     const claim = await expenseClaimsApi.createClaim({
-      claim_id: `CL-${CURRENT_EMPLOYEE_ID}-${Date.now()}`,
-      employee_id: CURRENT_EMPLOYEE_ID,
+      claim_id: `CL-${currentEmployeeId}-${Date.now()}`,
+      employee_id: currentEmployeeId,
       category_id: input.categoryId,
+      project_id: input.projectId,
       amount: input.amount,
       date: input.date,
       description: input.description,
@@ -67,7 +77,7 @@ export function ExpenseClaimsPage() {
     await loadAll(); // refresh categories so the new one appears in the dropdown
   }
 
-  if (loading) {
+  if (!currentEmployeeId || loading) {
     return <div className="ec-page ec-page--status">Loading your claims…</div>;
   }
 
@@ -96,7 +106,7 @@ export function ExpenseClaimsPage() {
         </section>
 
         <section>
-          <ExpenseClaimForm categories={categories} onSubmit={handleSubmitClaim} />
+          <ExpenseClaimForm categories={categories} projects={projects} onSubmit={handleSubmitClaim} />
           <AddCategoryForm onSubmit={handleAddCategory} />
         </section>
       </div>

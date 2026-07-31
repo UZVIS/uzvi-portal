@@ -4,7 +4,9 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.modules.directory.models import Employee
 from app.modules.expense_claims import schemas, service
+from app.modules.expense_claims.dependencies import get_current_employee, require_approver
 
 router = APIRouter(prefix="/expenses", tags=["expense-claims"])
 
@@ -20,7 +22,14 @@ def list_categories(db: Session = Depends(get_db)):
 
 
 @router.post("/claims", response_model=schemas.ExpenseClaimRead)
-def create_claim(data: schemas.ExpenseClaimCreate, db: Session = Depends(get_db)):
+def create_claim(
+    data: schemas.ExpenseClaimCreate,
+    db: Session = Depends(get_db),
+    current_employee: Employee = Depends(get_current_employee),
+):
+    # NFR-SEC-02: a claim is always attributed to whoever is actually signed
+    # in, never to whatever employee_id the client puts in the request body.
+    data.employee_id = current_employee.employee_id
     try:
         return service.create_claim(db, data)
     except service.NotFoundError as exc:
@@ -54,9 +63,13 @@ def get_claim(claim_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/claims/{claim_id}/approve", response_model=schemas.ExpenseClaimRead)
-def approve_claim(claim_id: str, decision: schemas.ClaimDecision, db: Session = Depends(get_db)):
+def approve_claim(
+    claim_id: str,
+    db: Session = Depends(get_db),
+    current_employee: Employee = Depends(require_approver),
+):
     try:
-        return service.approve_claim(db, claim_id, decision.decided_by_role)
+        return service.approve_claim(db, claim_id, current_employee.access_tier)
     except service.NotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
     except service.InvalidTransitionError as exc:
@@ -66,9 +79,13 @@ def approve_claim(claim_id: str, decision: schemas.ClaimDecision, db: Session = 
 
 
 @router.post("/claims/{claim_id}/reject", response_model=schemas.ExpenseClaimRead)
-def reject_claim(claim_id: str, db: Session = Depends(get_db)):
+def reject_claim(
+    claim_id: str,
+    db: Session = Depends(get_db),
+    current_employee: Employee = Depends(require_approver),
+):
     try:
-        return service.reject_claim(db, claim_id)
+        return service.reject_claim(db, claim_id, current_employee.access_tier)
     except service.NotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
     except service.InvalidTransitionError as exc:
@@ -76,7 +93,11 @@ def reject_claim(claim_id: str, db: Session = Depends(get_db)):
 
 
 @router.post("/claims/{claim_id}/reimburse", response_model=schemas.ExpenseClaimRead)
-def reimburse_claim(claim_id: str, db: Session = Depends(get_db)):
+def reimburse_claim(
+    claim_id: str,
+    db: Session = Depends(get_db),
+    current_employee: Employee = Depends(require_approver),
+):
     try:
         return service.mark_reimbursed(db, claim_id)
     except service.NotFoundError as exc:
@@ -91,5 +112,9 @@ def pending_total(employee_id: str, db: Session = Depends(get_db)):
 
 
 @router.get("/projects/{project_id}/rollup", response_model=schemas.ProjectExpenseRollup)
-def project_rollup(project_id: str, db: Session = Depends(get_db)):
+def project_rollup(
+    project_id: str,
+    db: Session = Depends(get_db),
+    current_employee: Employee = Depends(require_approver),
+):
     return service.project_expense_rollup(db, project_id)

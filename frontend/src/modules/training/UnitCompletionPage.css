@@ -1,0 +1,114 @@
+.completion-page {
+  padding: 32px;
+}
+
+.completion-header {
+  margin-bottom: 24px;
+}
+
+.completion-header h2 {
+  margin-bottom: 8px;
+}
+
+.completion-header p {
+  color: #6b7280;
+}
+
+.completion-card,
+.completion-table-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 28px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+}
+
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+.form-group input,
+.form-group select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+.complete-button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.complete-button:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.complete-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.form-error {
+  color: #dc2626;
+  margin-bottom: 18px;
+  font-weight: 500;
+}
+
+.completion-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.completion-table th {
+  background: #f8fafc;
+  text-align: left;
+  padding: 14px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.completion-table td {
+  padding: 14px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.completion-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+@media (max-width: 768px) {
+  .completion-page {
+    padding: 20px;
+  }
+
+  .completion-card,
+  .completion-table-card {
+    padding: 18px;
+  }
+
+  .completion-table {
+    display: block;
+    overflow-x: auto;
+  }
+}

@@ -1,11 +1,12 @@
-/**
- * M4 - Expense Claims
- * frontend/src/modules/expense_claims/api.ts
- *
- * Talks to the backend router mounted at /expenses (see router.py).
- */
+
 
 const API_BASE = "/expenses";
+const EMPLOYEE_ID_STORAGE_KEY = "uzvi_portal_employee_id";
+
+function authHeaders(): HeadersInit {
+  const employeeId = localStorage.getItem(EMPLOYEE_ID_STORAGE_KEY);
+  return employeeId ? { "X-Employee-Id": employeeId } : {};
+}
 
 export interface ExpenseCategory {
   category_id: string;
@@ -25,6 +26,8 @@ export interface ExpenseClaim {
   status: ClaimStatus;
   description?: string | null;
   receipt_file_path?: string | null;
+  decided_by_role?: string | null;
+  decided_at?: string | null;
 }
 
 export interface ExpenseClaimInput {
@@ -76,7 +79,7 @@ function extractErrorMessage(rawBody: string, status: number, path: string): str
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...authHeaders() },
     ...options,
   });
   if (!res.ok) {
@@ -92,6 +95,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 async function requestFormData<T>(path: string, formData: FormData): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     method: "POST",
+    headers: authHeaders(),
     body: formData,
   });
   if (!res.ok) {
@@ -123,16 +127,15 @@ export const expenseClaimsApi = {
   getPendingTotal: (employeeId: string) =>
     request<PendingTotal>(`/employees/${employeeId}/pending-total`),
 
-  // FR-EXP-03: approval chain. decidedByRole should come from the real
-  // logged-in user's role once auth exists (NFR-SEC-05) - passed manually
-  // for now since there's no auth.
-  approveClaim: (claimId: string, decidedByRole: string) =>
-    request<ExpenseClaim>(`/claims/${claimId}/approve`, {
-      method: "POST",
-      body: JSON.stringify({ decided_by_role: decidedByRole }),
-    }),
+  // FR-EXP-03 / NFR-SEC-01: the approval chain and role check now happen
+  // server-side, resolved from the real logged-in employee (X-Employee-Id
+  // header, sent automatically by request()) against the M0 Directory -
+  // not from anything the client claims here.
+  approveClaim: (claimId: string) =>
+    request<ExpenseClaim>(`/claims/${claimId}/approve`, { method: "POST" }),
 
-  rejectClaim: (claimId: string) => request<ExpenseClaim>(`/claims/${claimId}/reject`, { method: "POST" }),
+  rejectClaim: (claimId: string) =>
+    request<ExpenseClaim>(`/claims/${claimId}/reject`, { method: "POST" }),
 
   reimburseClaim: (claimId: string) =>
     request<ExpenseClaim>(`/claims/${claimId}/reimburse`, { method: "POST" }),

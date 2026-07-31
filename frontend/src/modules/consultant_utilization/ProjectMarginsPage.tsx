@@ -1,10 +1,3 @@
-/**
- * M1 - Consultant Utilization Tracker
- * frontend/src/modules/consultant_utilization/ProjectMarginsPage.tsx
- *
- * FR-UTL-04: per-project revenue, cost, and margin from logged hours and
- * billing/cost rates.
- */
 import { useEffect, useState } from "react";
 import { utilizationApi, type Project, type ProjectMargin } from "./api";
 import "./ProjectMarginsPage.css";
@@ -22,7 +15,9 @@ export function ProjectMarginsPage() {
         Promise.all(projects.map((p) => utilizationApi.getProjectMargin(p.project_id)))
       )
       .then(setMargins)
-      .catch((err) => setLoadError(err instanceof Error ? err.message : "Couldn't load project margins."))
+      .catch((err) =>
+        setLoadError(err instanceof Error ? err.message : "Couldn't load project margins.")
+      )
       .finally(() => setLoading(false));
   }, []);
 
@@ -31,13 +26,19 @@ export function ProjectMarginsPage() {
   }
 
   if (loadError) {
-    return <div className="pm-page pm-page--status pm-page--error">Couldn't load this page: {loadError}</div>;
+    return (
+      <div className="pm-page pm-page--status pm-page--error">
+        Couldn't load this page: {loadError}
+      </div>
+    );
   }
 
   return (
     <div className="pm-page">
       <h1 className="pm-page__title">Project Margins</h1>
-      <p className="pm-page__subtitle">Revenue, cost, and margin computed from logged hours × billing/cost rates.</p>
+      <p className="pm-page__subtitle">
+        Revenue, cost, and margin computed from logged hours × billing/cost rates.
+      </p>
 
       {margins.length === 0 ? (
         <p className="pm-page__empty">No projects yet.</p>
@@ -52,14 +53,29 @@ export function ProjectMarginsPage() {
               <th>Margin %</th>
             </tr>
           </thead>
+
           <tbody>
             {margins.map((m) => (
               <tr key={m.project_id}>
                 <td>{m.project_name}</td>
+
                 <td>₹{m.revenue.toLocaleString()}</td>
+
                 <td>₹{m.cost.toLocaleString()}</td>
-                <td className={m.margin < 0 ? "pm-table__negative" : ""}>₹{m.margin.toLocaleString()}</td>
-                <td>{m.margin_pct != null ? `${Math.round(m.margin_pct * 100)}%` : "—"}</td>
+
+                <td className={m.margin < 0 ? "pm-table__negative" : ""}>
+                  {m.margin > 0
+                    ? `+₹${m.margin.toLocaleString()}`
+                    : `₹${m.margin.toLocaleString()}`}
+                </td>
+
+                <td>
+                  {m.margin_pct != null
+                    ? `${m.margin_pct > 0 ? "+" : ""}${Math.round(
+                        m.margin_pct * 100
+                      )}%`
+                    : "—"}
+                </td>
               </tr>
             ))}
           </tbody>

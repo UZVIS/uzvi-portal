@@ -1,0 +1,38 @@
+.training-page {
+  padding: 24px;
+}
+
+.training-header {
+  margin-bottom: 24px;
+}
+
+.training-header h1 {
+  margin-bottom: 6px;
+}
+
+.training-header p {
+  color: #666;
+}
+
+.training-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.training-tabs button {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  background: #e5e7eb;
+}
+
+.training-tabs button.active {
+  background: #2563eb;
+  color: white;
+}
+
+.training-content {
+  margin-top: 16px;
+}

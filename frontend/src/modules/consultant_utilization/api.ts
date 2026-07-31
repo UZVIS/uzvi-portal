@@ -1,9 +1,3 @@
-/**
- * M1 - Consultant Utilization Tracker
- * frontend/src/modules/consultant_utilization/api.ts
- *
- * Talks to the backend router mounted at /utilization (see router.py).
- */
 
 const API_BASE = "/utilization";
 
@@ -11,6 +5,14 @@ export interface Project {
   project_id: string;
   name: string;
   project_type: string; // real project | Bench | Training | Internal | BD/Presales | Leave
+  billing_rate?: number | null;
+  cost_rate?: number | null;
+}
+
+export interface ProjectInput {
+  project_id: string;
+  name: string;
+  project_type: string;
   billing_rate?: number | null;
   cost_rate?: number | null;
 }
@@ -23,6 +25,18 @@ export interface TimeEntryInput {
   hours: number;
   billable_flag: boolean;
   source?: string; // manual | import
+  notes?: string;
+}
+
+export interface TimeEntry {
+  entry_id: string;
+  employee_id: string;
+  project_id: string;
+  date: string;
+  hours: number;
+  billable_flag: boolean;
+  source: string;
+  notes?: string | null;
 }
 
 export interface UtilizationSummary {
@@ -66,7 +80,6 @@ function extractErrorMessage(rawBody: string, status: number, path: string): str
 
     if (Array.isArray(detail) && detail.length > 0) {
       const rawMsg: string = detail[0].msg || "";
-      // Pydantic prefixes custom validator errors with "Value error, "
       return rawMsg.replace(/^Value error,\s*/, "") || `Request to ${path} failed (${status})`;
     }
     if (typeof detail === "string") {
@@ -93,25 +106,35 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
 export const utilizationApi = {
   listProjects: () => request<Project[]>("/projects"),
 
+  createProject: (data: ProjectInput) =>
+    request<Project>("/projects", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
   createTimeEntry: (data: TimeEntryInput) =>
     request<TimeEntryInput>("/time-entries", {
       method: "POST",
       body: JSON.stringify({ source: "manual", ...data }),
     }),
 
+  listTimeEntries: (employeeId: string, startDate?: string, endDate?: string) => {
+    const params = new URLSearchParams({ employee_id: employeeId });
+    if (startDate) params.set("start_date", startDate);
+    if (endDate) params.set("end_date", endDate);
+    return request<TimeEntry[]>(`/time-entries?${params.toString()}`);
+  },
+
   getPersonalDashboard: (employeeId: string, startDate: string, endDate: string) =>
     request<PersonalDashboard>(
       `/dashboard/employee/${employeeId}?start_date=${startDate}&end_date=${endDate}`
     ),
 
-  // FR-UTL-04: per-project revenue/cost/margin
   getProjectMargin: (projectId: string) => request<ProjectMargin>(`/projects/${projectId}/margin`),
 
-  // FR-UTL-05: org-wide utilization, bench-risk, over-allocation, project margins.
-  // NOTE: not role-restricted yet (NFR-SEC-01) - anyone can currently load this.
   getOrgDashboard: (startDate: string, endDate: string, capacityHoursPerWeek?: number) =>
     request<OrgUtilizationDashboard>(
       `/dashboard/org?start_date=${startDate}&end_date=${endDate}` +
         (capacityHoursPerWeek ? `&capacity_hours_per_week=${capacityHoursPerWeek}` : "")
     ),
-}
+};

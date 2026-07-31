@@ -1,7 +1,9 @@
-
 import { useEffect, useState } from "react";
-import { utilizationApi, type OrgUtilizationDashboard } from "./api";
+import { utilizationApi, type OrgUtilizationDashboard, type Project } from "./api";
+import { AddProjectForm } from "./components/AddProjectForm";
+import { AdminLogHoursForm } from "./components/AdminLogHoursForm";
 import "./OrgDashboardPage.css";
+import "../shared-theme.css";
 
 function isoDateNDaysAgo(n: number): string {
   const d = new Date();
@@ -15,20 +17,28 @@ export function OrgDashboardPage() {
   const [capacityHoursPerWeek, setCapacityHoursPerWeek] = useState("40");
 
   const [dashboard, setDashboard] = useState<OrgUtilizationDashboard | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   function load(start: string, end: string, capacity: number) {
     setLoading(true);
     setLoadError(null);
-    utilizationApi
-      .getOrgDashboard(start, end, capacity)
-      .then(setDashboard)
-      .catch((err) => setLoadError(err instanceof Error ? err.message : "Couldn't load the org dashboard."))
+
+    Promise.all([
+      utilizationApi.getOrgDashboard(start, end, capacity),
+      utilizationApi.listProjects(),
+    ])
+      .then(([dash, projectList]) => {
+        setDashboard(dash);
+        setProjects(projectList);
+      })
+      .catch((err) =>
+        setLoadError(err instanceof Error ? err.message : "Couldn't load the org dashboard.")
+      )
       .finally(() => setLoading(false));
   }
 
-  // Initial load with the default "last 7 days" window.
   useEffect(() => {
     load(periodStart, periodEnd, Number(capacityHoursPerWeek) || 40);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -40,20 +50,73 @@ export function OrgDashboardPage() {
     load(periodStart, periodEnd, Number(capacityHoursPerWeek) || 40);
   }
 
+  async function handleAddProject(input: {
+    name: string;
+    projectType: string;
+    billingRate: number | null;
+    costRate: number | null;
+  }) {
+    await utilizationApi.createProject({
+      project_id: `P-${Date.now()}`,
+      name: input.name,
+      project_type: input.projectType,
+      billing_rate: input.billingRate,
+      cost_rate: input.costRate,
+    });
+
+    load(periodStart, periodEnd, Number(capacityHoursPerWeek) || 40);
+  }
+
+  async function handleAdminLogHours(input: {
+    employeeId: string;
+    projectId: string;
+    date: string;
+    hours: number;
+    billable: boolean;
+  }) {
+    await utilizationApi.createTimeEntry({
+      entry_id: `TE-${input.employeeId}-${input.projectId}-${input.date}-${Date.now()}`,
+      employee_id: input.employeeId,
+      project_id: input.projectId,
+      date: input.date,
+      hours: input.hours,
+      billable_flag: input.billable,
+    });
+
+    load(periodStart, periodEnd, Number(capacityHoursPerWeek) || 40);
+  }
+
   return (
     <div className="od-page">
       <h1 className="od-page__title">Org Utilization Dashboard</h1>
-      <p className="od-page__subtitle">Admin/Leadership view (not yet role-restricted)</p>
+      <p className="od-page__subtitle">Admin/Leadership view</p>
+
+      <AddProjectForm onSubmit={handleAddProject} />
+
+      <AdminLogHoursForm
+        projects={projects}
+        onSubmit={handleAdminLogHours}
+      />
 
       <form className="od-filters" onSubmit={handleApply}>
         <label>
           Start date
-          <input type="date" value={periodStart} onChange={(e) => setPeriodStart(e.target.value)} />
+          <input
+            type="date"
+            value={periodStart}
+            onChange={(e) => setPeriodStart(e.target.value)}
+          />
         </label>
+
         <label>
           End date
-          <input type="date" value={periodEnd} onChange={(e) => setPeriodEnd(e.target.value)} />
+          <input
+            type="date"
+            value={periodEnd}
+            onChange={(e) => setPeriodEnd(e.target.value)}
+          />
         </label>
+
         <label>
           Capacity hrs/week
           <input
@@ -63,14 +126,21 @@ export function OrgDashboardPage() {
             onChange={(e) => setCapacityHoursPerWeek(e.target.value)}
           />
         </label>
+
         <button type="submit" disabled={loading}>
           {loading ? "Loading…" : "Apply"}
         </button>
       </form>
 
-      {loadError && <p className="od-page__error">Couldn't load this page: {loadError}</p>}
+      {loadError && (
+        <p className="od-page__error">
+          Couldn't load this page: {loadError}
+        </p>
+      )}
 
-      {loading && !dashboard && <p className="od-page__loading">Loading org dashboard…</p>}
+      {loading && !dashboard && (
+        <p className="od-page__loading">Loading org dashboard…</p>
+      )}
 
       {dashboard && (
         <>
@@ -80,21 +150,39 @@ export function OrgDashboardPage() {
 
           <div className="od-page__flags">
             <div className="od-flag od-flag--warn">
-              <div className="od-flag__count">{dashboard.bench_risk.length}</div>
-              <div className="od-flag__label">Bench-risk (under-utilized)</div>
-              <div className="od-flag__ids">{dashboard.bench_risk.join(", ") || "—"}</div>
+              <div className="od-flag__count">
+                {dashboard.bench_risk.length}
+              </div>
+              <div className="od-flag__label">
+                Bench-risk (under-utilized)
+              </div>
+              <div className="od-flag__ids">
+                {dashboard.bench_risk.join(", ") || "—"}
+              </div>
             </div>
+
             <div className="od-flag od-flag--danger">
-              <div className="od-flag__count">{dashboard.over_allocated.length}</div>
-              <div className="od-flag__label">Over-allocated</div>
-              <div className="od-flag__ids">{dashboard.over_allocated.join(", ") || "—"}</div>
+              <div className="od-flag__count">
+                {dashboard.over_allocated.length}
+              </div>
+              <div className="od-flag__label">
+                Over-allocated
+              </div>
+              <div className="od-flag__ids">
+                {dashboard.over_allocated.join(", ") || "—"}
+              </div>
             </div>
           </div>
 
           <section className="od-panel">
-            <h2 className="od-panel__title">Utilization by employee</h2>
+            <h2 className="od-panel__title">
+              Utilization by employee
+            </h2>
+
             {dashboard.utilization_by_employee.length === 0 ? (
-              <p className="od-panel__empty">No time entries logged in this period yet.</p>
+              <p className="od-panel__empty">
+                No time entries logged in this period yet.
+              </p>
             ) : (
               <table className="od-table">
                 <thead>
@@ -106,6 +194,7 @@ export function OrgDashboardPage() {
                     <th>Flag</th>
                   </tr>
                 </thead>
+
                 <tbody>
                   {dashboard.utilization_by_employee.map((u) => (
                     <tr key={u.employee_id}>
@@ -123,6 +212,7 @@ export function OrgDashboardPage() {
 
           <section className="od-panel">
             <h2 className="od-panel__title">Project margins</h2>
+
             {dashboard.project_margins.length === 0 ? (
               <p className="od-panel__empty">No projects yet.</p>
             ) : (
@@ -135,13 +225,21 @@ export function OrgDashboardPage() {
                     <th>Margin</th>
                   </tr>
                 </thead>
+
                 <tbody>
                   {dashboard.project_margins.map((m) => (
                     <tr key={m.project_id}>
                       <td>{m.project_name}</td>
+
                       <td>₹{m.revenue.toLocaleString()}</td>
+
                       <td>₹{m.cost.toLocaleString()}</td>
-                      <td>₹{m.margin.toLocaleString()}</td>
+
+                      <td className={m.margin < 0 ? "od-table__negative" : ""}>
+                        {m.margin > 0
+                          ? `+₹${m.margin.toLocaleString()}`
+                          : `₹${m.margin.toLocaleString()}`}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
