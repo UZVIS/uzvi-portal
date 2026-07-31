@@ -163,7 +163,7 @@ useEffect(() => {
   </div>
 )}
 
-        <div className="table-header">
+        <div className="programs-table-header">
 
           <span>ID</span>
 
@@ -187,7 +187,7 @@ useEffect(() => {
           filteredPrograms.map((program) => (
 
             <div
-              className="training-item"
+              className="programs-table-row"
               key={program.program_id}
             >
 

@@ -201,7 +201,7 @@ export default function ProgramDetailsPage() {
           </div>
         )}
 
-        <div className="table-header">
+        <div className="units-table-header">
           <span>Order</span>
           <span>Title</span>
         </div>
@@ -218,7 +218,7 @@ export default function ProgramDetailsPage() {
           sortedUnits.map((unit) => (
             <div
               key={unit.unit_id}
-              className="training-item"
+              className="units-table-row"
             >
               <div>{unit.sequence}</div>
 

@@ -7,6 +7,12 @@ import type{
 } from "./types";
 
 const API_BASE = "/api/helpdesk";
+const EMPLOYEE_ID_STORAGE_KEY = "uzvi_portal_employee_id";
+
+function authHeaders(): HeadersInit {
+  const employeeId = localStorage.getItem(EMPLOYEE_ID_STORAGE_KEY);
+  return employeeId ? { "X-Employee-Id": employeeId } : {};
+}
 
 async function request<T>(
   path: string,
@@ -15,6 +21,7 @@ async function request<T>(
   const response = await fetch(`${API_BASE}${path}`, {
     headers: {
       "Content-Type": "application/json",
+      ...authHeaders(),
     },
     ...options,
   });

@@ -42,6 +42,10 @@ export default function TicketListPage() {
     (ticket) => ticket.status.toLowerCase() === "resolved"
   ).length;
 
+  const slaBreachedCount = tickets.filter(
+    (ticket) => ticket.sla_breached
+  ).length;
+
   const filteredTickets = useMemo(() => {
     const value = search.toLowerCase();
 
@@ -137,6 +141,19 @@ export default function TicketListPage() {
           <p>Successfully completed</p>
         </div>
 
+        <div className="stat-card">
+          <div className="stat-top">
+            <span className="stat-dot sla-breached"></span>
+            <span className="stat-heading">
+              SLA Breached
+            </span>
+          </div>
+
+          <h2>{slaBreachedCount}</h2>
+
+          <p>Past priority threshold</p>
+        </div>
+
       </div>
 
       <div className="search-container">
@@ -161,7 +178,7 @@ export default function TicketListPage() {
           </div>
         </div>
 
-        <div className="table-header">
+        <div className="ticket-table-header">
 
           <span>Ticket</span>
 
@@ -218,6 +235,12 @@ export default function TicketListPage() {
                 >
                   {ticket.status}
                 </span>
+
+                {ticket.sla_breached && (
+                  <span className="sla-badge breached">
+                    SLA Breached
+                  </span>
+                )}
 
                 <span className="arrow">
                   →

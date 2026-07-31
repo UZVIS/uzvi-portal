@@ -97,6 +97,18 @@
   color: #15803d;
 }
 
+.sla-badge.breached {
+  display: inline-flex;
+  width: fit-content;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  background: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fca5a5;
+}
+
 .description-card h2,
 .comments-card h2 {
   margin-top: 0;

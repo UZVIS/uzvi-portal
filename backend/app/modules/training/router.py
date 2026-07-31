@@ -12,11 +12,17 @@ from app.modules.training.models import (
 )
 
 from app.modules.directory.models import Employee
+from app.modules.training.dependencies import (
+    get_current_employee,
+    require_admin,
+    require_cohort_viewer,
+)
 
 from app.modules.training.schemas import (
     CohortProgressResponse,
     EnrollmentCreate,
     EnrollmentResponse,
+    LaggingEnrollee,
     ProgressResponse,
     TrainingProgramCreate,
     TrainingProgramResponse,
@@ -25,6 +31,12 @@ from app.modules.training.schemas import (
     UnitCompletionCreate,
     UnitCompletionResponse,
 )
+
+# FR-LMS-05: an enrollee is flagged as "falling behind" when their completion
+# percentage trails the cohort average by more than this many percentage
+# points. Kept as a single named constant so the threshold is easy to tune
+# without touching the calculation logic itself.
+LAGGING_THRESHOLD_POINTS = 20.0
 
 router = APIRouter(
     prefix="/api/training",
@@ -52,6 +64,7 @@ def training_home():
 def create_training_program(
     program_in: TrainingProgramCreate,
     db: Session = Depends(get_db),
+    current_employee: Employee = Depends(require_admin),
 ):
     """
     Create a new training program.
@@ -85,6 +98,7 @@ def create_training_program(
 )
 def list_training_programs(
     db: Session = Depends(get_db),
+    current_employee: Employee = Depends(get_current_employee),
 ):
     """
     Return all available training programs.
@@ -102,6 +116,7 @@ def create_training_unit(
     program_id: int,
     unit_in: TrainingUnitCreate,
     db: Session = Depends(get_db),
+    current_employee: Employee = Depends(require_admin),
 ):
     """
     Add a training unit to an existing training program.
@@ -154,6 +169,7 @@ def create_training_unit(
 def list_training_units(
     program_id: int,
     db: Session = Depends(get_db),
+    current_employee: Employee = Depends(get_current_employee),
 ):
     """
     Return all units of a training program in sequence order.
@@ -187,6 +203,7 @@ def list_training_units(
 def create_enrollment(
     enrollment_in: EnrollmentCreate,
     db: Session = Depends(get_db),
+    current_employee: Employee = Depends(get_current_employee),
 ):
     """
     Enroll an existing employee into a training program.
@@ -251,6 +268,7 @@ def create_enrollment(
 )
 def list_enrollments(
     db: Session = Depends(get_db),
+    current_employee: Employee = Depends(get_current_employee),
 ):
     """
     Return all training enrollments.
@@ -267,6 +285,7 @@ def list_enrollments(
 def complete_training_unit(
     completion_in: UnitCompletionCreate,
     db: Session = Depends(get_db),
+    current_employee: Employee = Depends(get_current_employee),
 ):
     """
     Mark a unit as completed.
@@ -343,6 +362,7 @@ def complete_training_unit(
 )
 def list_completions(
     db: Session = Depends(get_db),
+    current_employee: Employee = Depends(get_current_employee),
 ):
     """
     List all completed units.
@@ -358,10 +378,24 @@ def list_completions(
 def get_employee_progress(
     employee_id: str,
     db: Session = Depends(get_db),
+    current_employee: Employee = Depends(get_current_employee),
 ):
     """
     Return real training progress for an employee.
     """
+
+    if (
+        current_employee.access_tier not in {
+            "Manager",
+            "Admin/Leadership",
+            "HR-Restricted",
+        }
+        and current_employee.employee_id != employee_id
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="You can only view your own training progress.",
+        )
 
     enrollment = (
         db.query(Enrollment)
@@ -417,6 +451,7 @@ def get_employee_progress(
 def get_cohort_progress(
     program_id: int,
     db: Session = Depends(get_db),
+    current_employee: Employee = Depends(require_cohort_viewer),
 ):
     """
     Return progress statistics for an entire training program.
@@ -456,6 +491,7 @@ def get_cohort_progress(
 
     completed_enrollments = 0
     total_percentage = 0.0
+    enrollee_percentages = []
 
     for enrollment in enrollments:
 
@@ -475,6 +511,9 @@ def get_cohort_progress(
         )
 
         total_percentage += percentage
+        enrollee_percentages.append(
+            (enrollment.employee_id, percentage)
+        )
 
         if (
             total_units > 0
@@ -491,10 +530,27 @@ def get_cohort_progress(
         else 0.0
     )
 
+    # FR-LMS-05: flag enrollees trailing the cohort average by more than
+    # LAGGING_THRESHOLD_POINTS. Needs at least two enrollees, otherwise
+    # there is no cohort average worth comparing against.
+    lagging_employees = []
+    if total_enrollments > 1:
+        for employee_id, percentage in enrollee_percentages:
+            points_behind = average_percentage - percentage
+            if points_behind > LAGGING_THRESHOLD_POINTS:
+                lagging_employees.append(
+                    LaggingEnrollee(
+                        employee_id=employee_id,
+                        completion_percentage=round(percentage, 2),
+                        points_behind_average=round(points_behind, 2),
+                    )
+                )
+
     return CohortProgressResponse(
         program_id=program.program_id,
         program_name=program.name,
         total_enrollments=total_enrollments,
         completed_enrollments=completed_enrollments,
         average_completion_percentage=average_percentage,
+        lagging_employees=lagging_employees,
     )

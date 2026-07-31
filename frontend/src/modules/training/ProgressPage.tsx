@@ -244,6 +244,24 @@ export default function ProgressPage() {
               </div>
 
             </div>
+
+            {cohortProgress.lagging_employees.length > 0 && (
+              <div className="lagging-employees">
+                <h4>Falling Behind Pace</h4>
+
+                <ul>
+                  {cohortProgress.lagging_employees.map((entry) => (
+                    <li key={entry.employee_id}>
+                      <strong>{entry.employee_id}</strong>
+                      {" — "}
+                      {entry.completion_percentage}% complete
+                      {" "}
+                      ({entry.points_behind_average} pts behind cohort average)
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         )}
 
