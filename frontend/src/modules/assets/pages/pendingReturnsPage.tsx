@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { RotateCcw } from "lucide-react";
 
-import Header from "../components/Header";
-import Sidebar from "../components/Sidebar";
 
 import ReturnDialog from "../components/ReturnDialog";
 
@@ -57,11 +55,8 @@ export default function PendingReturnsPage() {
 
         <div className="dashboard-layout">
 
-            <Sidebar />
 
             <div className="dashboard-page">
-
-                <Header />
 
                 <main className="dashboard-body">
 
