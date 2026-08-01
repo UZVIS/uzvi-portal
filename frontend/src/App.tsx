@@ -28,6 +28,8 @@ import {
   Package,
   Quote,
   GraduationCap,
+  Clock,
+  Award, // Performance & Goals కోసం ఐకాన్
 } from "lucide-react";
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
@@ -65,6 +67,10 @@ import TicketDetailsPage from "./modules/helpdesk/TicketDetailsPage";
 import { DirectoryPage } from "./modules/directory/DirectoryPage";
 import { OnboardingPage } from "./modules/onboarding/OnboardingPage";
 import { DocumentsPage } from "./modules/documents/DocumentsPage";
+
+// ─── Attendance & Performance Modules ───────────────────────────────────────
+import AttendanceModulePage from "./modules/attendance/AttendanceModulePage";
+import PerformanceModulePage from "./modules/performance/PerformanceModulePage";
 
 import Dashboard from "./modules/assets/pages/Dashboard";
 import EmployeeDashboard from "./modules/assets/pages/EmployeeDashboard";
@@ -142,6 +148,8 @@ function AppLayout() {
   const tierLabel = employee?.access_tier ?? "Administrator";
 
   const getHeaderTitle = () => {
+    if (location.pathname.startsWith("/performance")) return "Performance & Goals";
+    if (location.pathname.startsWith("/attendance")) return "Attendance";
     if (location.pathname.startsWith("/announcements")) return "Announcements";
     if (location.pathname.startsWith("/utilization")) return "Consultant Utilization";
     if (location.pathname.startsWith("/expenses")) return "Expense Claims";
@@ -191,6 +199,13 @@ function AppLayout() {
         <div className="flex-1 overflow-hidden px-3 py-3">
           <div className="mb-0.5">
             <NavLink to="/directory" icon={BookUser} label="Directory" />
+          </div>
+          <div className="mb-0.5">
+            <NavLink to="/attendance" icon={Clock} label="Attendance" />
+          </div>
+          {/* Performance & Goals లింక్ ఇక్కడ జోడించబడింది */}
+          <div className="mb-0.5">
+            <NavLink to="/performance" icon={Award} label="Performance & Goals" />
           </div>
           <div className="mb-0.5">
             <NavLink to="/onboarding" icon={ClipboardList} label="Onboarding" />
@@ -268,7 +283,7 @@ function AppLayout() {
 
           <div className="flex items-center space-x-4">
 
-            {/* CORRECTED: Role switcher only shows permitted options */}
+            {/* Role switcher */}
             <div className="flex items-center space-x-2 bg-[#2A2421] border border-white/10 rounded-xl px-3 py-1.5 hover:bg-white/5 transition">
               <UserCog size={16} className="text-[#F37021]" />
               <select
@@ -276,33 +291,24 @@ function AppLayout() {
                 onChange={(e) => setActiveRole(e.target.value)}
                 className="bg-transparent text-gray-300 text-sm font-semibold outline-none cursor-pointer appearance-none pr-3"
               >
-                {/* Rule: Employee only sees Employee Option */}
                 {actualRole === "Employee" && (
                   <option value="Employee" className="bg-[#1A1614] text-white">Employee</option>
                 )}
-
-                {/* Rule: Manager sees Manager & Employee Options */}
                 {actualRole === "Manager" && (
                   <>
                     <option value="Manager" className="bg-[#1A1614] text-white">Manager</option>
                     <option value="Employee" className="bg-[#1A1614] text-white">Employee</option>
                   </>
                 )}
-
-                {/* Rule: HR sees HR & Employee Options */}
                 {actualRole === "HR" && (
                   <>
                     <option value="HR" className="bg-[#1A1614] text-white">HR</option>
                     <option value="Employee" className="bg-[#1A1614] text-white">Employee</option>
                   </>
                 )}
-
-                {/* Rule: Admin sees only Admin Option */}
                 {actualRole === "Admin" && (
                   <option value="Admin" className="bg-[#1A1614] text-white">Admin</option>
                 )}
-
-                {/* Fallback Option just in case it doesn't match standard roles */}
                 {!["Employee", "Manager", "HR", "Admin"].includes(actualRole) && (
                   <option value={actualRole} className="bg-[#1A1614] text-white">
                     {actualRole}
@@ -374,6 +380,25 @@ function AppLayout() {
                 ) : (
                   <LeaveDashboard />
                 )
+              }
+            />
+
+            <Route
+              path="/attendance"
+              element={
+                <ProtectedRoute>
+                  <AttendanceModulePage />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Performance & Goals Route */}
+            <Route
+              path="/performance"
+              element={
+                <ProtectedRoute>
+                  <PerformanceModulePage />
+                </ProtectedRoute>
               }
             />
 
@@ -568,12 +593,10 @@ function AuthGate() {
     );
   }
 
-  // Public route
   if (location.pathname === "/login") {
     return <LoginPage />;
   }
 
-  // Not logged in → force login
   if (!employee) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
