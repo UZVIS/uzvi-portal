@@ -47,6 +47,8 @@ def add_task_to_template(task_in: OnboardingTaskCreate, db: Session = Depends(ge
         return service.add_task_to_template(db, task_in)
     except service.TemplateNotFound:
         raise HTTPException(status_code=404, detail="Parent template not found.")
+    except service.TaskAlreadyExists as e:
+        raise HTTPException(status_code=400, detail=f"Task ID '{e}' already exists — please choose a different one.")
     except service.NotAuthorized as e:
         raise HTTPException(status_code=403, detail=str(e))
 
