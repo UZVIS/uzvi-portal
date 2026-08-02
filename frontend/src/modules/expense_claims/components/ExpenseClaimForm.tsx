@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import type { ExpenseCategory } from "../api";
 import "./ExpenseClaimForm.css";
@@ -28,6 +27,7 @@ export function ExpenseClaimForm({ categories, projects, onSubmit }: Props) {
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [description, setDescription] = useState("");
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [fileInputKey, setFileInputKey] = useState(0);
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -70,6 +70,7 @@ export function ExpenseClaimForm({ categories, projects, onSubmit }: Props) {
       setAmount("");
       setDescription("");
       setReceiptFile(null);
+      setFileInputKey((k) => k + 1);
       setProjectId("");
       setStatus("saved");
     } catch (err) {
@@ -145,6 +146,7 @@ export function ExpenseClaimForm({ categories, projects, onSubmit }: Props) {
       <label className="claim-form__field">
         Receipt (required)
         <input
+          key={fileInputKey}
           type="file"
           accept=".pdf,.png,.jpg,.jpeg"
           required
