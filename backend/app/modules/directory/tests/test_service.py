@@ -98,6 +98,24 @@ def test_list_active_excludes_exited(db, admin):
     assert "E002" not in active_ids
 
 
+def test_list_exited_shows_only_exited(db, admin):
+   
+    service.create_employee(db, EmployeeCreate(employee_id="E001", name="Asha Rao"), admin)
+    service.create_employee(db, EmployeeCreate(employee_id="E002", name="Ravi Kumar"), admin)
+    service.mark_employee_exited(db, "E002", admin)
+
+    exited = service.list_exited_employees(db, admin)
+    exited_ids = [e.employee_id for e in exited]
+    assert "E002" in exited_ids
+    assert "E001" not in exited_ids
+
+
+def test_list_exited_by_non_admin_raises(db, admin):
+    service.create_employee(db, EmployeeCreate(employee_id="E001", name="Asha Rao"), admin)
+    with pytest.raises(service.NotAuthorized):
+        service.list_exited_employees(db, "E001")
+
+
 def test_exit_unauthorized_requester_raises(db, admin):
     service.create_employee(
         db, EmployeeCreate(employee_id="E001", name="Asha Rao", access_tier="Employee"), admin

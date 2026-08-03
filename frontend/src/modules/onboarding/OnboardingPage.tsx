@@ -50,6 +50,7 @@ export function OnboardingPage() {
   const [isTaskStateKnown, setIsTaskStateKnown] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cohortRefreshKey, setCohortRefreshKey] = useState(0);
 
   const loadAll = useCallback(async () => {
     setIsLoading(true);
@@ -123,6 +124,7 @@ export function OnboardingPage() {
     setProgress(prog);
     setOverdueTaskIds(new Set(overdueIds));
     setCompletionDetails(Object.fromEntries(details.map((d) => [d.task_id, d])));
+    setCohortRefreshKey((k) => k + 1);
   }
 
   async function handleCompleteTask(taskId: string) {
@@ -139,6 +141,7 @@ export function OnboardingPage() {
       setProgress(prog);
       setOverdueTaskIds(new Set(overdueIds));
       setCompletionDetails(Object.fromEntries(details.map((d) => [d.task_id, d])));
+      setCohortRefreshKey((k) => k + 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not mark the task complete.");
     }
@@ -218,7 +221,7 @@ export function OnboardingPage() {
           <h2 style={{ fontSize: 16, fontFamily: "var(--font-display)", marginBottom: 12 }}>
             Cohort view — all current joiners
           </h2>
-          <CohortView requesterId={employee.employee_id} />
+          <CohortView requesterId={employee.employee_id} refreshKey={cohortRefreshKey} />
         </section>
       )}
     </div>

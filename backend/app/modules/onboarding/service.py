@@ -23,6 +23,10 @@ class TemplateAlreadyExists(Exception):
     pass
 
 
+class TaskAlreadyExists(Exception):
+    pass
+
+
 class TemplateNotFound(Exception):
     pass
 
@@ -106,6 +110,14 @@ def add_task_to_template(db: Session, task_in: OnboardingTaskCreate) -> Onboardi
     )
     if not template:
         raise TemplateNotFound(task_in.template_id)
+
+    existing_task = (
+        db.query(OnboardingTask)
+        .filter(OnboardingTask.task_id == task_in.task_id)
+        .first()
+    )
+    if existing_task:
+        raise TaskAlreadyExists(task_in.task_id)
 
     new_task = OnboardingTask(
         task_id=task_in.task_id,

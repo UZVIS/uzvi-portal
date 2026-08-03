@@ -3,9 +3,10 @@ import { getCohort, type CohortRow } from "../api";
 
 interface CohortViewProps {
   requesterId: string;
+  refreshKey: number;
 }
 
-export function CohortView({ requesterId }: CohortViewProps) {
+export function CohortView({ requesterId, refreshKey }: CohortViewProps) {
   const [rows, setRows] = useState<CohortRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +27,7 @@ export function CohortView({ requesterId }: CohortViewProps) {
     return () => {
       cancelled = true;
     };
-  }, [requesterId]);
+  }, [requesterId, refreshKey]);
 
   if (isLoading) return <p className="directory-row__muted">Loading cohort…</p>;
   if (error) return <div className="error-banner">{error}</div>;
