@@ -73,6 +73,16 @@ class LeaveStatusUpdate(BaseModel):
     status: LeaveStatusEnum = Field(..., description="Leave status (APPROVED or REJECTED)")
     approver_id: str = Field(..., description="Employee ID of the manager taking action")
 
+class LeaveApprovalResponse(BaseModel):
+    """
+    Schema for returning the result of a leave approval action.
+    Includes fields for team availability warnings (e.g., if 30% of the team is already on leave).
+    """
+    approved: bool
+    warning: bool = False
+    percentage: Optional[float] = 0.0
+    message: str
+
 
 # ==========================================
 # Leave Balance Schemas

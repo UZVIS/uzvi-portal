@@ -98,6 +98,27 @@ def test_add_task_by_non_admin_raises(db):
         )
 
 
+def test_add_duplicate_task_id_raises(db):
+    service.create_template(
+        db, OnboardingTemplateCreate(template_id="TPL1", name="Standard", requester_id="E002")
+    )
+    service.add_task_to_template(
+        db,
+        OnboardingTaskCreate(
+            task_id="T1", template_id="TPL1", name="First task", seq=1,
+            responsible_role="hr", requester_id="E002",
+        ),
+    )
+    with pytest.raises(service.TaskAlreadyExists):
+        service.add_task_to_template(
+            db,
+            OnboardingTaskCreate(
+                task_id="T1", template_id="TPL1", name="Duplicate ID task", seq=2,
+                responsible_role="hr", requester_id="E002",
+            ),
+        )
+
+
 # --- instance creation and progress tracking ---
 
 def test_create_instance_requires_valid_template(db):

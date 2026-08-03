@@ -61,6 +61,13 @@ export function listActiveEmployees(): Promise<Employee[]> {
   );
 }
 
+/** GET /api/v1/employees/exited?requester_id=... - Admin/HR-Restricted only */
+export function listExitedEmployees(requesterId: string): Promise<Employee[]> {
+  return fetch(`${EMPLOYEES_PATH}/exited?requester_id=${encodeURIComponent(requesterId)}`).then(
+    (r) => handle(r, "Could not load exited employees.")
+  );
+}
+
 /** GET /api/v1/employees/{id} */
 export function getEmployee(employeeId: string): Promise<Employee> {
   return fetch(`${EMPLOYEES_PATH}/${encodeURIComponent(employeeId)}`).then(

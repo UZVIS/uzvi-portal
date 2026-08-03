@@ -91,30 +91,28 @@ const NavLink = ({
   return (
     <Link
       to={to}
-   className={`group flex items-center justify-between rounded-lg font-semibold transition-all duration-200
+      className={`group flex items-center justify-between rounded-lg font-semibold transition-all duration-200
     ${isSubItem ? "ml-6 text-[12.5px] px-3 py-2" : "text-[13px] px-3 py-2"}
-    ${
-      isSubItem
-        ? isActive
-          ? "bg-[#F37021] text-white shadow-sm shadow-[#F37021]/30"
-          : "text-white hover:bg-white/10"
-        : isActive
-        ? "bg-white/10 text-white"
-        : "text-white hover:bg-white/10"
-    }`}
+    ${isSubItem
+          ? isActive
+            ? "bg-[#F37021] text-white shadow-sm shadow-[#F37021]/30"
+            : "text-white hover:bg-white/10"
+          : isActive
+            ? "bg-white/10 text-white"
+            : "text-white hover:bg-white/10"
+        }`}
     >
       <div className="flex items-center space-x-3">
-       <span
-  className={`transition-colors duration-200 ${
-    isActive
-      ? "text-[#F37021]"
-      : "text-white"
-  }`}
->
+        <span
+          className={`transition-colors duration-200 ${isActive
+            ? "text-[#F37021]"
+            : "text-white"
+            }`}
+        >
           <Icon size={16} strokeWidth={2.25} />
         </span>
 
-<span className="tracking-wide text-white">
+        <span className="tracking-wide text-white">
           {label}
         </span>
       </div>
@@ -132,27 +130,39 @@ const SectionLabel = ({ label }: { label: string }) => (
   </p>
 );
 
+// ─── Helper: Normalize DB Roles to our 4 standard roles ──────────────────────
+const normalizeRole = (roleStr: string | undefined | null) => {
+  if (!roleStr) return "Employee";
+  const upperRole = roleStr.toUpperCase();
+
+  if (upperRole.includes("ADMIN") || upperRole.includes("LEADERSHIP")) return "Admin";
+  if (upperRole.includes("HR")) return "HR";
+  if (upperRole.includes("MANAGER")) return "Manager";
+
+  return "Employee";
+};
+
 // ─── Authenticated layout ────────────────────────────────────────────────────
 function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
 
   const [assetsOpen, setAssetsOpen] = useState(
-  location.pathname.startsWith("/assets")
-);
+    location.pathname.startsWith("/assets")
+  );
 
   const { employee, logout } = useAuth();
 
-  // The actual database role of the logged-in user
-  const actualRole = employee?.access_tier ?? "Employee";
+  // 🛠️ The actual normalized database role of the logged-in user
+  const actualRole = normalizeRole(employee?.access_tier);
 
-  // State controls which view they are currently looking at
+  // State controls which view they are currently looking at (from dropdown)
   const [activeRole, setActiveRole] = useState(actualRole);
 
   // Sync activeRole if employee details load slightly late
   useEffect(() => {
     if (employee?.access_tier) {
-      setActiveRole(employee.access_tier);
+      setActiveRole(normalizeRole(employee.access_tier));
     }
   }, [employee?.access_tier]);
 
@@ -163,6 +173,8 @@ function AppLayout() {
     .join("")
     .slice(0, 2)
     .toUpperCase();
+
+  // We keep the original string for display purposes in the profile card
   const tierLabel = employee?.access_tier ?? "Administrator";
 
   const getHeaderTitle = () => {
@@ -234,33 +246,30 @@ function AppLayout() {
           <div className="space-y-0.5">
             <div>
 
-  {/* Parent Item */}
-<div
-  className={`flex items-center justify-between rounded-lg transition-all duration-200 ${
-    location.pathname.startsWith("/assets")
-      ? "bg-white/10 text-white"
-      : "text-white hover:bg-white/10"
-  }`}
->
-    <Link
-  to="/assets"
-  className={`flex items-center gap-3 flex-1 px-3 py-2 text-[13px] font-semibold transition-colors ${
-    location.pathname === "/assets"
-      ? "text-white"
-      : "text-white hover:text-white"
-  }`}
->
-     <Package
-  size={16}
-  strokeWidth={2.25}
-  className={`transition-colors duration-200 ${
-    location.pathname.startsWith("/assets")
-      ? "text-[#F37021]"
-      : "text-white"
-  }`}
-/>
-      <span className="tracking-wide">Assets</span>
-    </Link>
+              {/* Parent Item */}
+              <div
+                className={`flex items-center justify-between rounded-lg transition-all duration-200 ${location.pathname.startsWith("/assets")
+                  ? "bg-white/10 text-white"
+                  : "text-white hover:bg-white/10"
+                  }`}
+              >
+                <Link
+                  to="/assets"
+                  className={`flex items-center gap-3 flex-1 px-3 py-2 text-[13px] font-semibold transition-colors ${location.pathname === "/assets"
+                    ? "text-white"
+                    : "text-white hover:text-white"
+                    }`}
+                >
+                  <Package
+                    size={16}
+                    strokeWidth={2.25}
+                    className={`transition-colors duration-200 ${location.pathname.startsWith("/assets")
+                      ? "text-[#F37021]"
+                      : "text-white"
+                      }`}
+                  />
+                  <span className="tracking-wide">Assets</span>
+                </Link>
 
     {actualRole === "Admin/Leadership" && (
       <button
@@ -307,17 +316,45 @@ function AppLayout() {
   )}
 </Link>
 
-    </div>
-  )}
+              {/* Sub Menu */}
+              {assetsOpen && actualRole === "Admin" && (
+                <div className="ml-5 mt-1 space-y-1 border-l border-white/10 pl-3">
 
-</div> 
+                  <Link
+                    to="/assets/pending-returns"
+                    className={`flex items-center justify-between rounded-md px-3 py-2 text-[12.5px] font-medium transition-all duration-200 ${location.pathname === "/assets/pending-returns"
+                      ? "bg-white/10 text-white"
+                      : "text-white hover:bg-white/10"
+                      }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <RotateCcw
+                        size={14}
+                        className={
+                          location.pathname === "/assets/pending-returns"
+                            ? "text-[#F37021]"
+                            : "text-white"
+                        }
+                      />
+                      <span className="text-white">Pending Returns</span>
+                    </div>
+
+                    {location.pathname === "/assets/pending-returns" && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#F37021]" />
+                    )}
+                  </Link>
+
+                </div>
+              )}
+
+            </div>
             <NavLink to="/expenses" icon={CreditCard} label="Expense Claims" />
             <NavLink to="/helpdesk" icon={Headphones} label="Helpdesk" />
             <NavLink to="/quotes" icon={ReceiptText} label="Quotes" />
           </div>
         </div>
 
-       
+
       </aside>
 
       {/* ─── MAIN CONTENT ────────────────────────────────────────────────── */}
@@ -334,7 +371,7 @@ function AppLayout() {
 
           <div className="flex items-center space-x-4">
 
-            {/* CORRECTED: Role switcher only shows permitted options — restyled as a professional pill dropdown */}
+            {/* Role switcher - only shows permitted options based on normalized actualRole */}
             <div className="relative flex items-center space-x-2 bg-[#221D1A] border border-white/10 rounded-xl pl-3 pr-8 py-1.5 hover:border-white/20 hover:bg-white/[0.04] transition-colors duration-150 shadow-inner shadow-black/20">
               <UserCog size={15} className="text-[#F37021] shrink-0" />
               <select

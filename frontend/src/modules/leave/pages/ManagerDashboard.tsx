@@ -1,13 +1,21 @@
 import { useState, useEffect } from "react";
 import { apiGet } from "../../../api/client";
-import { useAuth } from "../../../shared/auth/AuthContext"; // Added import
+import { useAuth } from "../../../shared/auth/AuthContext";
 // 🌟 Premium Icons
-import { Users, CheckCircle, X, Check } from "lucide-react";
+import { Users, CheckCircle, X, Check, AlertTriangle } from "lucide-react";
 
 export default function ManagerDashboard() {
     const [requests, setRequests] = useState<any[]>([]);
     const [leaveTypes, setLeaveTypes] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+
+    // ✅ State to manage the 30% Availability Warning Popup
+    const [warningState, setWarningState] = useState({
+        isOpen: false,
+        applicationId: "",
+        message: "",
+        percentage: 0
+    });
 
     // Dynamic Employee ID from Context
     const { employee } = useAuth();
@@ -54,7 +62,8 @@ export default function ManagerDashboard() {
         return new Date(dateString).toLocaleDateString('en-US', options);
     };
 
-    const handleAction = async (applicationId: string, actionType: 'APPROVED' | 'REJECTED') => {
+    // ✅ Added force parameter (defaults to false)
+    const handleAction = async (applicationId: string, actionType: 'APPROVED' | 'REJECTED', force: boolean = false) => {
         if (!managerId) {
             alert("User identity not found. Please log in again.");
             return;
@@ -66,14 +75,29 @@ export default function ManagerDashboard() {
                 approver_id: managerId
             };
 
-            const response = await fetch(`http://127.0.0.1:8000/api/v1/leave/applications/${applicationId}/status`, {
+            // ✅ Appended ?force= to the URL
+            const response = await fetch(`http://127.0.0.1:8000/api/v1/leave/applications/${applicationId}/status?force=${force}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload)
             });
 
             if (response.ok) {
-                alert(`Leave request ${actionType.toLowerCase()} successfully!`);
+                const data = await response.json();
+
+                // ✅ Intercept the warning from backend
+                if (data.warning) {
+                    setWarningState({
+                        isOpen: true,
+                        applicationId: applicationId,
+                        message: data.message,
+                        percentage: data.percentage
+                    });
+                    return; // Stop here, wait for manager's decision on the modal
+                }
+
+                alert(data.message || `Leave request ${actionType.toLowerCase()} successfully!`);
+                setWarningState({ isOpen: false, applicationId: "", message: "", percentage: 0 }); // Reset state
                 fetchManagerData();
             } else {
                 const err = await response.json();
@@ -86,7 +110,7 @@ export default function ManagerDashboard() {
     };
 
     return (
-        <div className="space-y-6 max-w-7xl mx-auto p-4 md:p-6">
+        <div className="space-y-6 max-w-7xl mx-auto p-4 md:p-6 relative">
             <div className="flex justify-between items-end">
                 <div>
                     <h2 className="text-2xl font-extrabold text-gray-800">Team Leave Approvals</h2>
@@ -99,7 +123,7 @@ export default function ManagerDashboard() {
                 <div>
                     <h4 className="font-bold text-blue-900 text-sm">Manager Responsibilities</h4>
                     <p className="text-xs text-blue-700 mt-1">
-                        Ensure team availability before approving long leaves. Certain medical leaves may require secondary HR verification after your approval.
+                        Ensure team availability before approving long leaves. The system will warn you if 30% or more of your team is absent.
                     </p>
                 </div>
             </div>
@@ -176,6 +200,42 @@ export default function ManagerDashboard() {
                     </div>
                 )}
             </div>
+
+            {/* ✅ Warning Modal UI */}
+            {warningState.isOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] px-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="bg-amber-50 p-5 flex items-start space-x-4 border-b border-amber-100">
+                            <div className="bg-amber-100 p-2 rounded-full">
+                                <AlertTriangle className="text-amber-600" size={24} />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-amber-900">Team Availability Warning</h3>
+                                <p className="text-sm text-amber-800 mt-1">{warningState.message}</p>
+                            </div>
+                        </div>
+                        <div className="p-6">
+                            <p className="text-sm text-gray-600 leading-relaxed">
+                                Approving this request means <span className="font-bold text-gray-900">{warningState.percentage}%</span> of your team will be absent simultaneously during this period. Are you sure you want to proceed?
+                            </p>
+                        </div>
+                        <div className="px-6 py-4 bg-gray-50 flex justify-end space-x-3 border-t border-gray-100">
+                            <button
+                                onClick={() => setWarningState({ ...warningState, isOpen: false })}
+                                className="px-4 py-2 border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 rounded-xl text-sm font-bold transition"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={() => handleAction(warningState.applicationId, 'APPROVED', true)}
+                                className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-sm font-bold shadow-sm transition"
+                            >
+                                Approve Anyway
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
