@@ -7,7 +7,7 @@ from app.modules.directory.schemas import EmployeeCreate, EmployeeUpdate, TeamCr
 # FR-DIR-05: "Admin shall be able to add, edit, and mark an employee as
 # exited." Section 3 states HR-Restricted has "everything Admin has, plus"
 # the elevated fields — so HR-Restricted is included here too.
-MANAGE_TIERS = {"Admin/Leadership", "HR-Restricted"}
+MANAGE_TIERS = {"Admin", "Admin/Leadership", "HR-Restricted"}
 
 
 class EmployeeAlreadyExists(Exception):
@@ -74,9 +74,12 @@ def get_employee(db: Session, employee_id: str) -> Employee | None:
 
 
 def list_active_employees(db: Session) -> list[Employee]:
-    # FR-DIR-03: the searchable directory is viewable by all employees —
-    # no tier restriction on this read.
     return db.query(Employee).filter(Employee.employment_status == "active").all()
+
+
+def list_exited_employees(db: Session, requester_id: str) -> list[Employee]:
+    _check_can_manage(db, requester_id)
+    return db.query(Employee).filter(Employee.employment_status == "exited").all()
 
 
 def update_employee(

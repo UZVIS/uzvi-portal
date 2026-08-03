@@ -47,6 +47,14 @@ def list_active_directory_profiles(db: Session = Depends(get_db)):
     return service.list_active_employees(db)
 
 
+@router.get("/exited", response_model=List[EmployeeResponse])
+def list_exited_directory_profiles(requester_id: str, db: Session = Depends(get_db)):
+    try:
+        return service.list_exited_employees(db, requester_id)
+    except service.NotAuthorized as e:
+        raise HTTPException(status_code=403, detail=str(e))
+
+
 @router.get("/{employee_id}", response_model=EmployeeResponse)
 def retrieve_profile_by_id(employee_id: str, db: Session = Depends(get_db)):
     employee = service.get_employee(db, employee_id)

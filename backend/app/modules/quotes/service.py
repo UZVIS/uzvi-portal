@@ -1,14 +1,4 @@
-"""
-M13 business logic (kept separate from routes/models per the FRD's layering
-convention: Python business logic -> storage -> FastAPI routes -> React).
 
-Margin convention (FR-BD-04): target_margin is a MARGIN on selling price,
-not a markup on cost. i.e. target_margin = (selling_price - cost) / selling_price.
-Rearranged, required selling price = cost / (1 - target_margin).
-This is applied uniformly per line, so per-line prices roll up consistently
-to the scenario-level total, and resulting_margin recomputes from the
-actual totals (should equal target_margin barring rounding).
-"""
 from sqlalchemy.orm import Session
 
 from . import models, schemas
@@ -109,12 +99,7 @@ def list_scenarios_for_opportunity(
 def add_line_item(
     db: Session, scenario_id: str, data: schemas.CostLineItemCreate
 ) -> models.CostLineItem:
-    """
-    Add a cost line item to a scenario (FR-BD-01). If library_item_id is
-    given, that library item's unit_cost overrides whichever of
-    vendor_cost/internal_cost matches its cost_component -- pulling from
-    the library (FR-BD-06) shouldn't require re-typing the rate.
-    """  
+     
     payload = data.model_dump()
     if payload.get("library_item_id"):
      lib_item = db.query(models.StandardCostLibrary).filter(

@@ -13,16 +13,18 @@ import {
 import { EmployeeRow, teamNameFor } from "./components/EmployeeRow";
 import { EmployeeForm } from "./components/EmployeeForm";
 import { TeamManager } from "./components/TeamManager";
+import { ExitedEmployeesList } from "./components/ExitedEmployeesList";
 import "../shared-theme.css";
 import "./DirectoryPage.css";
 
-const MANAGE_TIERS = new Set(["Admin/Leadership", "HR-Restricted"]);
+const MANAGE_TIERS = new Set(["Admin", "Admin/Leadership", "HR-Restricted"]);
 
 export function DirectoryPage() {
   const { employee } = useAuth();
   const canManage = employee ? MANAGE_TIERS.has(employee.access_tier) : false;
 
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [exitedRefreshKey, setExitedRefreshKey] = useState(0);
   const [teams, setTeams] = useState<Team[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -74,6 +76,7 @@ export function DirectoryPage() {
     try {
       await exitEmployee(employeeId, employee.employee_id);
       await load();
+      setExitedRefreshKey((k) => k + 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not mark the employee as exited.");
     }
@@ -180,6 +183,15 @@ export function DirectoryPage() {
           </table>
         )}
       </section>
+
+      {canManage && employee && (
+        <section className="directory-page__list">
+          <h2 style={{ fontSize: 16, fontFamily: "var(--font-display)", marginBottom: 12 }}>
+            Exited employees
+          </h2>
+          <ExitedEmployeesList requesterId={employee.employee_id} refreshKey={exitedRefreshKey} />
+        </section>
+      )}
     </div>
   );
 }
