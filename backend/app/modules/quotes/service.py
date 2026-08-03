@@ -99,12 +99,7 @@ def list_scenarios_for_opportunity(
 def add_line_item(
     db: Session, scenario_id: str, data: schemas.CostLineItemCreate
 ) -> models.CostLineItem:
-    """
-    Add a cost line item to a scenario (FR-BD-01). If library_item_id is
-    given, that library item's unit_cost overrides whichever of
-    vendor_cost/internal_cost matches its cost_component -- pulling from
-    the library (FR-BD-06) shouldn't require re-typing the rate.
-    """  
+     
     payload = data.model_dump()
     if payload.get("library_item_id"):
      lib_item = db.query(models.StandardCostLibrary).filter(
