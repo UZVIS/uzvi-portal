@@ -78,6 +78,34 @@ def create_claim(db: Session, data: schemas.ExpenseClaimCreate) -> models.Expens
             f"Amount {data.amount} exceeds cap {category.cap_amount} for category {category.category_id}"
         )
 
+    if category.cap_amount is not None:
+
+        month_start = data.date.replace(day=1)
+        if data.date.month == 12:
+            next_month_start = data.date.replace(year=data.date.year + 1, month=1, day=1)
+        else:
+            next_month_start = data.date.replace(month=data.date.month + 1, day=1)
+
+        existing_this_month = (
+            db.query(models.ExpenseClaim)
+            .filter(
+                models.ExpenseClaim.employee_id == data.employee_id,
+                models.ExpenseClaim.category_id == data.category_id,
+                models.ExpenseClaim.status != "Rejected",
+                models.ExpenseClaim.date >= month_start,
+                models.ExpenseClaim.date < next_month_start,
+            )
+            .all()
+        )
+        month_total_so_far = sum(c.amount for c in existing_this_month)
+        if month_total_so_far + data.amount > category.cap_amount:
+            raise CapExceededError(
+                f"This claim would bring your {category.name} total for "
+                f"{month_start.strftime('%B %Y')} to {month_total_so_far + data.amount}, "
+                f"exceeding the monthly cap of {category.cap_amount}. "
+                f"Already claimed this month: {month_total_so_far}."
+            )
+
     if data.date > date.today():
         raise FutureDateError(
             f"Cannot submit a claim dated {data.date} - it's in the future. "

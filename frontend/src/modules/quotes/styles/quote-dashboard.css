@@ -434,7 +434,7 @@ tbody tr:hover .opp-name {
 .modal-subtitle{
     margin-top:4px;
     color:#6B7280;
-    font-size:14px;
+   
 }
 
 .modal-close-btn{
@@ -455,36 +455,6 @@ tbody tr:hover .opp-name {
     background:#F3F4F6;
 }
 
-.form-group{
-    padding:18px 24px 0;
-}
-
-.form-group label{
-    display:block;
-    margin-bottom:8px;
-    font-size:14px;
-    font-weight:600;
-    color:#374151;
-}
-
-.form-group input{
-    width:100%;
-    height:46px;
-
-    padding:0 14px;
-
-    border:1px solid #D9DEE8;
-    border-radius:10px;
-
-    font-size:14px;
-    box-sizing:border-box;
-}
-
-.form-group input:focus{
-    outline:none;
-    border-color:#F2751A;
-    box-shadow:0 0 0 3px rgba(242,117,26,.12);
-}
 
 .modal-actions{
     display:flex;
@@ -497,32 +467,11 @@ tbody tr:hover .opp-name {
     margin-top:22px;
 }
 
-.secondary-btn{
-    background:#fff;
-    border:1px solid #D9DEE8;
-    border-radius:10px;
 
-    padding:10px 18px;
-    cursor:pointer;
-    font-weight:600;
-}
 
-.secondary-btn:hover{
-    background:#F9FAFB;
-}
 
-.add-btn{
-    background:#F2751A;
-    color:#fff;
 
-    border:none;
-    border-radius:10px;
 
-    padding:10px 20px;
-
-    cursor:pointer;
-    font-weight:700;
-}
 
 .add-btn:hover{
     background:#DF650F;
@@ -565,15 +514,7 @@ tbody tr:hover .opp-name {
   margin: 8px 0;
 }
 
-.opportunity-details {
-  padding: 24px;
-  max-width: 1200px;
-}
 
-.loading-text {
-  color: var(--muted);
-  font-size: 14px;
-}
 
 .details-id {
   font-size: 12px;
@@ -582,9 +523,6 @@ tbody tr:hover .opp-name {
   font-family: 'JetBrains Mono', monospace;
 }
 
-.section-head-row {
-  margin: 4px 0 14px;
-}
 
 .section-title {
   margin: 0;
@@ -639,12 +577,7 @@ tbody tr:hover .opp-name {
   font-size: 14px;
 }
 
-.details-id {
-  font-size: 12px;
-  color: var(--muted-soft);
-  margin-top: 8px;
-  font-family: 'JetBrains Mono', monospace;
-}
+
 
 .summary-card {
   display: grid;
@@ -692,12 +625,6 @@ tbody tr:hover .opp-name {
   margin: 4px 0 14px;
 }
 
-.section-title {
-  margin: 0;
-  font-size: 10px;
-  font-weight: 700;
-  color: var(--ink);
-}
 
 .section-count {
   color: var(--muted-soft);
@@ -936,7 +863,7 @@ tbody tr:hover .opp-name {
 
 /* Line items + totals layout */
 .workspace-grid {
-  display: flex;
+  display: grid;
   
   gap: 20px;
   align-items: start;
@@ -1121,9 +1048,9 @@ tbody tr:hover .opp-name {
   vertical-align: middle;
 }
 
-.modal {
+/* .modal {
     width: 340px;
-}
+} */
 
 .modal-title-group h2 {
     font-size: 16px;
@@ -1137,11 +1064,7 @@ tbody tr:hover .opp-name {
     height: 36px;
 }
 
-.secondary-btn,
-.add-btn {
-    height: 34px;
-    font-size: 12px;
-}
+
 
 /* ==========================
    DELETE CONFIRM DIALOG
@@ -1240,4 +1163,174 @@ tbody tr:hover .opp-name {
 
 .confirm-modal .danger-btn:hover{
     background:#DC2626;
+}
+
+/* ---------- Add/Edit Line Item Dialog ---------- */
+.dialog {
+  width: 380px;
+  max-width: 95%;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 18px 40px rgba(0,0,0,.15);
+  padding: 20px 22px;
+}
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  z-index: 9999;
+  padding: 20px;
+}
+.dialog-title {
+  margin: 0 0 18px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.dialog-form-group {
+  margin-bottom: 12px;
+}
+
+.dialog-form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4B5563;
+}
+
+.dialog-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 12px;
+  border: 1px solid #D1D5DB;
+  border-radius: 7px;
+  font-size: 13px;
+  box-sizing: border-box;
+}
+
+.dialog-input:focus {
+  outline: none;
+  border-color: #F2751A;
+  box-shadow: 0 0 0 3px rgba(242,117,26,.12);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.dialog-cancel-btn,
+.dialog-save-btn {
+  height: 34px;
+  min-width: 85px;
+  padding: 0 16px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.dialog-cancel-btn {
+  background: #fff;
+  border: 1px solid #D1D5DB;
+  color: #374151;
+}
+
+.dialog-cancel-btn:hover {
+  background: #F9FAFB;
+}
+
+.dialog-save-btn {
+  background: #F2751A;
+  border: 1px solid #F2751A;
+  color: #fff;
+}
+
+.dialog-save-btn:hover {
+  background: #DF650F;
+}
+.dialog-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/*  */
+
+.secondary-btn,
+.add-btn {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+
+.secondary-btn {
+  background: #fff;
+  border: 1px solid #D1D5DB;
+}
+.secondary-btn:hover {
+  background: #F9FAFB;
+}
+.add-btn {
+  background: #F2751A;
+  border: none;
+  color: #fff;
+}
+
+.add-btn:hover {
+  background: #DF650F;
+}
+
+.modal-body{
+    padding:24px;
+}
+
+.form-group{
+    margin-bottom:18px;
+}
+
+.form-group:last-child{
+    margin-bottom:0;
+}
+
+.form-group label{
+    display:block;
+    margin-bottom:8px;
+    font-size:13px;
+    font-weight:600;
+    color:#374151;
+}
+
+.form-group input{
+    width:100%;
+    height:42px;
+    padding:0 14px;
+    border:1px solid #D1D5DB;
+    border-radius:8px;
+    font-size:14px;
+    box-sizing:border-box;
+}
+
+.form-group input:focus{
+    outline:none;
+    border-color:#F2751A;
+    box-shadow:0 0 0 3px rgba(242,117,26,.15);
 }
