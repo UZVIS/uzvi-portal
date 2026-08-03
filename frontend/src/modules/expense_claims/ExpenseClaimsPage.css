@@ -60,6 +60,13 @@
   align-items: start;
 }
 
+/* .ec-page__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: stretch;
+} */
+
 @media (max-width: 760px) {
   .ec-page__grid {
     grid-template-columns: 1fr;
@@ -73,6 +80,14 @@
   padding: 18px 20px;
 } */
 
+/* .ec-panel {
+  background: #ffffff;
+  border: 1px solid #e3e6ea;
+  border-radius: 10px;
+  padding: 18px 20px;
+  overflow-x: auto;
+} */
+
 .ec-panel {
   background: #ffffff;
   border: 1px solid #e3e6ea;
@@ -81,8 +96,23 @@
   overflow-x: auto;
 }
 
+.ec-panel--claims {
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+
+
+/* .ec-panel--claims .claims-table thead th {
+  position: sticky;
+  top: 0;
+  background: #ffffff;
+  z-index: 1;
+} */
+
 .ec-panel__title {
   font-size: 14px;
   font-weight: 600;
   margin: 0 0 12px;
 }
+

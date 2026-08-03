@@ -53,6 +53,56 @@ def test_create_claim_over_cap_rejected(db, employee, category):
                 claim_id="CL2", employee_id="E1", category_id="C1", amount=15000, date=date(2026, 1, 5)
             ),
         )
+
+def test_cumulative_monthly_cap_blocks_second_claim(db, employee, category):
+    service.create_claim(
+        db,
+        schemas.ExpenseClaimCreate(
+            claim_id="CL_CUM1", employee_id="E1", category_id="C1", amount=8000, date=date(2026, 1, 5)
+        ),
+    )
+    with pytest.raises(service.CapExceededError):
+        service.create_claim(
+            db,
+            schemas.ExpenseClaimCreate(
+                claim_id="CL_CUM2", employee_id="E1", category_id="C1", amount=3000, date=date(2026, 1, 20)
+            ),
+        )
+
+
+def test_cumulative_cap_resets_next_month(db, employee, category):
+    service.create_claim(
+        db,
+        schemas.ExpenseClaimCreate(
+            claim_id="CL_JAN", employee_id="E1", category_id="C1", amount=8000, date=date(2026, 1, 5)
+        ),
+    )
+    # Same amount, but in February - should NOT count against January's total.
+    claim = service.create_claim(
+        db,
+        schemas.ExpenseClaimCreate(
+            claim_id="CL_FEB", employee_id="E1", category_id="C1", amount=8000, date=date(2026, 2, 1)
+        ),
+    )
+    assert claim.status == "Submitted"
+
+
+def test_cumulative_cap_ignores_rejected_claims(db, employee, category):
+    claim1 = service.create_claim(
+        db,
+        schemas.ExpenseClaimCreate(
+            claim_id="CL_R1", employee_id="E1", category_id="C1", amount=8000, date=date(2026, 1, 5)
+        ),
+    )
+    service.reject_claim(db, "CL_R1", decided_by_role="Manager")
+    # CL_R1 was rejected, so it shouldn't count toward January's cumulative total.
+    claim2 = service.create_claim(
+        db,
+        schemas.ExpenseClaimCreate(
+            claim_id="CL_R2", employee_id="E1", category_id="C1", amount=8000, date=date(2026, 1, 20)
+        ),
+    )
+    assert claim2.status == "Submitted"
 def test_create_claim_rejects_future_date(db, employee, category):
     tomorrow = date.today() + timedelta(days=1)
     with pytest.raises(service.FutureDateError):

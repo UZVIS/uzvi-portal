@@ -100,7 +100,7 @@ export function ExpenseClaimsPage() {
       )}
 
       <div className="ec-page__grid">
-        <section className="ec-panel">
+        <section className="ec-panel ec-panel--claims">
           <h2 className="ec-panel__title">Your claims</h2>
           <ClaimsTable claims={claims} categories={categories} />
         </section>

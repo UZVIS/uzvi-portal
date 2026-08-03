@@ -26,10 +26,11 @@ import {
   ClipboardList,
   FolderOpen,
   Package,
-  Quote,
+  ReceiptText,
   GraduationCap,
   Clock,
-  Award, // Performance & Goals కోసం ఐకాన్
+  Award, // Performance & Goals 
+  RotateCcw,
 } from "lucide-react";
  
 // ─── Auth ────────────────────────────────────────────────────────────────────
@@ -96,33 +97,59 @@ const NavLink = ({
   return (
     <Link
       to={to}
-      className={`flex items-center justify-between px-3 py-2 mb-0.5 rounded-lg font-semibold transition-all duration-200
-                ${isSubItem ? "ml-6 text-sm py-1.5" : "text-[13px]"}
-                ${isActive
-          ? "bg-[#F37021] text-white shadow-md"
-          : "text-gray-200 hover:bg-white/10 hover:text-white"
-        }`}
+   className={`group flex items-center justify-between rounded-lg font-semibold transition-all duration-200
+    ${isSubItem ? "ml-6 text-[12.5px] px-3 py-2" : "text-[13px] px-3 py-2"}
+    ${
+      isSubItem
+        ? isActive
+          ? "bg-[#F37021] text-white shadow-sm shadow-[#F37021]/30"
+          : "text-white hover:bg-white/10"
+        : isActive
+        ? "bg-white/10 text-white"
+        : "text-white hover:bg-white/10"
+    }`}
     >
       <div className="flex items-center space-x-3">
-        <span className={isActive ? "text-white" : "text-gray-300"}>
-          <Icon size={16} strokeWidth={2.5} />
+       <span
+  className={`transition-colors duration-200 ${
+    isActive
+      ? "text-[#F37021]"
+      : "text-white"
+  }`}
+>
+          <Icon size={16} strokeWidth={2.25} />
         </span>
  
         <span className={isActive ? "text-white" : "text-white"}>
+
+<span className="tracking-wide text-white">
           {label}
         </span>
       </div>
       {isActive && !isSubItem && (
-        <ChevronDown size={16} className="text-white" />
+        <span className="w-1.5 h-1.5 rounded-full bg-[#F37021]" />
       )}
     </Link>
   );
 };
  
+
+// ─── Sidebar section label ───────────────────────────────────────────────────
+const SectionLabel = ({ label }: { label: string }) => (
+  <p className="px-3 pt-4 pb-1.5 text-[10px] font-bold tracking-[0.14em] text-gray-500 uppercase select-none">
+    {label}
+  </p>
+);
+
 // ─── Authenticated layout ────────────────────────────────────────────────────
 function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
+
+  const [assetsOpen, setAssetsOpen] = useState(
+  location.pathname.startsWith("/assets")
+);
+
   const { employee, logout } = useAuth();
  
   // The actual database role of the logged-in user
@@ -176,17 +203,17 @@ function AppLayout() {
   return (
     <div className="flex h-screen bg-[#F4F6F8] font-sans overflow-hidden">
       {/* ─── SIDEBAR ─────────────────────────────────────────────────── */}
-      <aside className="w-[280px] bg-[#1A1614] flex flex-col justify-between shrink-0 transition-all">
+      <aside className="w-[280px] bg-[#1A1614] flex flex-col justify-between shrink-0 transition-all border-r border-black/40">
         <div className="px-4 py-3 flex items-center justify-between border-b border-white/5">
           <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 bg-[#F37021] text-white rounded-full flex items-center justify-center font-black text-lg shadow-lg">
+            <div className="w-9 h-9 bg-[#F37021] text-white rounded-full flex items-center justify-center font-black text-lg shadow-lg shadow-[#F37021]/20">
               U
             </div>
             <div>
               <h1 className="font-extrabold text-white text-[15px] tracking-wide leading-tight">
                 UZVI PORTAL
               </h1>
-              <p className="text-[11px] text-[#F37021] font-bold tracking-wide">
+              <p className="text-[10.5px] text-[#F37021] font-bold tracking-[0.08em] uppercase">
                 Employee Portal
               </p>
             </div>
@@ -194,8 +221,7 @@ function AppLayout() {
           <button className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition">
             <ChevronLeft size={16} />
           </button>
-        </div>
- 
+        </div> 
         <div className="flex-1 overflow-hidden px-3 py-3">
           <div className="mb-0.5">
             <NavLink to="/directory" icon={BookUser} label="Directory" />
@@ -203,17 +229,18 @@ function AppLayout() {
           <div className="mb-0.5">
             <NavLink to="/attendance" icon={Clock} label="Attendance" />
           </div>
-          {/* Performance & Goals లింక్ ఇక్కడ జోడించబడింది */}
+          {/* Performance & Goals */}
           <div className="mb-0.5">
             <NavLink to="/performance" icon={Award} label="Performance & Goals" />
           </div>
           <div className="mb-0.5">
+
+        <div className="flex-1 overflow-y-auto px-3 py-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+          <SectionLabel label="Workspace" />
+          <div className="space-y-0.5">
+            <NavLink to="/directory" icon={BookUser} label="Directory" />
             <NavLink to="/onboarding" icon={ClipboardList} label="Onboarding" />
-          </div>
-          <div className="mb-0.5">
             <NavLink to="/calendar" icon={CalendarDays} label="Company Calendar" />
-          </div>
-          <div className="mb-0.5">
             <NavLink to="/documents" icon={FolderOpen} label="Documents" />
           </div>
           <div className="mb-0.5">
@@ -221,28 +248,13 @@ function AppLayout() {
           </div>
  
           <div className="mb-0.5">
+
+          <SectionLabel label="People" />
+          <div className="space-y-0.5">
+            <NavLink to="/" icon={Briefcase} label="Leave Management" />
             <NavLink to="/dashboard" icon={Megaphone} label="Announcements" />
-          </div>
-          <div className="mb-0.5">
-            <NavLink
-              to="/utilization"
-              icon={Users}
-              label="Consultant Utilization"
-            />
-          </div>
-          <div className="mb-0.5">
-            <NavLink to="/assets" icon={Package} label="Assets" />
-          </div>
-          <div className="mb-0.5">
-            <NavLink to="/expenses" icon={CreditCard} label="Expense Claims" />
-          </div>
-          <div className="mb-0.5">
+            <NavLink to="/utilization" icon={Users} label="Consultant Utilization" />
             <NavLink to="/recruiting" icon={UserPlus} label="Recruiting" />
-          </div>
-          <div className="mb-0.5">
-            <NavLink to="/helpdesk" icon={Headphones} label="Helpdesk" />
-          </div>
-          <div className="mb-0.5">
             <NavLink to="/training" icon={GraduationCap} label="Training" />
           </div>
           <div className="mb-0.5">
@@ -256,17 +268,95 @@ function AppLayout() {
             <div className="w-10 h-10 bg-[#F37021] text-white rounded-full flex items-center justify-center font-bold text-sm shadow-md">
               {initials}
             </div>
+
+          <SectionLabel label="Operations" />
+          <div className="space-y-0.5">
             <div>
-              <p className="text-sm font-bold text-white leading-tight">
-                {displayName}
-              </p>
-              <p className="text-[11px] text-[#F37021] font-semibold">
-                {tierLabel}
-              </p>
-            </div>
+
+  {/* Parent Item */}
+<div
+  className={`flex items-center justify-between rounded-lg transition-all duration-200 ${
+    location.pathname.startsWith("/assets")
+      ? "bg-white/10 text-white"
+      : "text-white hover:bg-white/10"
+  }`}
+>
+    <Link
+  to="/assets"
+  className={`flex items-center gap-3 flex-1 px-3 py-2 text-[13px] font-semibold transition-colors ${
+    location.pathname === "/assets"
+      ? "text-white"
+      : "text-white hover:text-white"
+  }`}
+>
+     <Package
+  size={16}
+  strokeWidth={2.25}
+  className={`transition-colors duration-200 ${
+    location.pathname.startsWith("/assets")
+      ? "text-[#F37021]"
+      : "text-white"
+  }`}
+/>
+      <span className="tracking-wide">Assets</span>
+    </Link>
+
+    {actualRole === "Admin" && (
+      <button
+        type="button"
+        onClick={() => setAssetsOpen(!assetsOpen)}
+        className="px-3 py-2 text-gray-400 hover:text-white"
+      >
+        <ChevronDown
+          size={15}
+          className={`transition-transform duration-200 ${
+            assetsOpen ? "rotate-0" : "-rotate-90"
+          }`}
+        />
+      </button>
+    )}
+  </div>
+
+  {/* Sub Menu */}
+  {assetsOpen && actualRole === "Admin" && (
+    <div className="ml-5 mt-1 space-y-1 border-l border-white/10 pl-3">
+
+ <Link
+  to="/assets/pending-returns"
+  className={`flex items-center justify-between rounded-md px-3 py-2 text-[12.5px] font-medium transition-all duration-200 ${
+    location.pathname === "/assets/pending-returns"
+      ? "bg-white/10 text-white"
+      : "text-white hover:bg-white/10"
+  }`}
+>
+  <div className="flex items-center gap-2">
+    <RotateCcw
+      size={14}
+      className={
+        location.pathname === "/assets/pending-returns"
+          ? "text-[#F37021]"
+          : "text-white"
+      }
+    />
+    <span className="text-white">Pending Returns</span>
+  </div>
+
+  {location.pathname === "/assets/pending-returns" && (
+    <span className="w-1.5 h-1.5 rounded-full bg-[#F37021]" />
+  )}
+</Link>
+
+    </div>
+  )}
+
+</div> 
+            <NavLink to="/expenses" icon={CreditCard} label="Expense Claims" />
+            <NavLink to="/helpdesk" icon={Headphones} label="Helpdesk" />
+            <NavLink to="/quotes" icon={ReceiptText} label="Quotes" />
           </div>
-          <ChevronDown size={16} className="text-gray-500" />
         </div>
+
+       
       </aside>
  
       {/* ─── MAIN CONTENT ────────────────────────────────────────────────── */}
@@ -286,10 +376,14 @@ function AppLayout() {
             {/* Role switcher */}
             <div className="flex items-center space-x-2 bg-[#2A2421] border border-white/10 rounded-xl px-3 py-1.5 hover:bg-white/5 transition">
               <UserCog size={16} className="text-[#F37021]" />
+
+            {/* CORRECTED: Role switcher only shows permitted options — restyled as a professional pill dropdown */}
+            <div className="relative flex items-center space-x-2 bg-[#221D1A] border border-white/10 rounded-xl pl-3 pr-8 py-1.5 hover:border-white/20 hover:bg-white/[0.04] transition-colors duration-150 shadow-inner shadow-black/20">
+              <UserCog size={15} className="text-[#F37021] shrink-0" />
               <select
                 value={activeRole}
                 onChange={(e) => setActiveRole(e.target.value)}
-                className="bg-transparent text-gray-300 text-sm font-semibold outline-none cursor-pointer appearance-none pr-3"
+                className="bg-transparent text-gray-200 text-[13px] font-semibold outline-none cursor-pointer appearance-none pr-1 tracking-wide"
               >
                 {actualRole === "Employee" && (
                   <option value="Employee" className="bg-[#1A1614] text-white">Employee</option>
@@ -316,13 +410,13 @@ function AppLayout() {
                 )}
               </select>
               <ChevronDown
-                size={14}
-                className="text-gray-500 -ml-2 pointer-events-none"
+                size={13}
+                className="text-gray-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
               />
             </div>
  
             {/* Date */}
-            <div className="hidden md:flex items-center space-x-2 border border-white/10 bg-[#2A2421] rounded-xl px-4 py-1.5 text-sm font-semibold text-gray-300 cursor-pointer hover:bg-white/5 transition">
+            <div className="hidden md:flex items-center space-x-2 border border-white/10 bg-[#221D1A] rounded-xl px-4 py-1.5 text-sm font-semibold text-gray-300 cursor-pointer hover:bg-white/[0.04] hover:border-white/20 transition-colors duration-150">
               <CalendarIcon size={16} className="text-[#F37021]" />
               <span>{today}</span>
             </div>
@@ -337,7 +431,7 @@ function AppLayout() {
                   <p className="text-sm font-bold text-white leading-tight">
                     {displayName}
                   </p>
-                  <p className="text-[10px] text-gray-400 font-medium">
+                  <p className="text-[10px] text-gray-400 font-medium tracking-wide">
                     {tierLabel}
                   </p>
                 </div>
