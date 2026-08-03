@@ -262,7 +262,7 @@ function AppLayout() {
       <span className="tracking-wide">Assets</span>
     </Link>
 
-    {actualRole === "Admin" && (
+    {actualRole === "Admin/Leadership" && (
       <button
         type="button"
         onClick={() => setAssetsOpen(!assetsOpen)}
@@ -279,7 +279,7 @@ function AppLayout() {
   </div>
 
   {/* Sub Menu */}
-  {assetsOpen && actualRole === "Admin" && (
+  {assetsOpen && actualRole === "Admin/Leadership" && (
     <div className="ml-5 mt-1 space-y-1 border-l border-white/10 pl-3">
 
  <Link
@@ -364,12 +364,12 @@ function AppLayout() {
                 )}
 
                 {/* Rule: Admin sees only Admin Option */}
-                {actualRole === "Admin" && (
-                  <option value="Admin" className="bg-[#1A1614] text-white">Admin</option>
+                {actualRole === "Admin/Leadership" && (
+                  <option value="Admin/Leadership" className="bg-[#1A1614] text-white">Admin/Leadership</option>
                 )}
 
                 {/* Fallback Option just in case it doesn't match standard roles */}
-                {!["Employee", "Manager", "HR", "Admin"].includes(actualRole) && (
+                {!["Employee", "Manager", "HR", "Admin/Leadership"].includes(actualRole) && (
                   <option value={actualRole} className="bg-[#1A1614] text-white">
                     {actualRole}
                   </option>
