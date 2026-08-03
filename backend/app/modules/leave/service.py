@@ -7,7 +7,7 @@ between the API routers and the database CRUD operations.
 
 """
 
-from datetime import datetime
+from datetime import datetime, date
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
@@ -25,6 +25,10 @@ from app.modules.leave.schemas import (
     LeaveStatusUpdate,
     LeaveStatusEnum
 )
+
+# ⚠️ IMPORTANT: Import your Employee model here based on your project structure.
+# Assuming it's in a directory module, for example:
+from app.modules.directory.models import Employee 
 
 
 # ==========================================
@@ -108,9 +112,37 @@ def get_leave_applications(db: Session):
     """
     return crud.get_leave_applications(db=db)
 
-def update_leave_status(db: Session, application_id: str, leave_status: LeaveStatusUpdate):
+# ⭐ NEW FUNCTION: Calculate Team Leave Percentage
+def calculate_team_leave_percentage(db: Session, team_id: str) -> float:
+    """
+    Calculates the percentage of team members currently on an approved leave today.
+    """
+    if not team_id:
+        return 0.0
+
+    # 1. Get total members in the team
+    total_members = db.query(Employee).filter(Employee.team_id == team_id).count()
+    if total_members == 0:
+        return 0.0
+
+    # 2. Get members currently on leave today
+    today = date.today()
+    employees_on_leave = db.query(LeaveApplication).join(Employee).filter(
+        Employee.team_id == team_id,
+        LeaveApplication.status == LeaveStatusEnum.APPROVED,
+        LeaveApplication.start_date <= today,
+        LeaveApplication.end_date >= today
+    ).count()
+
+    # 3. Calculate percentage
+    return (employees_on_leave / total_members) * 100.0
+
+
+# ⭐ UPDATED FUNCTION: Includes Force logic and Percentage checking
+def update_leave_status(db: Session, application_id: str, leave_status: LeaveStatusUpdate, force: bool = False):
     """
     Handles the approval or rejection workflow of a leave application.
+    Checks team availability before approving unless forced.
     Deducts the required days from the employee's balance if approved,
     and logs the action in the audit trail.
     """
@@ -123,7 +155,23 @@ def update_leave_status(db: Session, application_id: str, leave_status: LeaveSta
     if application.status in [LeaveStatusEnum.APPROVED, LeaveStatusEnum.REJECTED]:
         raise HTTPException(status_code=400, detail=f"Application is already {application.status.value}")
 
-    # Step 3: Handle balance deduction if the manager approves the request
+    employee = crud.get_employee_by_id(db=db, employee_id=application.employee_id)
+
+    # ⭐ Step 3: Check Team Availability (The 30% Rule)
+    if leave_status.status == LeaveStatusEnum.APPROVED and not force:
+        if employee and getattr(employee, 'team_id', None):
+            percentage = calculate_team_leave_percentage(db, employee.team_id)
+            
+            if percentage >= 30.0:
+                # Return the warning instead of processing the leave
+                return {
+                    "approved": False,
+                    "warning": True,
+                    "percentage": round(percentage, 2),
+                    "message": f"{round(percentage)}% of your team is already on leave. Please review before approving."
+                }
+
+    # Step 4: Handle balance deduction if the manager approves the request
     if leave_status.status == LeaveStatusEnum.APPROVED:
         leave_balance = crud.get_leave_balance(
             db=db,
@@ -147,12 +195,12 @@ def update_leave_status(db: Session, application_id: str, leave_status: LeaveSta
         leave_balance.balance -= total_days
         crud.update_leave_balance(db=db, leave_balance=leave_balance)
 
-    # Step 4: Update the application status and approver details
+    # Step 5: Update the application status and approver details
     application.status = leave_status.status
     application.approver_id = leave_status.approver_id
     updated_application = crud.update_leave_application(db=db, application=application)
 
-    # Step 5: Generate an audit log for security and historical tracking
+    # Step 6: Generate an audit log for security and historical tracking
     new_audit = LeaveAuditLog(
         application_id=application.application_id,
         actor_id=leave_status.approver_id,
@@ -160,4 +208,10 @@ def update_leave_status(db: Session, application_id: str, leave_status: LeaveSta
     )
     crud.create_audit_log(db=db, audit_log=new_audit)
 
-    return updated_application
+    # ⭐ Step 7: Return final success response matching our schema
+    return {
+        "approved": True,
+        "warning": False,
+        "percentage": 0.0,
+        "message": f"Leave request {leave_status.status.value.lower()} successfully."
+    }
