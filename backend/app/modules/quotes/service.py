@@ -1,14 +1,4 @@
-"""
-M13 business logic (kept separate from routes/models per the FRD's layering
-convention: Python business logic -> storage -> FastAPI routes -> React).
 
-Margin convention (FR-BD-04): target_margin is a MARGIN on selling price,
-not a markup on cost. i.e. target_margin = (selling_price - cost) / selling_price.
-Rearranged, required selling price = cost / (1 - target_margin).
-This is applied uniformly per line, so per-line prices roll up consistently
-to the scenario-level total, and resulting_margin recomputes from the
-actual totals (should equal target_margin barring rounding).
-"""
 from sqlalchemy.orm import Session
 
 from . import models, schemas
