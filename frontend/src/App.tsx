@@ -271,20 +271,50 @@ function AppLayout() {
                   <span className="tracking-wide">Assets</span>
                 </Link>
 
-                {actualRole === "Admin" && (
-                  <button
-                    type="button"
-                    onClick={() => setAssetsOpen(!assetsOpen)}
-                    className="px-3 py-2 text-gray-400 hover:text-white"
-                  >
-                    <ChevronDown
-                      size={15}
-                      className={`transition-transform duration-200 ${assetsOpen ? "rotate-0" : "-rotate-90"
-                        }`}
-                    />
-                  </button>
-                )}
-              </div>
+    {actualRole === "Admin/Leadership" && (
+      <button
+        type="button"
+        onClick={() => setAssetsOpen(!assetsOpen)}
+        className="px-3 py-2 text-gray-400 hover:text-white"
+      >
+        <ChevronDown
+          size={15}
+          className={`transition-transform duration-200 ${
+            assetsOpen ? "rotate-0" : "-rotate-90"
+          }`}
+        />
+      </button>
+    )}
+  </div>
+
+  {/* Sub Menu */}
+  {assetsOpen && actualRole === "Admin/Leadership" && (
+    <div className="ml-5 mt-1 space-y-1 border-l border-white/10 pl-3">
+
+ <Link
+  to="/assets/pending-returns"
+  className={`flex items-center justify-between rounded-md px-3 py-2 text-[12.5px] font-medium transition-all duration-200 ${
+    location.pathname === "/assets/pending-returns"
+      ? "bg-white/10 text-white"
+      : "text-white hover:bg-white/10"
+  }`}
+>
+  <div className="flex items-center gap-2">
+    <RotateCcw
+      size={14}
+      className={
+        location.pathname === "/assets/pending-returns"
+          ? "text-[#F37021]"
+          : "text-white"
+      }
+    />
+    <span className="text-white">Pending Returns</span>
+  </div>
+
+  {location.pathname === "/assets/pending-returns" && (
+    <span className="w-1.5 h-1.5 rounded-full bg-[#F37021]" />
+  )}
+</Link>
 
               {/* Sub Menu */}
               {assetsOpen && actualRole === "Admin" && (
@@ -371,10 +401,16 @@ function AppLayout() {
                 )}
 
                 {/* Rule: Admin sees only Admin Option */}
-                {actualRole === "Admin" && (
-                  <option value="Admin" className="bg-[#1A1614] text-white">Admin</option>
+                {actualRole === "Admin/Leadership" && (
+                  <option value="Admin/Leadership" className="bg-[#1A1614] text-white">Admin/Leadership</option>
                 )}
 
+                {/* Fallback Option just in case it doesn't match standard roles */}
+                {!["Employee", "Manager", "HR", "Admin/Leadership"].includes(actualRole) && (
+                  <option value={actualRole} className="bg-[#1A1614] text-white">
+                    {actualRole}
+                  </option>
+                )}
               </select>
               <ChevronDown
                 size={13}

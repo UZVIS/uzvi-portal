@@ -17,7 +17,7 @@ import { ExitedEmployeesList } from "./components/ExitedEmployeesList";
 import "../shared-theme.css";
 import "./DirectoryPage.css";
 
-const MANAGE_TIERS = new Set(["Admin/Leadership", "HR-Restricted"]);
+const MANAGE_TIERS = new Set(["Admin", "Admin/Leadership", "HR-Restricted"]);
 
 export function DirectoryPage() {
   const { employee } = useAuth();

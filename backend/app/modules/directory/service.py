@@ -7,7 +7,7 @@ from app.modules.directory.schemas import EmployeeCreate, EmployeeUpdate, TeamCr
 # FR-DIR-05: "Admin shall be able to add, edit, and mark an employee as
 # exited." Section 3 states HR-Restricted has "everything Admin has, plus"
 # the elevated fields — so HR-Restricted is included here too.
-MANAGE_TIERS = {"Admin/Leadership", "HR-Restricted"}
+MANAGE_TIERS = {"Admin", "Admin/Leadership", "HR-Restricted"}
 
 
 class EmployeeAlreadyExists(Exception):
