@@ -1,4 +1,4 @@
-.cu-page {
+/* .cu-page {
   max-width: 900px;
   margin: 0 auto;
   padding: 32px 24px 60px;
@@ -84,7 +84,7 @@
   margin-top: 24px;
 } */
 
-.cu-panel--entries {
+/* .cu-panel--entries {
   margin-top: 24px;
   overflow-x: auto;
 }
@@ -105,6 +105,359 @@
   white-space: nowrap;
   color: #4b5563;
 }
+
+.cu-trend__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.cu-trend__label {
+  width: 64px;
+  color: #6b7280;
+}
+
+.cu-trend__bar-track {
+  flex: 1;
+  height: 8px;
+  background: #eef0f2;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.cu-trend__bar {
+  height: 100%;
+  background: #E2622E;
+  border-radius: 4px;
+}
+
+.cu-trend__value {
+  width: 48px;
+  text-align: right;
+  color: #1f2430;
+}  */
+
+/* .cu-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 8px 0 60px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #1f2430;
+}
+
+.cu-page--status {
+  text-align: center;
+  padding-top: 80px;
+  color: #6b7280;
+}
+
+.cu-page--error {
+  color: #b8433a;
+}
+
+.cu-page__title {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 2px;
+}
+
+.cu-page__subtitle {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0 0 20px;
+}
+
+.cu-page__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin: 24px 0;
+}
+
+@media (max-width: 720px) {
+  .cu-page__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cu-panel {
+  background: #ffffff;
+  border: 1px solid #e6ddd3;
+  border-radius: 10px;
+  padding: 18px 20px;
+}
+
+.cu-panel__title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+
+.cu-panel__empty {
+  font-size: 13px;
+  color: #9aa1ab;
+}
+
+.cu-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.cu-table th,
+.cu-table td {
+  width: 50%;
+  padding: 14px 32px;
+}
+
+.cu-table th {
+  text-align: left;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  border-bottom: 1px solid #eef0f2;
+}
+
+.cu-table td {
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.cu-table th:nth-child(2),
+.cu-table td:nth-child(2) {
+  text-align: center;
+}
+
+.cu-panel--entries {
+  margin-top: 24px;
+  overflow-x: auto;
+}
+
+.cu-panel__empty-inline {
+  color: #9aa1ab;
+}
+
+.cu-table--entries th,
+.cu-table--entries td {
+  padding-right: 16px;
+}
+
+.cu-table__ot {
+  color: #b8433a;
+  font-weight: 600;
+}
+
+.cu-table__notes {
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #4b5563;
+}
+
+.cu-trend__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.cu-trend__label {
+  width: 64px;
+  color: #6b7280;
+}
+
+.cu-trend__bar-track {
+  flex: 1;
+  height: 8px;
+  background: #eef0f2;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.cu-trend__bar {
+  height: 100%;
+  background: #E2622E;
+  border-radius: 4px;
+}
+
+.cu-trend__value {
+  width: 48px;
+  text-align: right;
+  color: #1f2430;
+} */
+
+
+.cu-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 8px 0 60px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #1f2430;
+}
+
+.cu-page--status {
+  text-align: center;
+  padding-top: 80px;
+  color: #6b7280;
+}
+
+.cu-page--error {
+  color: #b8433a;
+}
+
+.cu-page__title {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 2px;
+}
+
+.cu-page__subtitle {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0 0 20px;
+}
+
+.cu-page__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin: 24px 0;
+}
+
+@media (max-width: 720px) {
+  .cu-page__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cu-panel {
+  background: #ffffff;
+  border: 1px solid #e6ddd3;
+  border-radius: 10px;
+  padding: 18px 20px;
+}
+
+.cu-panel__title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+
+.cu-panel__empty {
+  font-size: 13px;
+  color: #9aa1ab;
+}
+
+/* ---------- Tables ---------- */
+
+.cu-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.cu-table th {
+  text-align: left;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 12px 10px;
+  border-bottom: 1px solid #eef0f2;
+}
+
+.cu-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+}
+
+.cu-table tbody tr:last-child td {
+  border-bottom: none;
+}
+/* Recent Entries column alignment */
+
+.cu-table--entries th:nth-child(3),
+.cu-table--entries td:nth-child(3),
+.cu-table--entries th:nth-child(4),
+.cu-table--entries td:nth-child(4),
+.cu-table--entries th:nth-child(5),
+.cu-table--entries td:nth-child(5),
+.cu-table--entries th:nth-child(6),
+.cu-table--entries td:nth-child(6) {
+  text-align: center;
+}
+
+/* Date, Project and Notes remain left aligned */
+
+.cu-table--entries th:nth-child(1),
+.cu-table--entries td:nth-child(1),
+.cu-table--entries th:nth-child(2),
+.cu-table--entries td:nth-child(2),
+.cu-table--entries th:nth-child(7),
+.cu-table--entries td:nth-child(7) {
+  text-align: left;
+}
+/* Hours by Project table */
+
+.cu-page__grid .cu-table {
+  table-layout: fixed;
+}
+
+.cu-page__grid .cu-table th,
+.cu-page__grid .cu-table td {
+  width: 50%;
+}
+
+.cu-page__grid .cu-table th:first-child,
+.cu-page__grid .cu-table td:first-child {
+  text-align: left;
+}
+
+.cu-page__grid .cu-table th:last-child,
+.cu-page__grid .cu-table td:last-child {
+  text-align: center;
+}
+
+/* Recent Entries */
+
+.cu-panel--entries {
+  margin-top: 24px;
+  overflow-x: auto;
+}
+
+.cu-table--entries {
+  table-layout: auto;
+}
+
+.cu-table--entries th,
+.cu-table--entries td {
+  padding: 12px 8px;
+}
+
+.cu-panel__empty-inline {
+  color: #9aa1ab;
+}
+
+.cu-table__ot {
+  color: #b8433a;
+  font-weight: 600;
+}
+
+.cu-table__notes {
+  max-width: 160px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #4b5563;
+}
+
+/* ---------- Weekly Trend ---------- */
 
 .cu-trend__row {
   display: flex;

@@ -30,6 +30,14 @@
   margin: 0 0 20px;
 }
 
+.od-page__range {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0 0 20px;
+}
+
+/* -------------------- Flags -------------------- */
+
 .od-page__flags {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -38,7 +46,7 @@
 }
 
 .od-flag {
-  background: #ffffff;
+  background: #fff;
   border: 1px solid #e6ddd3;
   border-radius: 10px;
   padding: 16px 20px;
@@ -69,8 +77,10 @@
   color: #9aa1ab;
 }
 
+/* -------------------- Panels -------------------- */
+
 .od-panel {
-  background: #ffffff;
+  background: #fff;
   border: 1px solid #e6ddd3;
   border-radius: 10px;
   padding: 18px 20px;
@@ -88,37 +98,100 @@
   color: #9aa1ab;
 }
 
+/* -------------------- Tables -------------------- */
+
 .od-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
   font-size: 13px;
 }
 
+.od-table th,
+.od-table td {
+  padding: 12px 16px;
+  vertical-align: middle;
+}
+
 .od-table th {
-  text-align: left;
   color: #6b7280;
-  font-weight: 500;
-  padding-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   border-bottom: 1px solid #eef0f2;
 }
 
 .od-table td {
-  padding: 8px 0;
   border-bottom: 1px solid #f3f4f6;
 }
 
-.od-page__range {
-  font-size: 13px;
-  color: #6b7280;
-  margin: 0 0 20px;
+.od-table tbody tr:last-child td {
+  border-bottom: none;
 }
+
+/* ---------- Utilization by employee ---------- */
+
+/* Equal width for 5 columns */
+.od-panel:first-of-type .od-table th,
+.od-panel:first-of-type .od-table td {
+  width: 20%;
+}
+
+/* Employee */
+.od-panel:first-of-type .od-table th:nth-child(1),
+.od-panel:first-of-type .od-table td:nth-child(1) {
+  text-align: left;
+}
+
+/* Billable Hours, Available Hours, Utilization */
+.od-panel:first-of-type .od-table th:nth-child(2),
+.od-panel:first-of-type .od-table td:nth-child(2),
+.od-panel:first-of-type .od-table th:nth-child(3),
+.od-panel:first-of-type .od-table td:nth-child(3),
+.od-panel:first-of-type .od-table th:nth-child(4),
+.od-panel:first-of-type .od-table td:nth-child(4) {
+  text-align: center;
+}
+
+/* Flag */
+.od-panel:first-of-type .od-table th:nth-child(5),
+.od-panel:first-of-type .od-table td:nth-child(5) {
+  text-align: left;
+}
+
+/* ---------- Project margins ---------- */
+
+/* Equal width for 4 columns */
+.od-panel:nth-of-type(2) .od-table th,
+.od-panel:nth-of-type(2) .od-table td {
+  width: 25%;
+}
+
+/* Project */
+.od-panel:nth-of-type(2) .od-table th:nth-child(1),
+.od-panel:nth-of-type(2) .od-table td:nth-child(1) {
+  text-align: left;
+}
+
+/* Revenue, Cost, Margin */
+.od-panel:nth-of-type(2) .od-table th:nth-child(2),
+.od-panel:nth-of-type(2) .od-table td:nth-child(2),
+.od-panel:nth-of-type(2) .od-table th:nth-child(3),
+.od-panel:nth-of-type(2) .od-table td:nth-child(3),
+.od-panel:nth-of-type(2) .od-table th:nth-child(4),
+.od-panel:nth-of-type(2) .od-table td:nth-child(4) {
+  text-align: center;
+}
+
+/* -------------------- Filters -------------------- */
 
 .od-filters {
   display: flex;
   align-items: flex-end;
   gap: 14px;
   flex-wrap: wrap;
-  background: #ffffff;
+  background: #fff;
   border: 1px solid #e6ddd3;
   border-radius: 10px;
   padding: 14px 18px;
@@ -146,7 +219,7 @@
 
 .od-filters button {
   background: #E2622E;
-  color: white;
+  color: #fff;
   border: none;
   padding: 8px 16px;
   border-radius: 6px;
@@ -162,12 +235,6 @@
 .od-filters button:disabled {
   opacity: 0.6;
   cursor: default;
-}
-
-.od-page__error {
-  color: #b8433a;
-  font-size: 13px;
-  margin-bottom: 16px;
 }
 
 .od-page__loading {
