@@ -16,7 +16,14 @@ router = APIRouter(
 )
 
 
-@router.post("/", response_model=AttendanceResponse, status_code=status.HTTP_201_CREATED)
+# -----------------------------
+# Create Attendance
+# -----------------------------
+@router.post(
+    "/",
+    response_model=AttendanceResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 def create_attendance(
     attendance: AttendanceCreate,
     db: Session = Depends(get_db),
@@ -25,6 +32,9 @@ def create_attendance(
     return attendance_service.create_attendance(attendance)
 
 
+# -----------------------------
+# Get All Attendance
+# -----------------------------
 @router.get("/", response_model=List[AttendanceResponse])
 def get_all_attendance(
     db: Session = Depends(get_db),
@@ -33,37 +43,9 @@ def get_all_attendance(
     return attendance_service.get_all_attendance()
 
 
-@router.get("/{attendance_id}", response_model=AttendanceResponse)
-def get_attendance(
-    attendance_id: int,
-    db: Session = Depends(get_db),
-):
-    attendance_service = AttendanceService(db)
-    return attendance_service.get_attendance(attendance_id)
-
-
-@router.put("/{attendance_id}", response_model=AttendanceResponse)
-def update_attendance(
-    attendance_id: int,
-    attendance: AttendanceUpdate,
-    db: Session = Depends(get_db),
-):
-    attendance_service = AttendanceService(db)
-    return attendance_service.update_attendance(
-        attendance_id,
-        attendance,
-    )
-
-
-@router.delete("/{attendance_id}", status_code=status.HTTP_200_OK)
-def delete_attendance(
-    attendance_id: int,
-    db: Session = Depends(get_db),
-):
-    attendance_service = AttendanceService(db)
-    return attendance_service.delete_attendance(attendance_id)
-
-
+# -----------------------------
+# Employee Attendance
+# -----------------------------
 @router.get("/employee/{employee_id}")
 def employee_attendance(
     employee_id: str,
@@ -73,6 +55,9 @@ def employee_attendance(
     return attendance_service.get_employee_attendance(employee_id)
 
 
+# -----------------------------
+# Monthly Summary
+# -----------------------------
 @router.get("/summary/{employee_id}")
 def monthly_summary(
     employee_id: str,
@@ -88,6 +73,9 @@ def monthly_summary(
     )
 
 
+# -----------------------------
+# Unexplained Absences
+# -----------------------------
 @router.get("/unexplained-absences")
 def unexplained_absences(
     db: Session = Depends(get_db),
@@ -96,6 +84,9 @@ def unexplained_absences(
     return attendance_service.get_unexplained_absences()
 
 
+# -----------------------------
+# Team Attendance
+# -----------------------------
 @router.get("/team/{team_id}")
 def team_attendance(
     team_id: str,
@@ -105,6 +96,9 @@ def team_attendance(
     return attendance_service.get_team_attendance(team_id)
 
 
+# -----------------------------
+# Export Attendance
+# -----------------------------
 @router.get("/export/{employee_id}")
 def export_attendance(
     employee_id: str,
@@ -112,3 +106,50 @@ def export_attendance(
 ):
     attendance_service = AttendanceService(db)
     return attendance_service.export_attendance(employee_id)
+
+
+# ==========================================================
+# Dynamic Routes (Always keep these LAST)
+# ==========================================================
+
+# -----------------------------
+# Get Attendance By Id
+# -----------------------------
+@router.get("/{attendance_id}", response_model=AttendanceResponse)
+def get_attendance(
+    attendance_id: int,
+    db: Session = Depends(get_db),
+):
+    attendance_service = AttendanceService(db)
+    return attendance_service.get_attendance(attendance_id)
+
+
+# -----------------------------
+# Update Attendance
+# -----------------------------
+@router.put("/{attendance_id}", response_model=AttendanceResponse)
+def update_attendance(
+    attendance_id: int,
+    attendance: AttendanceUpdate,
+    db: Session = Depends(get_db),
+):
+    attendance_service = AttendanceService(db)
+    return attendance_service.update_attendance(
+        attendance_id,
+        attendance,
+    )
+
+
+# -----------------------------
+# Delete Attendance
+# -----------------------------
+@router.delete(
+    "/{attendance_id}",
+    status_code=status.HTTP_200_OK,
+)
+def delete_attendance(
+    attendance_id: int,
+    db: Session = Depends(get_db),
+):
+    attendance_service = AttendanceService(db)
+    return attendance_service.delete_attendance(attendance_id)

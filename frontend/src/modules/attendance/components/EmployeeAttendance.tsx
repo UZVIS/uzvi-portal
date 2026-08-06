@@ -1,40 +1,36 @@
+// src/modules/attendance/components/EmployeeAttendance.tsx
+
 import React, { useEffect, useState } from "react";
 
-import {
-  getEmployeeAttendance,
-} from "../api";
+import { getEmployeeAttendance } from "../api";
 
-import type {
-  Attendance,
-} from "../types";
+import type { Attendance } from "../types";
 
 import AttendanceTable from "./AttendanceTable";
-
 
 interface EmployeeAttendanceProps {
   employeeId: string;
 }
 
-
 const EmployeeAttendance: React.FC<EmployeeAttendanceProps> = ({
   employeeId,
 }) => {
 
-
   const [records, setRecords] =
     useState<Attendance[]>([]);
-
 
   const [loading, setLoading] =
     useState(false);
 
-
+  const [error, setError] =
+    useState<string | null>(null);
 
   const fetchAttendance = async () => {
 
     try {
 
       setLoading(true);
+      setError(null);
 
       const data =
         await getEmployeeAttendance(
@@ -43,14 +39,13 @@ const EmployeeAttendance: React.FC<EmployeeAttendanceProps> = ({
 
       setRecords(data);
 
+    } catch (err) {
 
-    } catch (error) {
+      console.error(err);
 
-      console.error(
-        "Failed to fetch employee attendance",
-        error
+      setError(
+        "Failed to fetch employee attendance."
       );
-
 
     } finally {
 
@@ -60,11 +55,9 @@ const EmployeeAttendance: React.FC<EmployeeAttendanceProps> = ({
 
   };
 
-
-
   useEffect(() => {
 
-    if(employeeId){
+    if (employeeId) {
 
       fetchAttendance();
 
@@ -72,39 +65,35 @@ const EmployeeAttendance: React.FC<EmployeeAttendanceProps> = ({
 
   }, [employeeId]);
 
-
-
   return (
 
-    <div>
+    <div className="employee-attendance">
 
-      <h2>
-        Employee Attendance
-      </h2>
+      <div className="section-header">
 
+        <h2>
+          Employee Attendance
+        </h2>
 
-      {
-        loading ? (
+      </div>
 
-          <p>
-            Loading attendance...
-          </p>
+      {error && (
 
-        ) : (
+        <div className="error-message">
+          {error}
+        </div>
 
-          <AttendanceTable
-            records={records}
-          />
+      )}
 
-        )
-      }
-
+      <AttendanceTable
+        records={records}
+        loading={loading}
+      />
 
     </div>
 
   );
 
 };
-
 
 export default EmployeeAttendance;

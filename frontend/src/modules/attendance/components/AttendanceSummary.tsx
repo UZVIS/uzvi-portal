@@ -1,135 +1,54 @@
 import React from "react";
 
-
-interface AttendanceStats {
-
-  totalPresent: number;
-
-  totalAbsent: number;
-
-  totalLeave: number;
-
-  totalEmployees: number;
-
+interface AttendanceSummaryProps {
+  summary: {
+    present: number;
+    wfh: number;
+    leave: number;
+    absent: number;
+  };
 }
 
-
-
-const AttendanceSummary: React.FC<{
-  stats: AttendanceStats
-}> = ({ stats }) => {
-
-
-
-  const percentage = (value: number) => {
-
-    if (stats.totalEmployees === 0) {
-
-      return "0";
-
-    }
-
-
-    return (
-      ((value / stats.totalEmployees) * 100)
-        .toFixed(1)
-    );
-
-  };
-
-
-
+const AttendanceSummary: React.FC<AttendanceSummaryProps> = ({
+  summary,
+}) => {
 
   return (
 
     <div className="attendance-summary">
 
+      <h2 className="section-title">
+        Monthly Summary
+      </h2>
 
-      <h3>
-        Attendance Summary
-      </h3>
+      <div className="summary-grid">
 
-
-
-      <div className="stats-grid">
-
-
-
-        <div className="stat-card">
-
-          <span>
-            Present
-          </span>
-
-
-          <span>
-            {stats.totalPresent}
-          </span>
-
-
-          <span>
-            {percentage(stats.totalPresent)}%
-          </span>
-
-
+        <div className="summary-card office">
+          <h3>In Office</h3>
+          <p>{summary.present}</p>
         </div>
 
-
-
-
-
-        <div className="stat-card">
-
-          <span>
-            Absent
-          </span>
-
-
-          <span>
-            {stats.totalAbsent}
-          </span>
-
-
-          <span>
-            {percentage(stats.totalAbsent)}%
-          </span>
-
-
+        <div className="summary-card wfh">
+          <h3>WFH</h3>
+          <p>{summary.wfh}</p>
         </div>
 
-
-
-
-
-        <div className="stat-card">
-
-          <span>
-            Leave
-          </span>
-
-
-          <span>
-            {stats.totalLeave}
-          </span>
-
-
-          <span>
-            {percentage(stats.totalLeave)}%
-          </span>
-
-
+        <div className="summary-card leave">
+          <h3>On Leave</h3>
+          <p>{summary.leave}</p>
         </div>
 
-
+        <div className="summary-card absent">
+          <h3>Absent</h3>
+          <p>{summary.absent}</p>
+        </div>
 
       </div>
-
 
     </div>
 
   );
 
 };
-
 
 export default AttendanceSummary;

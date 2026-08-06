@@ -1,206 +1,341 @@
+// src/modules/attendance/components/AttendanceTable.tsx
+
 import React from "react";
 
-
-interface AttendanceRecord {
-
-  id?: number;
-
-  employeeId?: string;
-
-  employee_id?: string;
-
-  date?: string;
-
-  attendance_date?: string;
-
-  status: string;
-
-  checkIn?: string;
-
-  checkOut?: string;
-
-  check_in?: string;
-
-  check_out?: string;
-
-  notes?: string;
-
-}
-
-
+import type {
+  Attendance,
+} from "../types";
 
 interface AttendanceTableProps {
 
-  records: AttendanceRecord[];
+  records: Attendance[];
 
   loading?: boolean;
 
+  onEdit?: (
+    record: Attendance
+  ) => void;
+
+  onDelete?: (
+    id: number
+  ) => void;
+
 }
 
-
-
 const AttendanceTable: React.FC<
-AttendanceTableProps
-> = ({ records }) => {
+  AttendanceTableProps
+> = ({
+
+  records,
+
+  loading = false,
+
+  onEdit,
+
+  onDelete,
+
+}) => {
+
+  const getEmployeeName = (
+    employeeId: string
+  ) => {
+
+    switch (employeeId) {
+
+      case "EMP001":
+        return "Arjun Kumar";
+
+      default:
+        return "Arjun Kumar";
+
+    }
+
+  };
+
+  const getStatusLabel = (
+    status: string
+  ) => {
+
+    switch (status) {
+
+      case "in-office":
+        return "In Office";
+
+      case "wfh":
+        return "WFH";
+
+      case "on-leave":
+        return "On Leave";
+
+      case "absent":
+        return "Absent";
+
+      default:
+        return status;
+
+    }
+
+  };
+
+  const getStatusClass = (
+    status: string
+  ) => {
+
+    switch (status) {
+
+      case "in-office":
+        return "status-badge office";
+
+      case "wfh":
+        return "status-badge wfh";
+
+      case "on-leave":
+        return "status-badge leave";
+
+      case "absent":
+        return "status-badge absent";
+
+      default:
+        return "status-badge";
+
+    }
+
+  };
+
+  if (loading) {
+
+    return (
+
+      <div className="attendance-table">
+
+        <div className="loading-state">
+
+          Loading attendance records...
+
+        </div>
+
+      </div>
+
+    );
+
+  }
 
   return (
 
     <div className="attendance-table">
 
+      <div className="table-header">
 
-      <h3>
-        Attendance Records
-      </h3>
+        <div>
 
+          <h2>
 
+            Attendance Records
 
-      {
-        records.length === 0 ? (
+          </h2>
 
           <p>
-            No attendance records found
+
+            Monthly attendance history
+
           </p>
 
+        </div>
 
-        ) : (
+        <div className="record-count">
 
+          {records.length} Records
 
-          <table border={1}>
+        </div>
 
+      </div>
 
-            <thead>
+      <div className="table-wrapper">
+
+        <table>
+
+          <thead>
+
+            <tr>
+
+              <th>Employee ID</th>
+
+              <th>Employee Name</th>
+
+              <th>Date</th>
+
+              <th>Status</th>
+
+              <th>Check In</th>
+
+              <th>Check Out</th>
+
+              <th>Source</th>
+
+              <th>Actions</th>
+
+            </tr>
+
+          </thead>
+
+          <tbody>
+
+            {records.length === 0 ? (
 
               <tr>
 
-                <th>
-                  Employee ID
-                </th>
+                <td
+                  colSpan={8}
+                  className="empty-state"
+                >
 
+                  No attendance records found.
 
-                <th>
-                  Date
-                </th>
-
-
-                <th>
-                  Status
-                </th>
-
-
-                <th>
-                  Check In
-                </th>
-
-
-                <th>
-                  Check Out
-                </th>
-
-
-                <th>
-                  Notes
-                </th>
-
+                </td>
 
               </tr>
 
+            ) : (
 
-            </thead>
+                            records.map((record) => (
 
+                <tr key={record.id}>
 
+                  {/* Employee ID */}
 
+                  <td>
 
-            <tbody>
+                    {record.employee_id}
 
+                  </td>
 
-              {
-                records.map(
-                  (record, index) => (
+                  {/* Employee Name */}
 
-                    <tr key={record.id ?? index}>
+                  <td className="employee-name">
 
+                    {getEmployeeName(
+                      record.employee_id
+                    )}
 
-                      <td>
-                        {
-                          record.employee_id ??
-                          record.employeeId
+                  </td>
+
+                  {/* Date */}
+
+                  <td>
+
+                    {new Date(
+                      record.attendance_date
+                    ).toLocaleDateString(
+                      "en-IN",
+                      {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      }
+                    )}
+
+                  </td>
+
+                  {/* Status */}
+
+                  <td>
+
+                    <span
+                      className={
+                        getStatusClass(
+                          record.status
+                        )
+                      }
+                    >
+
+                      {getStatusLabel(
+                        record.status
+                      )}
+
+                    </span>
+
+                  </td>
+
+                  {/* Check In */}
+
+                  <td>
+
+                    {record.check_in ?? "-"}
+
+                  </td>
+
+                  {/* Check Out */}
+
+                  <td>
+
+                    {record.check_out ?? "-"}
+
+                  </td>
+
+                  {/* Source */}
+
+                  <td>
+
+                    <span className="source-badge">
+
+                      {record.source ?? "Manual"}
+
+                    </span>
+
+                  </td>
+
+                  {/* Actions */}
+
+                  <td>
+
+                    <div className="action-buttons">
+
+                      <button
+                        className="edit-btn"
+                        title="Edit Attendance"
+                        onClick={() =>
+                          onEdit?.(record)
                         }
-                      </td>
+                      >
 
+                        ✏️
 
+                      </button>
 
-                      <td>
-                        {
-                          record.attendance_date ??
-                          record.date
+                      <button
+                        className="delete-btn"
+                        title="Delete Attendance"
+                        onClick={() =>
+                          onDelete?.(
+                            record.id
+                          )
                         }
-                      </td>
+                      >
 
+                        🗑️
 
+                      </button>
 
+                    </div>
 
-                      <td>
-                        {record.status}
-                      </td>
+                  </td>
 
+                </tr>
 
+              ))
 
+            )}
 
-                      <td>
-                        {
-                          record.check_in ??
-                          record.checkIn ??
-                          "-"
-                        }
-                      </td>
+          </tbody>
 
+        </table>
 
-
-
-                      <td>
-                        {
-                          record.check_out ??
-                          record.checkOut ??
-                          "-"
-                        }
-                      </td>
-
-
-
-
-                      <td>
-                        {
-                          record.notes ??
-                          "-"
-                        }
-                      </td>
-
-
-
-                    </tr>
-
-                  )
-                )
-              }
-
-
-            </tbody>
-
-
-          </table>
-
-
-        )
-      }
-
-
+      </div>
 
     </div>
 
   );
 
 };
-
-
 
 export default AttendanceTable;

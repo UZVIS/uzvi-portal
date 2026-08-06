@@ -1,311 +1,637 @@
 // src/modules/attendance/AttendanceModulePage.tsx
 
-import React, { useEffect, useState } from "react";
-import { useAttendance } from "./hooks/useAttendance";
-import type { AttendanceStatus, AttendanceFormData } from "./types";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
 import "./AttendanceModulePage.css";
 
-const AttendanceModulePage: React.FC = () => {
+import {
+  Search,
+  Download,
+  Plus,
+  Pencil,
+  Trash2,
+  Eye,
+  Briefcase,
+  Home,
+  CalendarDays,
+  UserX,
+} from "lucide-react";
+
+import {
+  useAttendance,
+  useTeamAttendance,
+} from "./hooks/useAttendance";
+
+import AttendanceModal from "./components/AttendanceModal";
+import TeamAttendance from "./components/TeamAttendance";
+import UnexplainedAbsences from "./components/UnexplainedAbsences";
+
+import type {
+  Attendance,
+  AttendanceFormData,
+  AttendanceStatus,
+} from "./types";
+
+interface AttendanceModulePageProps {
+  role: string;
+}
+
+const employeeNames: Record<string, string> = {
+  EMP001: "Arjun Kumar",
+  EMP002: "Rahul Sharma",
+  EMP003: "Sneha Reddy",
+  EMP004: "Priya Nair",
+  EMP005: "Kiran Verma",
+};
+
+const AttendanceModulePage: React.FC<
+  AttendanceModulePageProps
+> = ({ role }) => {
+
+  const employeeId = "EMP001";
+
+  const teamId = "TEAM001";
+
+    /* ======================================
+     Attendance Hook
+  ====================================== */
+
   const {
     records,
     summary,
+    loading,
+    error,
+    fetchAttendance,
+    fetchSummary,
     markAttendance,
-    fetchMyAttendance,
+    editAttendance,
+    removeAttendance,
   } = useAttendance();
 
-  const [selectedStatus, setSelectedStatus] = useState<AttendanceStatus | "">("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const currentDate = new Date();
+  /* ======================================
+     Team Hook
+  ====================================== */
+
+  const {
+    fetchTeamAttendance,
+    fetchUnexplainedAbsences,
+  } = useTeamAttendance();
+
+  /* ======================================
+     States
+  ====================================== */
+
+  const [search, setSearch] = useState("");
+
+  const [modalOpen, setModalOpen] =
+    useState(false);
+
+  const [
+    selectedRecord,
+    setSelectedRecord,
+  ] = useState<Attendance | null>(
+    null
+  );
+
+  /* ======================================
+     Initial Load
+  ====================================== */
 
   useEffect(() => {
-    fetchMyAttendance("EMP001");
+    fetchAttendance();
+
+    fetchSummary(
+      employeeId,
+      new Date().getFullYear(),
+      new Date().getMonth() + 1
+    );
+
+    fetchTeamAttendance(teamId);
+
+    fetchUnexplainedAbsences();
   }, []);
 
-  const handleStatusSelect = async (status: AttendanceStatus) => {
-    setSelectedStatus(status);
+  /* ======================================
+     Search Filter
+  ====================================== */
 
-    const payload: AttendanceFormData = {
-      employee_id: "EMP001",
-      attendance_date: new Date().toISOString().split("T")[0],
-      status: status,
-      source: "manual"
+  const filteredRecords = useMemo(() => {
+    return records.filter((item) => {
+      const employeeName =
+        employeeNames[item.employee_id] ??
+        "";
+
+      return (
+        item.employee_id
+          .toLowerCase()
+          .includes(search.toLowerCase()) ||
+
+        employeeName
+          .toLowerCase()
+          .includes(search.toLowerCase()) ||
+
+        item.status
+          .toLowerCase()
+          .includes(search.toLowerCase()) ||
+
+        item.attendance_date.includes(
+          search
+        )
+      );
+    });
+  }, [records, search]);
+
+  /* ======================================
+     Add Attendance
+  ====================================== */
+
+  const handleAddAttendance = () => {
+    setSelectedRecord(null);
+    setModalOpen(true);
+  };
+
+  /* ======================================
+     Edit Attendance
+  ====================================== */
+
+  const handleEditAttendance = (
+    record: Attendance
+  ) => {
+    setSelectedRecord(record);
+    setModalOpen(true);
+  };
+
+  /* ======================================
+     Delete Attendance
+  ====================================== */
+
+  const handleDeleteAttendance =
+    async (id: number) => {
+      const ok = window.confirm(
+        "Delete attendance record?"
+      );
+
+      if (!ok) return;
+
+      await removeAttendance(id);
+
+      fetchAttendance();
     };
 
-    try {
-      await markAttendance(payload);
-      await fetchMyAttendance("EMP001"); // Refresh after marking
-    } catch (error) {
-      console.error("Failed to mark attendance", error);
-    }
-  };
+  /* ======================================
+     Save Attendance
+  ====================================== */
 
-  const todayStr = currentDate.toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric"
-  });
+  const handleSaveAttendance =
+    async (
+      data: AttendanceFormData
+    ) => {
+      if (selectedRecord) {
+        await editAttendance(
+          selectedRecord.id,
+          data
+        );
+      } else {
+        await markAttendance(data);
+      }
 
-  const todayRecord = records.find(
-    record =>
-      record.attendance_date === new Date().toISOString().split("T")[0]
-  );
+      setModalOpen(false);
+      setSelectedRecord(null);
 
-  const getStatusEmoji = (status: AttendanceStatus) => {
-    const map = {
-      "in-office": "🏢",
-      "wfh": "🏠",
-      "on-leave": "🌴",
-      "absent": "❌"
+      fetchAttendance();
     };
-    return map[status] || "⭕";
-  };
 
-  const getStatusLabel = (status: AttendanceStatus) => {
-    const map = {
-      "in-office": "Office",
-      "wfh": "WFH",
-      "on-leave": "Leave",
-      "absent": "Absent"
-    };
-    return map[status] || status;
-  };
-
-  const filteredRecords = records.filter(
-    record =>
-      record.attendance_date.includes(searchTerm) ||
-      record.status.includes(searchTerm)
-  );
-
-  const stats = {
-    present: summary?.present_days ?? 0,
-    wfh: summary?.wfh_days ?? 0,
-    leave: summary?.leave_days ?? 0,
-    total: summary?.total_days ?? 0
-  };
-
-  const generateCalendar = () => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
-    const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const days: (number | null)[] = [];
-    const startOffset = firstDay === 0 ? 6 : firstDay - 1;
-
-    for (let i = 0; i < startOffset; i++) {
-      days.push(null);
-    }
-    for (let i = 1; i <= daysInMonth; i++) {
-      days.push(i);
-    }
-    return days;
-  };
-
-  const getDayStatus = (day: number) => {
-    const dateStr =
-      `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    const record = records.find(item => item.attendance_date === dateStr);
-    return record?.status ?? null;
-  };
-
-  const calendarDays = generateCalendar();
-  const monthName = currentDate.toLocaleString("en-US", {
-    month: "long",
-    year: "numeric"
-  });
-  const weekDays = ["M", "T", "W", "T", "F", "S", "S"];
+  /* ======================================
+     UI Starts
+  ====================================== */
 
   return (
     <div className="attendance-page">
-      {/* HEADER */}
+
+            {/* ======================================
+          Header
+      ====================================== */}
+
       <div className="attendance-header">
-        <h1>Attendance</h1>
-        <p className="subtitle">
-          Mark your day and track your monthly summary — {monthName}
-        </p>
+
+        <div>
+
+          <h1>Attendance</h1>
+
+          <p>
+            Manage employee attendance,
+            reports and monthly summary
+          </p>
+
+        </div>
+
       </div>
 
-      {/* TOTALS */}
-      <div className="totals-section">
-        <div className="totals-grid">
-          <div className="total-card">
-            <div className="total-value">{stats.total}</div>
-            <div className="total-label">Total days worked</div>
-          </div>
-          <div className="total-card">
-            <div className="total-value">{stats.present}</div>
-            <div className="total-label">Days in office</div>
-          </div>
-          <div className="total-card">
-            <div className="total-value">{stats.wfh}</div>
-            <div className="total-label">WFH days</div>
-          </div>
-          <div className="total-card">
-            <div className="total-value">{stats.leave}</div>
-            <div className="total-label">Leave days</div>
-          </div>
-          <div className="total-card">
-            <div className="total-value">{records.length}</div>
-            <div className="total-label">Total records</div>
-          </div>
+      {/* ======================================
+          Error
+      ====================================== */}
+
+      {error && (
+        <div className="error-message">
+          {error}
         </div>
-      </div>
+      )}
 
-      {/* TODAY STATUS */}
-      <div className="today-section">
-        <div className="today-label">
-          <span className="today-date">Today - {todayStr}</span>
-          <span className="today-question">How are you working today?</span>
-        </div>
+      {/* ======================================
+          Summary Cards
+      ====================================== */}
 
-        <div className="status-cards">
-          <button
-            className={`status-card ${selectedStatus === "in-office" ? "active" : ""} ${todayRecord?.status === "in-office" ? "marked" : ""}`}
-            onClick={() => handleStatusSelect("in-office")}
-          >
-            <span className="status-icon">🏢</span>
-            <span className="status-name">Office</span>
-            {todayRecord?.status === "in-office" && <span className="check-mark">✓</span>}
-          </button>
+      {summary && (
 
-          <button
-            className={`status-card ${selectedStatus === "wfh" ? "active" : ""} ${todayRecord?.status === "wfh" ? "marked" : ""}`}
-            onClick={() => handleStatusSelect("wfh")}
-          >
-            <span className="status-icon">🏠</span>
-            <span className="status-name">WFH</span>
-            {todayRecord?.status === "wfh" && <span className="check-mark">✓</span>}
-          </button>
+        <div className="summary-grid">
 
-          <button
-            className={`status-card ${selectedStatus === "on-leave" ? "active" : ""} ${todayRecord?.status === "on-leave" ? "marked" : ""}`}
-            onClick={() => handleStatusSelect("on-leave")}
-          >
-            <span className="status-icon">🌴</span>
-            <span className="status-name">Leave</span>
-            {todayRecord?.status === "on-leave" && <span className="check-mark">✓</span>}
-          </button>
-        </div>
-      </div>
+          <div className="summary-card office">
 
-      {/* CALENDAR */}
-      <div className="calendar-section">
-        <div className="calendar-header">
-          <h3>{monthName}</h3>
-        </div>
-
-        <div className="calendar-grid">
-          {weekDays.map((day, index) => (
-            <div key={index} className="calendar-weekday">
-              {day}
+            <div className="summary-icon">
+              <Briefcase size={26} />
             </div>
-          ))}
-          {calendarDays.map((day, index) => {
-            const status = day ? getDayStatus(day) : null;
-            const isToday = day === new Date().getDate() && 
-                           currentDate.getMonth() === new Date().getMonth() &&
-                           currentDate.getFullYear() === new Date().getFullYear();
 
-            return (
-              <div
-                key={index}
-                className={`calendar-day ${!day ? "empty" : ""} ${isToday ? "today" : ""}`}
-              >
-                {day && (
-                  <>
-                    <span className="day-number">{day}</span>
-                    {status && (
-                      <span className="day-status">{getStatusEmoji(status)}</span>
-                    )}
-                  </>
-                )}
-              </div>
-            );
-          })}
+            <div>
+              <h3>In Office</h3>
+              <h2>{summary.present_days}</h2>
+            </div>
+
+          </div>
+
+          <div className="summary-card wfh">
+
+            <div className="summary-icon">
+              <Home size={26} />
+            </div>
+
+            <div>
+              <h3>WFH</h3>
+              <h2>{summary.wfh_days}</h2>
+            </div>
+
+          </div>
+
+          <div className="summary-card leave">
+
+            <div className="summary-icon">
+              <CalendarDays size={26} />
+            </div>
+
+            <div>
+              <h3>On Leave</h3>
+              <h2>{summary.leave_days}</h2>
+            </div>
+
+          </div>
+
+          <div className="summary-card absent">
+
+            <div className="summary-icon">
+              <UserX size={26} />
+            </div>
+
+            <div>
+              <h3>Absent</h3>
+              <h2>{summary.absent_days}</h2>
+            </div>
+
+          </div>
+
         </div>
-      </div>
 
-      {/* SEARCH */}
-      <div className="search-section">
-        <div className="search-bar">
+      )}
+
+      {/* ======================================
+          Toolbar
+      ====================================== */}
+
+      <div className="attendance-toolbar">
+
+        <div className="search-box">
+
+          <Search
+            size={18}
+            className="search-icon"
+          />
+
           <input
             type="text"
-            placeholder="Search attendance by date or status..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
             className="search-input"
+            placeholder="Search Employee ID / Name / Date / Status"
+            value={search}
+            onChange={(e) =>
+              setSearch(e.target.value)
+            }
           />
-          <button className="search-btn">Search</button>
+
         </div>
+
+        <div className="toolbar-buttons">
+
+          <button className="export-btn">
+
+            <Download size={18} />
+
+            Export Attendance
+
+          </button>
+
+          {role === "Admin" && (
+
+            <button
+              className="add-btn"
+              onClick={handleAddAttendance}
+            >
+
+              <Plus size={18} />
+
+              Add Attendance
+
+            </button>
+
+          )}
+
+        </div>
+
       </div>
 
-      {/* TABLE */}
-      <div className="table-section">
-        <div className="table-header">
-          <div className="table-title">
-            <h3>Attendance Records</h3>
-            <span className="record-count">{filteredRecords.length} records</span>
+            {/* ======================================
+          ADMIN - Attendance Records
+      ====================================== */}
+
+      {role === "Admin" && (
+
+        <div className="attendance-table">
+
+          <div className="table-header">
+
+            <div>
+
+              <h2>Attendance Records</h2>
+
+              <p>Employee attendance history</p>
+
+            </div>
+
+            <div className="record-count">
+
+              {filteredRecords.length} Records
+
+            </div>
+
           </div>
+
+          <div className="table-wrapper">
+
+            <table>
+
+              <thead>
+
+                <tr>
+
+                  <th>Employee ID</th>
+
+                  <th>Employee Name</th>
+
+                  <th>Date</th>
+
+                  <th>Status</th>
+
+                  <th>Check In</th>
+
+                  <th>Check Out</th>
+
+                  <th>Source</th>
+
+                  <th>Actions</th>
+
+                </tr>
+
+              </thead>
+
+              <tbody>
+
+                {filteredRecords.length === 0 ? (
+
+                  <tr>
+
+                    <td
+                      colSpan={8}
+                      className="empty-state"
+                    >
+
+                      No attendance records found.
+
+                    </td>
+
+                  </tr>
+
+                ) : (
+
+                  filteredRecords.map((record) => (
+
+                    <tr key={record.id}>
+
+                      <td className="employee-id">
+
+                        {record.employee_id}
+
+                      </td>
+
+                      <td className="employee-name">
+
+                        {employeeNames[
+                          record.employee_id
+                        ] ?? "Arjun Kumar"}
+
+                      </td>
+
+                      <td className="attendance-date">
+
+                        {new Date(
+                          record.attendance_date
+                        ).toLocaleDateString(
+                          "en-IN",
+                          {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          }
+                        )}
+
+                      </td>
+
+                      <td>
+
+                        <span
+                          className={`status-badge ${
+                            record.status ===
+                            "in-office"
+                              ? "office"
+                              : record.status ===
+                                "wfh"
+                              ? "wfh"
+                              : record.status ===
+                                "on-leave"
+                              ? "leave"
+                              : "absent"
+                          }`}
+                        >
+
+                          {record.status}
+
+                        </span>
+
+                      </td>
+
+                      <td>
+
+                        {record.check_in ?? "-"}
+
+                      </td>
+
+                      <td>
+
+                        {record.check_out ?? "-"}
+
+                      </td>
+
+                      <td>
+
+                        <span className="source-badge">
+
+                          {record.source ??
+                            "Manual"}
+
+                        </span>
+
+                      </td>
+
+                      <td>
+
+                        <div className="action-buttons">
+
+                          <button
+                            className="view-btn"
+                          >
+                            <Eye size={16} />
+                          </button>
+
+                          <button
+                            className="edit-btn"
+                            onClick={() =>
+                              handleEditAttendance(
+                                record
+                              )
+                            }
+                          >
+                            <Pencil size={16} />
+                          </button>
+
+                          <button
+                            className="delete-btn"
+                            onClick={() =>
+                              handleDeleteAttendance(
+                                record.id
+                              )
+                            }
+                          >
+                            <Trash2 size={16} />
+                          </button>
+
+                        </div>
+
+                      </td>
+
+                    </tr>
+
+                  ))
+
+                )}
+
+              </tbody>
+
+            </table>
+
+          </div>
+
         </div>
 
-        <div className="table-wrapper">
-          <table className="attendance-table">
-            <thead>
-              <tr>
-                <th>DATE</th>
-                <th>STATUS</th>
-                <th>CHECK-IN</th>
-                <th>CHECK-OUT</th>
-                <th>SOURCE</th>
-                <th>ACTIONS</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredRecords.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="no-data">
-                    No attendance records found
-                  </td>
-                </tr>
-              ) : (
-                filteredRecords.map((record) => (
-                  <tr key={record.id}>
-                    <td>
-                      {new Date(record.attendance_date).toLocaleDateString(
-                        "en-IN",
-                        {
-                          day: "2-digit",
-                          month: "short",
-                          year: "numeric"
-                        }
-                      )}
-                    </td>
-                    <td>
-                      <span className={`status-badge ${record.status}`}>
-                        {getStatusEmoji(record.status)} {getStatusLabel(record.status)}
-                      </span>
-                    </td>
-                    <td>{record.check_in || "-"}</td>
-                    <td>{record.check_out || "-"}</td>
-                    <td>
-                      <span className="source-badge">{record.source || "manual"}</span>
-                    </td>
-                    <td className="actions-cell">
-                      <button className="action-btn edit-btn" title="Edit">
-                        ✏️
-                      </button>
-                      <button className="action-btn delete-btn" title="Delete">
-                        🗑️
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+      )}
+
+      {/* ======================================
+          MANAGER - Team Attendance
+      ====================================== */}
+
+      {role === "Manager" && (
+
+        <TeamAttendance
+          teamId={teamId}
+        />
+
+      )}
+
+            {/* ======================================
+          Unexplained Absences
+      ====================================== */}
+
+      {(role === "Admin" ||
+        role === "Manager") && (
+
+        <div className="mt-30">
+
+          <UnexplainedAbsences />
+
         </div>
-      </div>
+
+      )}
+
+      {/* ======================================
+          Attendance Modal
+          (Admin Only)
+      ====================================== */}
+
+      {role === "Admin" && (
+
+        <AttendanceModal
+
+          isOpen={modalOpen}
+
+          onClose={() => {
+
+            setModalOpen(false);
+
+            setSelectedRecord(null);
+
+          }}
+
+          onSave={handleSaveAttendance}
+
+          record={selectedRecord}
+
+          loading={loading}
+
+          employeeId={employeeId}
+
+          employeeName={
+            employeeNames[
+              employeeId
+            ]
+          }
+
+        />
+
+      )}
+
     </div>
+
   );
+
 };
 
 export default AttendanceModulePage;
+  

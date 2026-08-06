@@ -22,14 +22,14 @@ import type {
   UnexplainedAbsence,
 } from "../types";
 
-
-// ==============================
+// =====================================
 // Main Attendance Hook
-// ==============================
+// =====================================
 
 export const useAttendance = () => {
 
-  const [records, setRecords] = useState<Attendance[]>([]);
+  const [records, setRecords] =
+    useState<Attendance[]>([]);
 
   const [summary, setSummary] =
     useState<AttendanceSummary | null>(null);
@@ -40,9 +40,9 @@ export const useAttendance = () => {
   const [error, setError] =
     useState<string | null>(null);
 
-
-
+  // =====================================
   // Get All Attendance
+  // =====================================
 
   const fetchAttendance = async (
     filter?: AttendanceFilter
@@ -61,7 +61,7 @@ export const useAttendance = () => {
     } catch {
 
       setError(
-        "Failed to fetch attendance"
+        "Failed to fetch attendance."
       );
 
     } finally {
@@ -72,9 +72,9 @@ export const useAttendance = () => {
 
   };
 
-
-
+  // =====================================
   // Employee Attendance
+  // =====================================
 
   const fetchMyAttendance = async (
     employeeId: string
@@ -83,6 +83,7 @@ export const useAttendance = () => {
     try {
 
       setLoading(true);
+      setError(null);
 
       const data =
         await getEmployeeAttendance(
@@ -91,13 +92,11 @@ export const useAttendance = () => {
 
       setRecords(data);
 
-
     } catch {
 
       setError(
-        "Failed to fetch employee attendance"
+        "Failed to fetch employee attendance."
       );
-
 
     } finally {
 
@@ -107,18 +106,20 @@ export const useAttendance = () => {
 
   };
 
-
-
-
-  // Summary
+  // =====================================
+  // Monthly Summary
+  // =====================================
 
   const fetchSummary = async (
     employeeId: string,
-    year:number,
-    month:number
+    year: number,
+    month: number
   ) => {
 
     try {
+
+      setLoading(true);
+      setError(null);
 
       const data =
         await getAttendanceSummary(
@@ -129,46 +130,11 @@ export const useAttendance = () => {
 
       setSummary(data);
 
-
     } catch {
 
       setError(
-        "Failed to fetch summary"
+        "Failed to fetch monthly summary."
       );
-
-    }
-
-  };
-
-
-
-
-  // Create Attendance
-
-  const markAttendance = async (
-    data: AttendanceFormData
-  ) => {
-
-
-    try {
-
-      setLoading(true);
-
-
-      const response =
-        await createAttendance(data);
-
-
-      setRecords(
-        (prev)=>[
-          ...prev,
-          response
-        ]
-      );
-
-
-      return response;
-
 
     } finally {
 
@@ -178,21 +144,62 @@ export const useAttendance = () => {
 
   };
 
+  // =====================================
+  // Create Attendance
+  // =====================================
 
-
-
-  // Update
-
-  const editAttendance = async (
-    id:number,
-    data:AttendanceFormData
-  )=>{
-
+  const markAttendance = async (
+    data: AttendanceFormData
+  ) => {
 
     try {
 
       setLoading(true);
+      setError(null);
 
+      const response =
+        await createAttendance(data);
+
+      setRecords(
+        (prev) => [
+          ...prev,
+          response,
+        ]
+      );
+
+      return response;
+
+    } catch {
+
+      setError(
+        "Failed to create attendance."
+      );
+
+      throw new Error(
+        "Create attendance failed."
+      );
+
+    } finally {
+
+      setLoading(false);
+
+    }
+
+  };
+
+  // =====================================
+  // Update Attendance
+  // =====================================
+
+  const editAttendance = async (
+    id: number,
+    data: AttendanceFormData
+  ) => {
+
+    try {
+
+      setLoading(true);
+      setError(null);
 
       const updated =
         await updateAttendance(
@@ -200,20 +207,26 @@ export const useAttendance = () => {
           data
         );
 
-
       setRecords(
-        prev =>
-          prev.map(
-            item =>
-              item.id === id
+        (prev) =>
+          prev.map((item) =>
+            item.id === id
               ? updated
               : item
           )
       );
 
-
       return updated;
 
+    } catch {
+
+      setError(
+        "Failed to update attendance."
+      );
+
+      throw new Error(
+        "Update attendance failed."
+      );
 
     } finally {
 
@@ -223,35 +236,40 @@ export const useAttendance = () => {
 
   };
 
+  // =====================================
+  // Delete Attendance
+  // =====================================
 
+  const removeAttendance = async (
+    id: number
+  ) => {
 
-
-
-  // Delete
-
-  const removeAttendance = async(
-    id:number
-  )=>{
-
-
-    try{
+    try {
 
       setLoading(true);
-
+      setError(null);
 
       await deleteAttendance(id);
 
-
       setRecords(
-        prev =>
+        (prev) =>
           prev.filter(
-            item =>
+            (item) =>
               item.id !== id
           )
       );
 
+    } catch {
 
-    }finally{
+      setError(
+        "Failed to delete attendance."
+      );
+
+      throw new Error(
+        "Delete attendance failed."
+      );
+
+    } finally {
 
       setLoading(false);
 
@@ -259,80 +277,91 @@ export const useAttendance = () => {
 
   };
 
-
-
-
-  useEffect(()=>{
+  useEffect(() => {
 
     fetchAttendance();
 
-  },[]);
+  }, []);
 
-
+    // =====================================
+  // Return
+  // =====================================
 
   return {
 
     records,
+
     summary,
+
     loading,
+
     error,
 
     fetchAttendance,
+
     fetchMyAttendance,
+
     fetchSummary,
 
     markAttendance,
+
     editAttendance,
-    removeAttendance
+
+    removeAttendance,
 
   };
 
 };
 
-
-
-
-// =================================================
+// =====================================
 // Team Attendance Hook
-// =================================================
-
+// =====================================
 
 export const useTeamAttendance = () => {
 
-
-  const [teamRecords,setTeamRecords] =
+  const [teamRecords, setTeamRecords] =
     useState<TeamAttendance[]>([]);
 
+  const [
 
-  const [unexplainedAbsences,setUnexplainedAbsences] =
+    unexplainedAbsences,
+
+    setUnexplainedAbsences,
+
+  ] =
     useState<UnexplainedAbsence[]>([]);
 
-
-  const [loading,setLoading] =
+  const [loading, setLoading] =
     useState(false);
 
+  const [error, setError] =
+    useState<string | null>(null);
 
-
+  // =====================================
   // Team Attendance
+  // =====================================
 
-  const fetchTeamAttendance = async(
-    teamId:string
-  )=>{
+  const fetchTeamAttendance = async (
+    teamId: string
+  ) => {
 
-
-    try{
+    try {
 
       setLoading(true);
-
+      setError(null);
 
       const data =
         await getTeamAttendance(teamId);
 
-
       setTeamRecords(data);
 
+    } catch {
 
-    }finally{
+      setError(
+        "Failed to fetch team attendance."
+      );
+
+    } finally {
 
       setLoading(false);
 
@@ -340,37 +369,40 @@ export const useTeamAttendance = () => {
 
   };
 
-
-
-
+  // =====================================
   // Unexplained Absences
+  // =====================================
 
+  const fetchUnexplainedAbsences =
+    async () => {
 
-  const fetchUnexplainedAbsences = async()=>{
+      try {
 
+        setLoading(true);
+        setError(null);
 
-    try{
+        const data =
+          await getUnexplainedAbsences();
 
-      setLoading(true);
+        setUnexplainedAbsences(data);
 
+      } catch {
 
-      const data =
-        await getUnexplainedAbsences();
+        setError(
+          "Failed to fetch unexplained absences."
+        );
 
+      } finally {
 
-      setUnexplainedAbsences(data);
+        setLoading(false);
 
+      }
 
-    }finally{
+    };
 
-      setLoading(false);
-
-    }
-
-  };
-
-
-
+  // =====================================
+  // Return
+  // =====================================
 
   return {
 
@@ -380,11 +412,12 @@ export const useTeamAttendance = () => {
 
     loading,
 
+    error,
+
     fetchTeamAttendance,
 
-    fetchUnexplainedAbsences
+    fetchUnexplainedAbsences,
 
   };
-
 
 };

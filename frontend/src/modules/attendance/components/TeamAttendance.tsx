@@ -1,148 +1,82 @@
 // src/modules/attendance/components/TeamAttendance.tsx
 
+import React, { useEffect } from "react";
 
-import React, {
-  useEffect,
-  useState
-} from "react";
-
-
-import {
-  useTeamAttendance
-} from "../hooks/useAttendance";
-
-
+import { useTeamAttendance } from "../hooks/useAttendance";
 
 interface TeamAttendanceProps {
-
-  onEmployeeClick?: (
-    employeeId:string
-  ) => void;
-
+  teamId: string;
+  onEmployeeClick?: (employeeId: string) => void;
 }
 
-
-
-
-const TeamAttendance: React.FC<
-  TeamAttendanceProps
-> = ({
-  onEmployeeClick
+const TeamAttendance: React.FC<TeamAttendanceProps> = ({
+  teamId,
+  onEmployeeClick,
 }) => {
-
-
 
   const {
     teamRecords,
     loading,
-    fetchTeamAttendance
+    fetchTeamAttendance,
   } = useTeamAttendance();
 
+  useEffect(() => {
 
+    if (teamId) {
 
-  const [selectedDate,setSelectedDate] =
-    useState(
-      new Date()
-      .toISOString()
-      .split("T")[0]
-    );
+      fetchTeamAttendance(teamId);
 
+    }
 
+  }, [teamId]);
 
+  const getStatusLabel = (status: string) => {
 
-  useEffect(()=>{
+    switch (status) {
 
+      case "in-office":
+        return "In Office";
 
-    fetchTeamAttendance(
-      selectedDate
-    );
+      case "wfh":
+        return "WFH";
 
+      case "on-leave":
+        return "On Leave";
 
-  },[selectedDate]);
+      case "absent":
+        return "Absent";
 
+      default:
+        return status;
 
-
-
-
-  const getStatusBadge = (
-    status:string
-  ) => {
-
-
-    const badges:Record<
-      string,
-      string
-    > = {
-
-
-      "in-office":
-        "badge-success",
-
-
-      "wfh":
-        "badge-info",
-
-
-      "on-leave":
-        "badge-warning",
-
-
-      "absent":
-        "badge-danger",
-
-
-    };
-
-
-    return badges[status] ||
-      "badge-secondary";
+    }
 
   };
 
+  const getStatusClass = (status: string) => {
 
+    switch (status) {
 
+      case "in-office":
+        return "status office";
 
+      case "wfh":
+        return "status wfh";
 
-  const getStatusLabel = (
-    status:string
-  ) => {
+      case "on-leave":
+        return "status leave";
 
+      case "absent":
+        return "status absent";
 
-    const labels:Record<
-      string,
-      string
-    > = {
+      default:
+        return "status";
 
-
-      "in-office":
-        "In-Office",
-
-
-      "wfh":
-        "WFH",
-
-
-      "on-leave":
-        "On-Leave",
-
-
-      "absent":
-        "Absent",
-
-
-    };
-
-
-    return labels[status] ||
-      status;
+    }
 
   };
 
-
-
-
-
-  if(loading){
+  if (loading) {
 
     return (
 
@@ -158,246 +92,130 @@ const TeamAttendance: React.FC<
 
   return (
 
-    <div className="team-attendance-container">
+    <div className="team-attendance">
 
+      <h2>
 
-      <div className="team-attendance-header">
+        Team Attendance
 
+      </h2>
 
-        <h3>
-          Team Attendance
-        </h3>
+      {teamRecords.length === 0 ? (
 
-        <div className="date-picker">
+        <p>
 
+          No team attendance records found.
 
-          <label>
-            Date:
-          </label>
+        </p>
 
+      ) : (
 
-          <input
+        <table className="attendance-table">
 
-            type="date"
+          <thead>
 
-            value={selectedDate}
+            <tr>
 
-            onChange={(e)=>
-              setSelectedDate(
-                e.target.value
-              )
-            }
+              <th>Employee ID</th>
 
-          />
+              <th>Employee Name</th>
 
+              <th>Designation</th>
 
-        </div>
+              <th>Department</th>
 
+              <th>Status</th>
 
-      </div>
+              <th>Check In</th>
 
+              <th>Check Out</th>
 
+            </tr>
 
+          </thead>
 
+          <tbody>
 
-      {
-        teamRecords.length === 0 ? (
+            {teamRecords.map((record) => (
 
-          <div className="empty-state">
+              <tr
 
-            No team attendance records found
+                key={record.employee_id}
 
-          </div>
+                onClick={() =>
+                  onEmployeeClick?.(
+                    record.employee_id
+                  )
+                }
 
+              >
 
-        ) : (
+                <td>
 
+                  {record.employee_id}
 
+                </td>
 
-          <table className="team-attendance-table">
+                <td>
 
+                  {record.employee_name}
 
-            <thead>
+                </td>
 
+                <td>
 
-              <tr>
+                  {record.designation ?? "-"}
 
-                <th>
-                  Employee
-                </th>
+                </td>
 
+                <td>
 
-                <th>
-                  Designation
-                </th>
+                  {record.department ?? "-"}
 
+                </td>
 
-                <th>
-                  Department
-                </th>
+                <td>
 
+                  <span
+                    className={getStatusClass(
+                      record.status
+                    )}
+                  >
 
-                <th>
-                  Status
-                </th>
+                    {getStatusLabel(
+                      record.status
+                    )}
 
+                  </span>
 
-                <th>
-                  Check-in
-                </th>
+                </td>
 
+                <td>
 
-                <th>
-                  Check-out
-                </th>
+                  {record.check_in ?? "-"}
 
+                </td>
+
+                <td>
+
+                  {record.check_out ?? "-"}
+
+                </td>
 
               </tr>
 
+            ))}
 
-            </thead>
+          </tbody>
 
+        </table>
 
-
-
-
-            <tbody>
-
-
-              {
-                teamRecords.map(
-                  (record)=>(
-
-
-                    <tr
-
-                      key={
-                        record.employee_id
-                      }
-
-
-                      onClick={()=>
-                        onEmployeeClick?.(
-                          record.employee_id
-                        )
-                      }
-
-
-                      className="clickable-row"
-
-                    >
-
-
-
-                      <td>
-
-                        {record.employee_name}
-
-                      </td>
-
-
-
-
-                      <td>
-
-                        {record.designation}
-
-                      </td>
-
-
-
-
-                      <td>
-
-                        {record.department}
-
-                      </td>
-
-
-
-
-
-                      <td>
-
-
-                        <span
-                          className={
-                            `badge ${
-                              getStatusBadge(
-                                record.status
-                              )
-                            }`
-                          }
-                        >
-
-                          {
-                            getStatusLabel(
-                              record.status
-                            )
-                          }
-
-
-                        </span>
-
-
-                      </td>
-
-
-
-
-
-                      <td>
-
-                        {
-                          record.check_in ||
-                          "-"
-                        }
-
-                      </td>
-
-
-
-
-
-                      <td>
-
-                        {
-                          record.check_out ||
-                          "-"
-                        }
-
-                      </td>
-
-
-
-                    </tr>
-
-
-                  )
-                )
-              }
-
-
-            </tbody>
-
-
-
-          </table>
-
-
-        )
-      }
-
-
+      )}
 
     </div>
 
-
   );
 
-
 };
-
-
 
 export default TeamAttendance;
