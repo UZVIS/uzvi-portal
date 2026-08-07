@@ -5,23 +5,14 @@ from sqlalchemy import pool
 
 from alembic import context
 
-# this is the Alembic Config object, which provides
-# access to the values within the .ini file in use.
+
 config = context.config
 
-# Interpret the config file for Python logging.
-# This line sets up loggers basically.
+
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# add your model's MetaData object here
-# for 'autogenerate' support
-#
-# Import the ONE shared Base from app.database, then import every module's
-# models module so its tables register on that Base's metadata. A module
-# whose models.py is never imported here will be silently skipped by
-# `alembic revision --autogenerate` — if you add a new module, add its
-# import to this list.
+
 from app.database import Base
 
 import app.modules.directory.models
@@ -59,12 +50,6 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
-    """Run migrations in 'online' mode.
-
-    In this scenario we need to create an Engine
-    and associate a connection with the context.
-
-    """
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",

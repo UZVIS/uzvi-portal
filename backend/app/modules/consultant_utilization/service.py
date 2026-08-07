@@ -196,13 +196,7 @@
 #     return [compute_project_margin(db, p.project_id) for p in projects]
 
 
-"""
-M1 - Consultant Utilization Tracker
-backend/app/modules/consultant_utilization/service.py
 
-Business logic layer, per the layering convention in the dev quickstart:
-Python business logic -> storage layer -> FastAPI routes -> React frontend.
-"""
 from datetime import date
 from typing import List, Optional
 from collections import defaultdict
@@ -231,9 +225,6 @@ class DailyHoursExceededError(Exception):
 
 
 class OvertimeConfirmationRequired(Exception):
-    """Raised when logging the requested hours would push the day's NORMAL
-    hours past 8, and the client hasn't set confirm_overtime=True yet.
-    Carries enough info for the caller to show a real confirmation prompt."""
 
     def __init__(self, remaining_normal_hours: float, requested_hours: float):
         self.remaining_normal_hours = remaining_normal_hours
@@ -289,10 +280,8 @@ def create_time_entry(db: Session, data: schemas.TimeEntryCreate) -> models.Time
 
     if hours_already_logged + data.hours > MAX_HOURS_PER_DAY:
         raise DailyHoursExceededError(
-            f"You've already logged {hours_already_logged}h on {data.date}. "
-            f"Adding {data.hours}h would bring the day's total to "
-            f"{hours_already_logged + data.hours}h, which exceeds the {MAX_HOURS_PER_DAY:g}h "
-            f"daily maximum ({NORMAL_HOURS_PER_DAY:g}h normal + {MAX_HOURS_PER_DAY - NORMAL_HOURS_PER_DAY:g}h overtime)."
+            f"You've already logged {hours_already_logged:g} hours today. "
+            f"You can't log more than {MAX_HOURS_PER_DAY:g} hours in a day."
         )
 
     remaining_normal = max(0.0, NORMAL_HOURS_PER_DAY - normal_already_logged)
