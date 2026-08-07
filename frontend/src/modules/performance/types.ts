@@ -104,7 +104,7 @@ export interface GoalWithAssessments extends Goal {
 
 
 
-export interface ReviewStatus {
+export interface ReviewStatus{
 
   employee_id:string;
 
@@ -137,5 +137,23 @@ export interface CreateManagerReviewData {
   rating:number;
 
   review_text?:string;
+
+}
+
+export interface TeamGoal {
+
+  id: number;
+
+  employee_id: string;
+
+  employee_name: string;
+
+  cycle_id: number;
+
+  description: string;
+
+  target_outcome?: string;
+
+  status: GoalStatus;
 
 }

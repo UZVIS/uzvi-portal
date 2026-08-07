@@ -5,6 +5,7 @@ import axios from "axios";
 
 import type {
   Goal,
+  TeamGoal,
   CreateGoalData,
   GoalWithAssessments,
   SelfAssessment,
@@ -49,7 +50,25 @@ Promise<ReviewCycle[]> => {
 
 };
 
+// ================= CREATE REVIEW CYCLE =================
 
+export const createReviewCycle = async (
+  data: {
+    name: string;
+    period_start: string;
+    period_end: string;
+  }
+): Promise<ReviewCycle> => {
+
+  const response =
+    await api.post(
+      "/cycles",
+      data
+    );
+
+  return response.data;
+
+};
 
 
 // ================= CREATE GOAL =================
@@ -250,6 +269,19 @@ Promise<ReviewCycle | null> => {
 
 };
 
+
+// ================= TEAM GOALS =================
+
+export const getTeamGoals = async (): Promise<TeamGoal[]> => {
+
+  const response =
+    await api.get(
+      "/team?cycle_id=1&employee_id=EMP001"
+    );
+
+  return response.data;
+
+};
 
 
 export default api;
