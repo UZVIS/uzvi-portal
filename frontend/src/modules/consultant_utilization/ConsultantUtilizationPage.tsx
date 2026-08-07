@@ -402,8 +402,6 @@ export function ConsultantUtilizationPage() {
   const periodStart = isoDateNDaysAgo(7);
   const periodEnd = isoDateNDaysAgo(0);
 
-  // Custom centered modal state, replacing native window.confirm/alert
-  // (which browsers render at the top of the window and can't be styled).
   const [dialog, setDialog] = useState<{ message: string; mode: "confirm" | "alert" } | null>(null);
   const dialogResolveRef = useRef<((value: boolean) => void) | null>(null);
 
@@ -411,13 +409,6 @@ export function ConsultantUtilizationPage() {
     return new Promise((resolve) => {
       dialogResolveRef.current = resolve;
       setDialog({ message, mode: "confirm" });
-    });
-  }
-
-  function askAlert(message: string): Promise<void> {
-    return new Promise((resolve) => {
-      dialogResolveRef.current = () => resolve();
-      setDialog({ message, mode: "alert" });
     });
   }
 
@@ -462,15 +453,13 @@ export function ConsultantUtilizationPage() {
     } catch (err) {
       if (err instanceof OvertimeConfirmationError) {
         const wantsOvertime = await askConfirm(
-          `Only ${err.remainingNormalHours}h of normal time remain today. ` +
-            `Logging ${entry.hours}h would include overtime. Continue and log the overtime hours too?`
+          "You've completed your regular 8 hours. Do you want to continue with overtime?"
         );
         if (wantsOvertime) {
           await utilizationApi.createTimeEntry({ ...baseEntry, hours: entry.hours, confirm_overtime: true });
-        } else if (err.remainingNormalHours > 0) {
-          await utilizationApi.createTimeEntry({ ...baseEntry, hours: err.remainingNormalHours });
         } else {
-          await askAlert("You've already used all 8 normal hours today. Nothing was logged.");
+          // Declined - nothing is saved. They can adjust the hours field
+          // themselves and submit again.
           return;
         }
       } else {

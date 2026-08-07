@@ -510,13 +510,6 @@ export function OrgDashboardPage() {
     });
   }
 
-  function askAlert(message: string): Promise<void> {
-    return new Promise((resolve) => {
-      dialogResolveRef.current = () => resolve();
-      setDialog({ message, mode: "alert" });
-    });
-  }
-
   function handleDialogChoice(choice: boolean) {
     dialogResolveRef.current?.(choice);
     dialogResolveRef.current = null;
@@ -538,6 +531,7 @@ export function OrgDashboardPage() {
       .finally(() => setLoading(false));
   }
 
+  // Initial load with the default "last 7 days" window.
   useEffect(() => {
     load(periodStart, periodEnd, Number(capacityHoursPerWeek) || 40);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -562,7 +556,7 @@ export function OrgDashboardPage() {
       billing_rate: input.billingRate,
       cost_rate: input.costRate,
     });
-    load(periodStart, periodEnd, Number(capacityHoursPerWeek) || 40);
+    load(periodStart, periodEnd, Number(capacityHoursPerWeek) || 40); // refresh so new project shows in margins table
   }
 
   async function handleAdminLogHours(input: {
@@ -592,31 +586,20 @@ export function OrgDashboardPage() {
         );
         if (wantsOvertime) {
           await utilizationApi.createTimeEntry({ ...baseEntry, hours: input.hours, confirm_overtime: true });
-        } else if (err.remainingNormalHours > 0) {
-          await utilizationApi.createTimeEntry({ ...baseEntry, hours: err.remainingNormalHours });
         } else {
-          await askAlert(`${input.employeeId} already has 8 normal hours logged that day. Nothing was logged.`);
+          // Declined - nothing is saved. Admin can adjust the hours field
+          // themselves and submit again.
           return;
         }
       } else {
         throw err;
       }
     }
-    load(periodStart, periodEnd, Number(capacityHoursPerWeek) || 40);
+    load(periodStart, periodEnd, Number(capacityHoursPerWeek) || 40); // refresh so the entry shows in utilization-by-employee
   }
 
   return (
     <div className="od-page">
-      <ConfirmDialog
-        open={!!dialog}
-        title={dialog?.mode === "alert" ? "Notice" : "Overtime confirmation"}
-        message={dialog?.message ?? ""}
-        hideCancel={dialog?.mode === "alert"}
-        confirmLabel={dialog?.mode === "alert" ? "OK" : "Yes, log overtime"}
-        cancelLabel="No"
-        onConfirm={() => handleDialogChoice(true)}
-        onCancel={() => handleDialogChoice(false)}
-      />
       <h1 className="od-page__title">Org Utilization Dashboard</h1>
       <p className="od-page__subtitle">Admin/Leadership view</p>
 
