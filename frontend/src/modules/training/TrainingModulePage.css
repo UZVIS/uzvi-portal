@@ -3,6 +3,10 @@
 }
 
 .training-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
   margin-bottom: 24px;
 }
 
@@ -12,6 +16,17 @@
 
 .training-header p {
   color: #666;
+}
+
+.training-role-badge {
+  background: #e0e7ff;
+  color: #3730a3;
+  border: 1px solid #c7d2fe;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .training-tabs {
@@ -29,7 +44,7 @@
 }
 
 .training-tabs button.active {
-  background: #2563eb;
+  background: #E2622E;
   color: white;
 }
 

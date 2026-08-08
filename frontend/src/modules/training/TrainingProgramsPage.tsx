@@ -3,8 +3,14 @@ import { trainingApi } from "./api";
 import type { TrainingProgram } from "./types";
 import "./TrainingProgramsPage.css";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../shared/auth/AuthContext";
+import { isTrainingAdmin } from "./roles";
 
 export default function TrainingProgramsPage() {
+  const { employee } = useAuth();
+  // FR-LMS-01: only Admin/Leadership may define training programs.
+  const admin = isTrainingAdmin(employee?.access_tier);
+
   const [programs, setPrograms] = useState<TrainingProgram[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -123,19 +129,21 @@ useEffect(() => {
             </span>
           </div>
 
-          <button
-            className="create-program-button"
-            onClick={() =>
-              setShowCreateForm(!showCreateForm)
-            }
-          >
-            {showCreateForm
-              ? "Cancel"
-              : "+ Create Program"}
-          </button>
+          {admin && (
+            <button
+              className="create-program-button"
+              onClick={() =>
+                setShowCreateForm(!showCreateForm)
+              }
+            >
+              {showCreateForm
+                ? "Cancel"
+                : "+ Create Program"}
+            </button>
+          )}
         </div>
 
-        {showCreateForm && (
+        {admin && showCreateForm && (
   <div className="create-program-form">
 
     <input
@@ -201,7 +209,7 @@ useEffect(() => {
 
               <div>
                 <button className="manage-button" onClick={() => navigate(`/training/programs/${program.program_id}`)}>
-                  Manage
+                  {admin ? "Manage" : "View Units"}
                 </button>
               </div>
 

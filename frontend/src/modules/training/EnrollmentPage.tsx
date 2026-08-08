@@ -1,12 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { trainingApi } from "./api";
 import type {
   Enrollment,
   TrainingProgram,
 } from "./types";
 import "./EnrollmentPage.css";
+import { useAuth } from "../../shared/auth/AuthContext";
+import { isTrainingCohortViewer } from "./roles";
 
 export default function EnrollmentPage() {
+  const { employee } = useAuth();
+  // Manager/Admin-Leadership/HR-Restricted can see and enroll anyone
+  // (FR-LMS-05); a plain Employee only sees and manages their own enrollments.
+  const cohortViewer = isTrainingCohortViewer(employee?.access_tier);
+
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [programs, setPrograms] = useState<TrainingProgram[]>([])
   const [loading, setLoading] = useState(true);
@@ -45,7 +52,11 @@ export default function EnrollmentPage() {
   }
 
   async function handleCreateEnrollment() {
-    if (!employeeId.trim()) {
+    const targetEmployeeId = cohortViewer
+      ? employeeId.trim()
+      : employee?.employee_id ?? "";
+
+    if (!targetEmployeeId) {
       setCreateError("Employee ID is required.");
       return;
     }
@@ -60,7 +71,7 @@ export default function EnrollmentPage() {
       setCreateError("");
 
       await trainingApi.createEnrollment({
-        employee_id: employeeId.trim(),
+        employee_id: targetEmployeeId,
         program_id: Number(selectedProgram),
       });
 
@@ -82,6 +93,15 @@ export default function EnrollmentPage() {
   useEffect(() => {
     loadData();
   }, []);
+
+  const visibleEnrollments = useMemo(() => {
+    if (cohortViewer) {
+      return enrollments;
+    }
+    return enrollments.filter(
+      (enrollment) => enrollment.employee_id === employee?.employee_id
+    );
+  }, [enrollments, cohortViewer, employee?.employee_id]);
 
   if (loading) {
     return (
@@ -108,7 +128,9 @@ export default function EnrollmentPage() {
 
         <div className="training-card-header">
           <h3>
-            Total Enrollments: {enrollments.length}
+            {cohortViewer
+              ? `Total Enrollments: ${visibleEnrollments.length}`
+              : `My Enrollments: ${visibleEnrollments.length}`}
           </h3>
           <button
             className="create-program-button"
@@ -118,24 +140,28 @@ export default function EnrollmentPage() {
           >
             {showCreateForm
               ? "Cancel"
-              : "+ Enroll Employee"}
+              : cohortViewer
+              ? "+ Enroll Employee"
+              : "+ Enroll Me"}
           </button>
         </div>
         {showCreateForm && (
           <div className="create-program-form">
 
-            <input
-              type="text"
-              placeholder="Employee ID"
-              value={employeeId}
-              onChange={(e) => {
-                setEmployeeId(e.target.value);
+            {cohortViewer && (
+              <input
+                type="text"
+                placeholder="Employee ID"
+                value={employeeId}
+                onChange={(e) => {
+                  setEmployeeId(e.target.value);
 
-                if (createError) {
-                  setCreateError("");
-                }
-              }}
-            />
+                  if (createError) {
+                    setCreateError("");
+                  }
+                }}
+              />
+            )}
 
             <select
               value={selectedProgram}
@@ -176,24 +202,29 @@ export default function EnrollmentPage() {
           </div>
         )}
         <div className="enrollment-table-header">
-          <span>Employee ID</span>
+          {cohortViewer && <span>Employee ID</span>}
           <span>Program</span>
           <span>Enrolled At</span>
         </div>
 
-        {enrollments.length === 0 ? (
+        {visibleEnrollments.length === 0 ? (
           <div className="empty-state">
             <h4>No enrollments found</h4>
+            {!cohortViewer && (
+              <p>You haven't enrolled in any training programs yet.</p>
+            )}
           </div>
         ) : (
-          enrollments.map((enrollment) => (
+          visibleEnrollments.map((enrollment) => (
             <div
               key={enrollment.enrollment_id}
               className="enrollment-table-row"
             >
-              <div>
-                {enrollment.employee_id}
-              </div>
+              {cohortViewer && (
+                <div>
+                  {enrollment.employee_id}
+                </div>
+              )}
 
               <div>
                 {programs.find(

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import "./UnitCompletionPage.css";
 
 import { trainingApi } from "./api";
@@ -9,8 +9,18 @@ import type {
   TrainingUnit,
   UnitCompletion,
 } from "./types";
+import { useAuth } from "../../shared/auth/AuthContext";
+import { isTrainingCohortViewer } from "./roles";
 
 export default function UnitCompletionPage() {
+  const { employee } = useAuth();
+  // Completion is always self-attested — nobody, including Admin/Leadership,
+  // marks a unit complete on someone else's behalf. Manager/Admin-Leadership/
+  // HR-Restricted additionally get a read-only audit view of everyone's
+  // completions (FR-LMS-05), but the "Mark Complete" form only ever acts on
+  // the signed-in employee's own enrollments.
+  const cohortViewer = isTrainingCohortViewer(employee?.access_tier);
+
   const [programs, setPrograms] = useState<TrainingProgram[]>([]);
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [units, setUnits] = useState<TrainingUnit[]>([]);
@@ -22,6 +32,21 @@ export default function UnitCompletionPage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const ownEnrollments = useMemo(() => {
+    return enrollments.filter(
+      (enrollment) => enrollment.employee_id === employee?.employee_id
+    );
+  }, [enrollments, employee?.employee_id]);
+
+  const ownCompletions = useMemo(() => {
+    const ownEnrollmentIds = new Set(
+      ownEnrollments.map((enrollment) => enrollment.enrollment_id)
+    );
+    return completions.filter((completion) =>
+      ownEnrollmentIds.has(completion.enrollment_id)
+    );
+  }, [completions, ownEnrollments]);
 
   useEffect(() => {
     loadInitialData();
@@ -146,8 +171,7 @@ export default function UnitCompletionPage() {
       <div className="completion-header">
         <h2>Unit Completion</h2>
         <p>
-          Mark training units as completed and
-          record employee scores.
+          Mark your own training units as completed.
         </p>
       </div>
 
@@ -171,12 +195,11 @@ export default function UnitCompletionPage() {
               Select Enrollment
             </option>
 
-            {enrollments.map((enrollment) => (
+            {ownEnrollments.map((enrollment) => (
               <option
                 key={enrollment.enrollment_id}
                 value={enrollment.enrollment_id}
               >
-                {enrollment.employee_id} -{" "}
                 {programs.find(
                   (program) =>
                     program.program_id ===
@@ -239,15 +262,14 @@ export default function UnitCompletionPage() {
       </div>
 
       <div className="completion-table-card">
-        <h3>Completed Units</h3>
+        <h3>My Completed Units</h3>
 
-        {completions.length === 0 ? (
+        {ownCompletions.length === 0 ? (
           <p>No completed units found.</p>
         ) : (
           <table className="completion-table">
             <thead>
               <tr>
-                <th>Enrollment</th>
                 <th>Unit</th>
                 <th>Score</th>
                 <th>Completed At</th>
@@ -255,15 +277,8 @@ export default function UnitCompletionPage() {
             </thead>
 
             <tbody>
-              {completions.map(
+              {ownCompletions.map(
                 (completion) => {
-                  const enrollment =
-                    enrollments.find(
-                      (item) =>
-                        item.enrollment_id ===
-                        completion.enrollment_id
-                    );
-
                   const unit =
                     units.find(
                       (item) =>
@@ -277,12 +292,6 @@ export default function UnitCompletionPage() {
                         completion.completion_id
                       }
                     >
-                      <td>
-                        {enrollment
-                          ?.employee_id ??
-                          completion.enrollment_id}
-                      </td>
-
                       <td>
                         {unit?.name ??
                           completion.unit_id}
@@ -306,6 +315,64 @@ export default function UnitCompletionPage() {
           </table>
         )}
       </div>
+
+      {cohortViewer && (
+        <div className="completion-table-card">
+          <h3>All Completions (org-wide)</h3>
+          <p className="completion-audit-note">
+            Read-only. Manager/Admin-Leadership/HR-Restricted can see every
+            employee's completions here for oversight, but completion is
+            always self-attested — this view has no "Mark Complete" action.
+          </p>
+
+          {completions.length === 0 ? (
+            <p>No completed units found.</p>
+          ) : (
+            <table className="completion-table">
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>Unit</th>
+                  <th>Score</th>
+                  <th>Completed At</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {completions.map((completion) => {
+                  const enrollment = enrollments.find(
+                    (item) =>
+                      item.enrollment_id === completion.enrollment_id
+                  );
+
+                  const unit = units.find(
+                    (item) => item.unit_id === completion.unit_id
+                  );
+
+                  return (
+                    <tr key={completion.completion_id}>
+                      <td>
+                        {enrollment?.employee_id ??
+                          completion.enrollment_id}
+                      </td>
+
+                      <td>{unit?.name ?? completion.unit_id}</td>
+
+                      <td>{completion.score ?? "-"}</td>
+
+                      <td>
+                        {new Date(
+                          completion.completed_at
+                        ).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
     </div>
   );
 }
