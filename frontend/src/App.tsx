@@ -29,13 +29,15 @@ import {
   ReceiptText,
   GraduationCap,
   RotateCcw,
+  Clock, // <-- Attendance Icon
+  Award, // <-- Performance & Goals Icon
 } from "lucide-react";
-
+ 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 import { AuthProvider, useAuth } from "./shared/auth/AuthContext";
 import { LoginPage } from "./shared/auth/LoginPage";
 import { ProtectedRoute } from "./shared/components/ProtectedRoute";
-
+ 
 // ─── Leave & Calendar ────────────────────────────────────────────────────────
 import {
   LeaveDashboard,
@@ -44,7 +46,7 @@ import {
   AdminDashboard,
 } from "./modules/leave";
 import { CalendarPage } from "./modules/calendar";
-
+ 
 // ─── Other modules ───────────────────────────────────────────────────────────
 import { AnnouncementsPage } from "./modules/announcements/AnnouncementsPage";
 import { ComposeAnnouncementPage } from "./modules/announcements/ComposeAnnouncementPage";
@@ -66,12 +68,16 @@ import TicketDetailsPage from "./modules/helpdesk/TicketDetailsPage";
 import { DirectoryPage } from "./modules/directory/DirectoryPage";
 import { OnboardingPage } from "./modules/onboarding/OnboardingPage";
 import { DocumentsPage } from "./modules/documents/DocumentsPage";
-
+ 
+// ─── Newly Added Modules ─────────────────────────────────────────────────────
+import AttendanceModulePage from "./modules/attendance/AttendanceModulePage";
+import PerformanceModulePage from "./modules/performance/PerformanceModulePage";
+ 
 import Dashboard from "./modules/assets/pages/Dashboard";
 import EmployeeDashboard from "./modules/assets/pages/EmployeeDashboard";
 import { assetRoutes } from "./modules/assets/routes";
 import { quoteRoutes } from "./modules/quotes/routes";
-
+ 
 // ─── NavLink ─────────────────────────────────────────────────────────────────
 const NavLink = ({
   to,
@@ -87,7 +93,7 @@ const NavLink = ({
   const location = useLocation();
   const isActive =
     location.pathname === to || location.pathname.startsWith(to + "/");
-
+ 
   return (
     <Link
       to={to}
@@ -111,7 +117,7 @@ const NavLink = ({
         >
           <Icon size={16} strokeWidth={2.25} />
         </span>
-
+ 
         <span className="tracking-wide text-white">
           {label}
         </span>
@@ -122,50 +128,50 @@ const NavLink = ({
     </Link>
   );
 };
-
+ 
 // ─── Sidebar section label ───────────────────────────────────────────────────
 const SectionLabel = ({ label }: { label: string }) => (
   <p className="px-3 pt-4 pb-1.5 text-[10px] font-bold tracking-[0.14em] text-gray-500 uppercase select-none">
     {label}
   </p>
 );
-
+ 
 // ─── Helper: Normalize DB Roles to our 4 standard roles ──────────────────────
 const normalizeRole = (roleStr: string | undefined | null) => {
   if (!roleStr) return "Employee";
   const upperRole = roleStr.toUpperCase();
-
+ 
   if (upperRole.includes("ADMIN") || upperRole.includes("LEADERSHIP")) return "Admin";
   if (upperRole.includes("HR")) return "HR";
   if (upperRole.includes("MANAGER")) return "Manager";
-
+ 
   return "Employee";
 };
-
+ 
 // ─── Authenticated layout ────────────────────────────────────────────────────
 function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
-
+ 
   const [assetsOpen, setAssetsOpen] = useState(
     location.pathname.startsWith("/assets")
   );
-
+ 
   const { employee, logout } = useAuth();
-
+ 
   // 🛠️ The actual normalized database role of the logged-in user
   const actualRole = normalizeRole(employee?.access_tier);
-
+ 
   // State controls which view they are currently looking at (from dropdown)
   const [activeRole, setActiveRole] = useState(actualRole);
-
+ 
   // Sync activeRole if employee details load slightly late
   useEffect(() => {
     if (employee?.access_tier) {
       setActiveRole(normalizeRole(employee.access_tier));
     }
   }, [employee?.access_tier]);
-
+ 
   const displayName = employee?.name ?? "Admin User";
   const initials = displayName
     .split(" ")
@@ -173,11 +179,13 @@ function AppLayout() {
     .join("")
     .slice(0, 2)
     .toUpperCase();
-
+ 
   // We keep the original string for display purposes in the profile card
   const tierLabel = employee?.access_tier ?? "Administrator";
-
+ 
   const getHeaderTitle = () => {
+    if (location.pathname.startsWith("/attendance")) return "Attendance"; // <-- Added Header
+    if (location.pathname.startsWith("/performance")) return "Performance & Goals"; // <-- Added Header
     if (location.pathname.startsWith("/announcements")) return "Announcements";
     if (location.pathname.startsWith("/utilization")) return "Consultant Utilization";
     if (location.pathname.startsWith("/expenses")) return "Expense Claims";
@@ -194,13 +202,13 @@ function AppLayout() {
     if (location.pathname === "/" || location.pathname === "/dashboard") return "Leave Dashboard";
     return "UZVI Workspace";
   };
-
+ 
   const today = new Date().toLocaleDateString("en-GB", {
     day: "2-digit",
     month: "short",
     year: "numeric",
   });
-
+ 
   return (
     <div className="flex h-screen bg-[#F4F6F8] font-sans overflow-hidden">
       {/* ─── SIDEBAR ─────────────────────────────────────────────────── */}
@@ -223,16 +231,18 @@ function AppLayout() {
             <ChevronLeft size={16} />
           </button>
         </div>
-
+ 
         <div className="flex-1 overflow-y-auto px-3 py-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
           <SectionLabel label="Workspace" />
           <div className="space-y-0.5">
             <NavLink to="/directory" icon={BookUser} label="Directory" />
+            <NavLink to="/attendance" icon={Clock} label="Attendance" /> {/* <-- Added NavLink */}
+            <NavLink to="/performance" icon={Award} label="Performance & Goals" /> {/* <-- Added NavLink */}
             <NavLink to="/onboarding" icon={ClipboardList} label="Onboarding" />
             <NavLink to="/calendar" icon={CalendarDays} label="Company Calendar" />
             <NavLink to="/documents" icon={FolderOpen} label="Documents" />
           </div>
-
+ 
           <SectionLabel label="People" />
           <div className="space-y-0.5">
             <NavLink to="/" icon={Briefcase} label="Leave Management" />
@@ -241,11 +251,11 @@ function AppLayout() {
             <NavLink to="/recruiting" icon={UserPlus} label="Recruiting" />
             <NavLink to="/training" icon={GraduationCap} label="Training" />
           </div>
-
+ 
           <SectionLabel label="Operations" />
           <div className="space-y-0.5">
             <div>
-
+ 
               {/* Parent Item */}
               <div
                 className={`flex items-center justify-between rounded-lg transition-all duration-200 ${location.pathname.startsWith("/assets")
@@ -270,7 +280,7 @@ function AppLayout() {
                   />
                   <span className="tracking-wide">Assets</span>
                 </Link>
-
+ 
                 {actualRole === "Admin" && (
                   <button
                     type="button"
@@ -285,11 +295,11 @@ function AppLayout() {
                   </button>
                 )}
               </div>
-
+ 
               {/* Sub Menu */}
               {assetsOpen && actualRole === "Admin" && (
                 <div className="ml-5 mt-1 space-y-1 border-l border-white/10 pl-3">
-
+ 
                   <Link
                     to="/assets/pending-returns"
                     className={`flex items-center justify-between rounded-md px-3 py-2 text-[12.5px] font-medium transition-all duration-200 ${location.pathname === "/assets/pending-returns"
@@ -308,25 +318,23 @@ function AppLayout() {
                       />
                       <span className="text-white">Pending Returns</span>
                     </div>
-
+ 
                     {location.pathname === "/assets/pending-returns" && (
                       <span className="w-1.5 h-1.5 rounded-full bg-[#F37021]" />
                     )}
                   </Link>
-
+ 
                 </div>
               )}
-
+ 
             </div>
             <NavLink to="/expenses" icon={CreditCard} label="Expense Claims" />
             <NavLink to="/helpdesk" icon={Headphones} label="Helpdesk" />
             <NavLink to="/quotes" icon={ReceiptText} label="Quotes" />
           </div>
         </div>
-
-
       </aside>
-
+ 
       {/* ─── MAIN CONTENT ────────────────────────────────────────────────── */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
         <header className="h-[72px] bg-[#1A1614] border-b border-white/5 flex items-center justify-between px-6 shrink-0">
@@ -338,9 +346,9 @@ function AppLayout() {
               {getHeaderTitle()}
             </h2>
           </div>
-
+ 
           <div className="flex items-center space-x-4">
-
+ 
             {/* Role switcher - only shows permitted options based on normalized actualRole */}
             <div className="relative flex items-center space-x-2 bg-[#221D1A] border border-white/10 rounded-xl pl-3 pr-8 py-1.5 hover:border-white/20 hover:bg-white/[0.04] transition-colors duration-150 shadow-inner shadow-black/20">
               <UserCog size={15} className="text-[#F37021] shrink-0" />
@@ -353,7 +361,7 @@ function AppLayout() {
                 {actualRole === "Employee" && (
                   <option value="Employee" className="bg-[#1A1614] text-white">Employee</option>
                 )}
-
+ 
                 {/* Rule: Manager sees Manager & Employee Options */}
                 {actualRole === "Manager" && (
                   <>
@@ -361,7 +369,7 @@ function AppLayout() {
                     <option value="Employee" className="bg-[#1A1614] text-white">Employee</option>
                   </>
                 )}
-
+ 
                 {/* Rule: HR sees HR & Employee Options */}
                 {actualRole === "HR" && (
                   <>
@@ -369,25 +377,25 @@ function AppLayout() {
                     <option value="Employee" className="bg-[#1A1614] text-white">Employee</option>
                   </>
                 )}
-
+ 
                 {/* Rule: Admin sees only Admin Option */}
                 {actualRole === "Admin" && (
                   <option value="Admin" className="bg-[#1A1614] text-white">Admin</option>
                 )}
-
+ 
               </select>
               <ChevronDown
                 size={13}
                 className="text-gray-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
               />
             </div>
-
+ 
             {/* Date */}
             <div className="hidden md:flex items-center space-x-2 border border-white/10 bg-[#221D1A] rounded-xl px-4 py-1.5 text-sm font-semibold text-gray-300 cursor-pointer hover:bg-white/[0.04] hover:border-white/20 transition-colors duration-150">
               <CalendarIcon size={16} className="text-[#F37021]" />
               <span>{today}</span>
             </div>
-
+ 
             {/* Profile + Sign out */}
             <div className="flex items-center space-x-4 border-l border-white/10 pl-4">
               <div className="flex items-center space-x-3">
@@ -403,7 +411,7 @@ function AppLayout() {
                   </p>
                 </div>
               </div>
-
+ 
               <button
                 onClick={() => {
                   logout();
@@ -417,7 +425,7 @@ function AppLayout() {
             </div>
           </div>
         </header>
-
+ 
         {/* Page content */}
         <div className="flex-1 overflow-y-auto p-6 md:p-8">
           <Routes>
@@ -443,12 +451,30 @@ function AppLayout() {
                 )
               }
             />
-
+ 
+            {/* <-- Added Attendance & Performance Routes --> */}
+            <Route
+              path="/attendance"
+              element={
+                <ProtectedRoute>
+                  <AttendanceModulePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/performance"
+              element={
+                <ProtectedRoute>
+                  <PerformanceModulePage />
+                </ProtectedRoute>
+              }
+            />
+ 
             <Route
               path="/calendar"
               element={<CalendarPage role={activeRole} />}
             />
-
+ 
             <Route
               path="/announcements"
               element={
@@ -481,7 +507,7 @@ function AppLayout() {
                 </ProtectedRoute>
               }
             />
-
+ 
             <Route
               path="/utilization"
               element={
@@ -490,7 +516,7 @@ function AppLayout() {
                 </ProtectedRoute>
               }
             />
-
+ 
             <Route
               path="/expenses"
               element={
@@ -499,7 +525,7 @@ function AppLayout() {
                 </ProtectedRoute>
               }
             />
-
+ 
             <Route
               path="/recruiting"
               element={
@@ -518,7 +544,7 @@ function AppLayout() {
                 element={<CandidateDetailPage />}
               />
             </Route>
-
+ 
             <Route
               path="/helpdesk"
               element={
@@ -535,7 +561,7 @@ function AppLayout() {
                 </ProtectedRoute>
               }
             />
-
+ 
             <Route
               path="/directory"
               element={
@@ -544,12 +570,12 @@ function AppLayout() {
                 </ProtectedRoute>
               }
             />
-
+ 
             <Route
               path="candidates/:candidateId"
               element={<CandidateDetailPage />}
             />
-
+ 
             <Route
               path="/documents"
               element={
@@ -566,7 +592,7 @@ function AppLayout() {
                 </ProtectedRoute>
               }
             />
-
+ 
             <Route
               path="/training"
               element={
@@ -575,7 +601,7 @@ function AppLayout() {
                 </ProtectedRoute>
               }
             />
-
+ 
             <Route
               path="/training/programs/:programId"
               element={
@@ -584,7 +610,7 @@ function AppLayout() {
                 </ProtectedRoute>
               }
             />
-
+ 
             <Route
               path="/assets"
               element={
@@ -597,10 +623,10 @@ function AppLayout() {
                 </ProtectedRoute>
               }
             />
-
+ 
             {quoteRoutes}
             {assetRoutes}
-
+ 
             <Route
               path="*"
               element={
@@ -621,12 +647,12 @@ function AppLayout() {
     </div>
   );
 }
-
+ 
 // ─── Gate: show login or app ─────────────────────────────────────────────────
 function AuthGate() {
   const { employee, isLoading } = useAuth();
   const location = useLocation();
-
+ 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#1A1614] flex items-center justify-center">
@@ -634,20 +660,20 @@ function AuthGate() {
       </div>
     );
   }
-
+ 
   // Public route
   if (location.pathname === "/login") {
     return <LoginPage />;
   }
-
+ 
   // Not logged in → force login
   if (!employee) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
-
+ 
   return <AppLayout />;
 }
-
+ 
 // ─── Root ────────────────────────────────────────────────────────────────────
 export default function App() {
   return (
