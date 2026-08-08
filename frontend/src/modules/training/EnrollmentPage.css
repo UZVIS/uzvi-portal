@@ -33,6 +33,11 @@
   padding: 16px 18px;
 }
 
+.enrollment-table-header:not(:has(span:nth-child(3))),
+.enrollment-table-row:not(:has(:nth-child(3))) {
+  grid-template-columns: 1fr 200px;
+}
+
 .enrollment-table-header {
   font-weight: 600;
   border-bottom: 1px solid #e5e7eb;

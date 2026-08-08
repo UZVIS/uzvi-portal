@@ -60,12 +60,12 @@
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  background: #2563eb;
+  background: #E2622E;
   color: white;
 }
 
 .manage-button:hover {
-  background: #1d4ed8;
+  background: #c9541f;
 }
 
 .empty-state {
@@ -81,13 +81,13 @@
   padding: 10px 16px;
   border: none;
   border-radius: 6px;
-  background: #2563eb;
+  background: #E2622E;
   color: white;
   cursor: pointer;
 }
 
 .create-program-button:hover {
-  background: #1d4ed8;
+  background: #c9541f;
 }
 
 .create-program-form {

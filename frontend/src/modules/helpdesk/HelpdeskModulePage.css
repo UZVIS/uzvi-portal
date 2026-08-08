@@ -24,6 +24,18 @@
     font-size: 15px;
 }
 
+.helpdesk-role-badge {
+    align-self: flex-start;
+    background: #fdece0;
+    color: #b3541e;
+    border: 1px solid #f3c8a8;
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
 .helpdesk-tabs {
     display: flex;
     gap: 14px;

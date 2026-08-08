@@ -28,9 +28,17 @@ async function request<T>(
 
   if (!response.ok) {
     const body = await response.text().catch(() => "");
-    throw new Error(
-      `Request failed (${response.status}): ${body}`
-    );
+
+    let message = "Request failed.";
+
+    try {
+      const data = JSON.parse(body);
+      message = data.detail ?? message;
+    } catch {
+      // Ignore if the response isn't JSON
+    }
+
+    throw new Error(message);
   }
 
   return response.json() as Promise<T>;
