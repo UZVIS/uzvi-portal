@@ -397,24 +397,32 @@ def get_employee_progress(
             detail="You can only view your own training progress.",
         )
 
-    enrollment = (
+    enrollments = (
         db.query(Enrollment)
         .filter(
             Enrollment.employee_id == employee_id
         )
-        .first()
+        .all()
     )
 
-    if not enrollment:
+    if not enrollments:
         raise HTTPException(
             status_code=404,
             detail="Employee is not enrolled in any training program.",
         )
 
+    program_ids = [
+        enrollment.program_id for enrollment in enrollments
+    ]
+
+    enrollment_ids = [
+        enrollment.enrollment_id for enrollment in enrollments
+    ]
+
     total_units = (
         db.query(TrainingUnit)
         .filter(
-            TrainingUnit.program_id == enrollment.program_id
+            TrainingUnit.program_id.in_(program_ids)
         )
         .count()
     )
@@ -422,8 +430,7 @@ def get_employee_progress(
     completed_units = (
         db.query(UnitCompletion)
         .filter(
-            UnitCompletion.enrollment_id
-            == enrollment.enrollment_id
+            UnitCompletion.enrollment_id.in_(enrollment_ids)
         )
         .count()
     )
