@@ -13,6 +13,7 @@ from app.modules.training.models import (
 
 from app.modules.directory.models import Employee
 from app.modules.training.dependencies import (
+    COHORT_VIEW_TIERS,
     get_current_employee,
     require_admin,
     require_cohort_viewer,
@@ -207,7 +208,20 @@ def create_enrollment(
 ):
     """
     Enroll an existing employee into a training program.
+
+    A plain Employee may only self-enroll (FR-LMS-02); enrolling someone
+    else is restricted to Manager/Admin-Leadership/HR-Restricted
+    (FR-LMS-05), matching the frontend's cohort-viewer check.
     """
+
+    if (
+        current_employee.access_tier not in COHORT_VIEW_TIERS
+        and enrollment_in.employee_id != current_employee.employee_id
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail=f"{current_employee.access_tier} accounts can only enroll themselves.",
+        )
 
     employee = (
         db.query(Employee)
@@ -271,10 +285,21 @@ def list_enrollments(
     current_employee: Employee = Depends(get_current_employee),
 ):
     """
-    Return all training enrollments.
+    Return training enrollments.
+
+    A plain Employee only sees their own enrollments; the full org-wide
+    list is restricted to Manager/Admin-Leadership/HR-Restricted
+    (FR-LMS-05), matching the frontend's cohort-viewer split.
     """
 
-    return db.query(Enrollment).all()
+    query = db.query(Enrollment)
+
+    if current_employee.access_tier not in COHORT_VIEW_TIERS:
+        query = query.filter(
+            Enrollment.employee_id == current_employee.employee_id
+        )
+
+    return query.all()
 
 #Unit completion APIs
 @router.post(
@@ -289,6 +314,13 @@ def complete_training_unit(
 ):
     """
     Mark a unit as completed.
+
+    Completion is always self-attested. Only the enrolled employee knows
+    whether they actually did the training — nobody else, including
+    Manager/Admin-Leadership/HR-Restricted, can mark it complete on their
+    behalf. This is a hard rule with no privileged-tier exception, matching
+    the frontend where the "Mark Complete" form only ever lists the
+    signed-in employee's own enrollments.
     """
 
     enrollment = (
@@ -304,6 +336,12 @@ def complete_training_unit(
         raise HTTPException(
             status_code=404,
             detail="Enrollment not found.",
+        )
+
+    if enrollment.employee_id != current_employee.employee_id:
+        raise HTTPException(
+            status_code=403,
+            detail="You can only mark your own training units complete.",
         )
 
     unit = (
@@ -365,10 +403,29 @@ def list_completions(
     current_employee: Employee = Depends(get_current_employee),
 ):
     """
-    List all completed units.
+    List completed units.
+
+    A plain Employee only sees their own completions; the full org-wide
+    list is restricted to Manager/Admin-Leadership/HR-Restricted
+    (FR-LMS-05), matching the frontend's cohort-viewer split.
     """
 
-    return db.query(UnitCompletion).all()
+    query = db.query(UnitCompletion)
+
+    if current_employee.access_tier not in COHORT_VIEW_TIERS:
+        own_enrollment_ids = [
+            enrollment.enrollment_id
+            for enrollment in db.query(Enrollment)
+            .filter(
+                Enrollment.employee_id == current_employee.employee_id
+            )
+            .all()
+        ]
+        query = query.filter(
+            UnitCompletion.enrollment_id.in_(own_enrollment_ids)
+        )
+
+    return query.all()
 
 #Employee Progress APIs
 @router.get(
