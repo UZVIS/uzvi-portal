@@ -457,7 +457,7 @@ function AppLayout() {
               path="/attendance"
               element={
                 <ProtectedRoute>
-                  <AttendanceModulePage role={activeRole as| "Admin" | "Manager" | "Employee"}/>
+                  <AttendanceModulePage role={activeRole as | "Admin" | "Manager" | "Employee"}/>
                 </ProtectedRoute>
               }
             />
