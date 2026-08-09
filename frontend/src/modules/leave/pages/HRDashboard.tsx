@@ -1,19 +1,24 @@
 import { useState, useEffect } from "react";
 import { apiGet } from "../../../api/client";
-import { useAuth } from "../../../shared/auth/AuthContext"; // Added import
-// 🌟 Premium Icons
-import { ShieldAlert, CheckCircle, Paperclip, X, Check } from "lucide-react";
+import { useAuth } from "../../../shared/auth/AuthContext";
+import { ShieldAlert, CheckCircle, X, Check, Paperclip, Download, AlertCircle } from "lucide-react";
 
 export default function HRDashboard() {
     const [requests, setRequests] = useState<any[]>([]);
     const [leaveTypes, setLeaveTypes] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Dynamic Employee ID from Context
+    // Modal State for Errors/Alerts
+    const [modalState, setModalState] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        isError: false
+    });
+
     const { employee } = useAuth();
     const hrId = employee?.employee_id;
 
-    // Moved duration calculation up so it can be used in filtering
     const getDurationDays = (start: string, end: string) => {
         if (!start || !end) return 0;
         const diffTime = Math.abs(new Date(end).getTime() - new Date(start).getTime());
@@ -31,31 +36,11 @@ export default function HRDashboard() {
             const validTypes = Array.isArray(typesData) ? typesData : [];
             setLeaveTypes(validTypes);
 
-            const appsData = await apiGet('/v1/leave/applications');
+            const appsData = await apiGet('/v1/leave/applications?role=HR');
             if (Array.isArray(appsData)) {
-                const hrPendingApps = appsData.filter(app => {
-                    const status = app?.status?.toUpperCase();
-
-                    // Always show if explicitly marked for HR
-                    if (status === "PENDING_HR") return true;
-
-                    // If it's just PENDING, check if it crosses the threshold
-                    if (status === "PENDING") {
-                        const type = validTypes.find(t => t.leave_type_id === app.leave_type_id);
-                        const typeNameLower = type?.name?.toLowerCase() || "";
-                        const threshold = type?.doc_required_threshold ?? 0;
-                        const duration = getDurationDays(app.start_date, app.end_date);
-
-                        const isSpecialLeave = typeNameLower.includes("maternity") || typeNameLower.includes("paternity");
-
-                        // Show in HR dashboard ONLY if it crosses the document threshold or is a special leave
-                        return isSpecialLeave || (threshold > 0 && duration > threshold);
-                    }
-
-                    return false;
-                });
-
-                setRequests(hrPendingApps);
+                setRequests(appsData);
+            } else {
+                setRequests([]);
             }
         } catch (error) {
             console.error("Error fetching HR dashboard data:", error);
@@ -75,16 +60,22 @@ export default function HRDashboard() {
         return new Date(dateString).toLocaleDateString('en-US', options);
     };
 
-    const handleAction = async (applicationId: string, actionType: 'APPROVED' | 'REJECTED') => {
-        if (!hrId) {
-            alert("User identity not found. Please log in again.");
-            return;
+    const getStoredDocument = (applicationId: string) => {
+        try {
+            const storedDocs = JSON.parse(localStorage.getItem("leaveDocuments") || "{}");
+            return storedDocs[applicationId] || null;
+        } catch {
+            return null;
         }
+    };
+
+    const handleAction = async (applicationId: string, actionType: 'APPROVED' | 'REJECTED') => {
+        if (!hrId) return;
 
         try {
             const payload = {
                 status: actionType,
-                approver_id: hrId // Dynamic HR ID
+                approver_id: hrId
             };
 
             const response = await fetch(`http://127.0.0.1:8000/api/v1/leave/applications/${applicationId}/status`, {
@@ -94,24 +85,43 @@ export default function HRDashboard() {
             });
 
             if (response.ok) {
-                alert(`Leave request ${actionType.toLowerCase()} successfully!`);
+                setRequests(prevRequests =>
+                    prevRequests.filter(req => req.application_id !== applicationId)
+                );
                 fetchHRData();
+
+                setModalState({
+                    isOpen: true,
+                    title: "Success",
+                    message: `Leave application successfully ${actionType.toLowerCase() === 'approved' ? 'verified and approved' : 'rejected'}.`,
+                    isError: false
+                });
             } else {
                 const err = await response.json();
-                alert(`Failed to update status: ${JSON.stringify(err.detail || err)}`);
+                setModalState({
+                    isOpen: true,
+                    title: "Action Failed",
+                    message: err.detail || "Insufficient Balance or Server Error occurred.",
+                    isError: true
+                });
             }
         } catch (error) {
             console.error("Error updating leave status:", error);
-            alert("Network error while updating status.");
+            setModalState({
+                isOpen: true,
+                title: "Network Error",
+                message: "Unable to connect to the server while updating status.",
+                isError: true
+            });
         }
     };
 
     return (
-        <div className="space-y-6 max-w-7xl mx-auto p-4 md:p-6">
+        <div className="space-y-6 max-w-7xl mx-auto p-4 md:p-6 relative">
             <div className="flex justify-between items-end">
                 <div>
-                    <h2 className="text-2xl font-extrabold text-gray-800">HR Medical & Compliance View</h2>
-                    <p className="text-sm text-gray-500 mt-1">Review sensitive leave requests and verify medical documents.</p>
+                    <h2 className="text-2xl font-extrabold text-gray-800">HR Medical and Compliance View</h2>
+                    <p className="text-sm text-gray-500 mt-1">Review sensitive leave requests and finalize approvals.</p>
                 </div>
             </div>
 
@@ -119,7 +129,7 @@ export default function HRDashboard() {
                 <ShieldAlert className="text-amber-500 shrink-0 mt-0.5" size={24} />
                 <div>
                     <h4 className="font-bold text-white text-sm">Strict Confidentiality Required</h4>
-                    <p className="text-xs text-slate-300 mt-1">You are viewing restricted medical and maternity data. Do not share these reasons or documents with the employee's direct manager.</p>
+                    <p className="text-xs text-slate-300 mt-1">You are viewing restricted medical and compliance data. Do not share these reasons with the employee's direct manager.</p>
                 </div>
             </div>
 
@@ -141,7 +151,7 @@ export default function HRDashboard() {
                                 <tr className="text-xs font-bold text-gray-400 uppercase tracking-wider">
                                     <th className="py-4 px-6">Employee</th>
                                     <th className="py-4 px-6">Leave Type</th>
-                                    <th className="py-4 px-6">Private Medical Notes</th>
+                                    <th className="py-4 px-6">Private Notes & Document</th>
                                     <th className="py-4 px-6 text-right">Actions</th>
                                 </tr>
                             </thead>
@@ -149,6 +159,8 @@ export default function HRDashboard() {
                                 {requests.map((req) => {
                                     const leaveName = getLeaveTypeName(req.leave_type_id);
                                     const totalDays = getDurationDays(req.start_date, req.end_date);
+                                    const attachedDoc = getStoredDocument(req.application_id);
+
                                     return (
                                         <tr key={req.application_id} className="hover:bg-gray-50 transition">
                                             <td className="py-4 px-6">
@@ -170,10 +182,34 @@ export default function HRDashboard() {
                                                 </div>
                                             </td>
                                             <td className="py-4 px-6 max-w-sm">
-                                                <p className="text-sm text-gray-800 font-medium">{req.reason || "No medical notes provided."}</p>
-                                                <div className="mt-2 flex items-center space-x-2 text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 cursor-pointer hover:bg-blue-100 inline-flex transition">
-                                                    <Paperclip size={14} /><span>Medical_Proof_Document.pdf</span>
-                                                </div>
+                                                <p className="text-sm text-gray-800 font-medium mb-2">{req.reason || "Medical leave request exceeding threshold."}</p>
+
+                                                {attachedDoc ? (
+                                                    <div className="bg-blue-50/70 border border-blue-100 rounded-lg p-2.5 flex items-center justify-between">
+                                                        <div className="flex items-center space-x-2 overflow-hidden">
+                                                            <Paperclip size={14} className="text-blue-600 shrink-0" />
+                                                            <span className="text-xs font-bold text-blue-900 truncate">{attachedDoc.fileName}</span>
+                                                        </div>
+                                                        <div className="flex items-center space-x-1 shrink-0 ml-2">
+                                                            <button
+                                                                onClick={() => window.open(attachedDoc.fileData, "_blank")}
+                                                                className="px-2 py-1 bg-blue-600 text-white rounded text-[11px] font-semibold hover:bg-blue-700 transition"
+                                                            >
+                                                                View
+                                                            </button>
+                                                            <a
+                                                                href={attachedDoc.fileData}
+                                                                download={attachedDoc.fileName}
+                                                                className="p-1 bg-white border border-blue-200 text-blue-600 rounded hover:bg-blue-50 transition"
+                                                                title="Download"
+                                                            >
+                                                                <Download size={12} />
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-xs text-amber-600 font-medium italic">No document attached locally</span>
+                                                )}
                                             </td>
                                             <td className="py-4 px-6 text-right">
                                                 <div className="flex justify-end space-x-2">
@@ -181,7 +217,7 @@ export default function HRDashboard() {
                                                         <X size={14} /> <span>Reject</span>
                                                     </button>
                                                     <button onClick={() => handleAction(req.application_id, 'APPROVED')} className="px-4 py-1.5 bg-slate-900 hover:bg-black text-white rounded-lg text-sm font-bold shadow-sm transition flex items-center space-x-1">
-                                                        <Check size={14} /> <span>Verify & Approve</span>
+                                                        <Check size={14} /> <span>Approve</span>
                                                     </button>
                                                 </div>
                                             </td>
@@ -193,6 +229,31 @@ export default function HRDashboard() {
                     </div>
                 )}
             </div>
+
+            {/* Custom Modal Popup for Success/Error */}
+            {modalState.isOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] px-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className={`p-5 flex items-start space-x-4 border-b ${modalState.isError ? 'bg-red-50 border-red-100' : 'bg-emerald-50 border-emerald-100'}`}>
+                            <div className={`p-2 rounded-full ${modalState.isError ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                                {modalState.isError ? <AlertCircle size={24} /> : <CheckCircle size={24} />}
+                            </div>
+                            <div>
+                                <h3 className={`text-lg font-bold ${modalState.isError ? 'text-red-900' : 'text-emerald-900'}`}>{modalState.title}</h3>
+                                <p className={`text-sm mt-1 ${modalState.isError ? 'text-red-800' : 'text-emerald-800'}`}>{modalState.message}</p>
+                            </div>
+                        </div>
+                        <div className="px-6 py-4 bg-gray-50 flex justify-end border-t border-gray-100">
+                            <button
+                                onClick={() => setModalState({ isOpen: false, title: "", message: "", isError: false })}
+                                className={`px-5 py-2 text-white rounded-xl text-sm font-bold shadow-sm transition ${modalState.isError ? 'bg-red-600 hover:bg-red-700' : 'bg-slate-900 hover:bg-black'}`}
+                            >
+                                OK
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

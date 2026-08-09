@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { apiPost, apiGet } from "../../../api/client";
-import { useAuth } from "../../../shared/auth/AuthContext"; // Added import
-// Premium Icons imported
+import { useAuth } from "../../../shared/auth/AuthContext";
 import { CalendarPlus, Paperclip, Lock, Check, X, Clock } from "lucide-react";
 
 export default function LeaveDashboard() {
@@ -16,13 +15,12 @@ export default function LeaveDashboard() {
     const [attachment, setAttachment] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Dynamic Employee ID from Context
     const { employee } = useAuth();
     const employeeId = employee?.employee_id;
 
     useEffect(() => {
         async function fetchDashboardData() {
-            if (!employeeId) return; // Guard clause in case it's loading
+            if (!employeeId) return;
 
             try {
                 const typesData = await apiGet('/v1/leave/leave-types');
@@ -35,9 +33,8 @@ export default function LeaveDashboard() {
                 const balancesData = await apiGet(`/v1/leave/leave-balances/${employeeId}`);
                 setLeaveBalances(Array.isArray(balancesData) ? balancesData : [balancesData]);
 
-                const allApplications = await apiGet('/v1/leave/applications');
-                if (Array.isArray(allApplications)) {
-                    const myApplications = allApplications.filter(app => app.employee_id === employeeId);
+                const myApplications = await apiGet(`/v1/leave/applications?employee_id=${employeeId}&role=Employee`);
+                if (Array.isArray(myApplications)) {
                     setLeaveHistory(myApplications);
                 } else {
                     setLeaveHistory([]);
@@ -47,7 +44,7 @@ export default function LeaveDashboard() {
             }
         }
         fetchDashboardData();
-    }, [employeeId]); // Added employeeId to dependency array
+    }, [employeeId]);
 
     const getBalanceFor = (leaveName: string) => {
         if (!leaveTypes.length || !leaveBalances.length) return "0";
@@ -83,13 +80,12 @@ export default function LeaveDashboard() {
         return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
     };
 
+    // Document Threshold Logic
     const appliedDaysNumber = getDurationNumber(startDate, endDate);
     const selectedTypeDetails = (leaveTypes || []).find(t => t?.leave_type_id === leaveTypeId);
     const threshold = selectedTypeDetails?.doc_required_threshold ?? 0;
-    const typeNameLower = selectedTypeDetails?.name?.toLowerCase() || "";
 
-    const isSpecialLeave = typeNameLower.includes("maternity") || typeNameLower.includes("paternity");
-    const isDocumentMandatory = isSpecialLeave || (threshold > 0 && appliedDaysNumber > threshold);
+    const isDocumentMandatory = threshold > 0 && appliedDaysNumber > threshold;
 
     const resetForm = () => {
         setIsFormOpen(false);
@@ -98,33 +94,26 @@ export default function LeaveDashboard() {
         setAttachment(null);
     };
 
+    // Helper: Convert File to Base64 Data URL for LocalStorage
+    const fileToDataUrl = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    };
+
     const handleSubmit = async () => {
-        if (!startDate || !endDate) {
-            alert("Please select start and end dates.");
-            return;
-        }
+        if (!startDate || !endDate) return;
 
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        if (new Date(startDate) < today) {
-            alert("Leave start date cannot be in the past!");
-            return;
-        }
+        if (new Date(startDate) < today) return;
+        if (new Date(startDate) > new Date(endDate)) return;
 
-        if (new Date(startDate) > new Date(endDate)) {
-            alert("End date cannot be before start date.");
-            return;
-        }
-
-        if (isDocumentMandatory && !attachment) {
-            alert("Please upload the required medical/proof document to proceed.");
-            return;
-        }
-
-        if (!employeeId) {
-            alert("User identity not found. Please log in again.");
-            return;
-        }
+        if (isDocumentMandatory && !attachment) return;
+        if (!employeeId) return;
 
         setIsSubmitting(true);
 
@@ -136,24 +125,32 @@ export default function LeaveDashboard() {
         };
 
         try {
-            await apiPost('/v1/leave/applications', leaveData);
-            alert("Leave request submitted successfully!");
+            // 1. Submit to Backend (Without modifying backend models/schemas)
+            const response: any = await apiPost('/v1/leave/applications', leaveData);
 
-            const updatedAllApps = await apiGet('/v1/leave/applications');
-            if (Array.isArray(updatedAllApps)) {
-                setLeaveHistory(updatedAllApps.filter(app => app.employee_id === employeeId));
+            // 2. If a document was attached and application_id is returned, store it in LocalStorage
+            if (attachment && response?.application_id) {
+                const fileDataUrl = await fileToDataUrl(attachment);
+                const storedDocs = JSON.parse(localStorage.getItem("leaveDocuments") || "{}");
+
+                storedDocs[response.application_id] = {
+                    fileName: attachment.name,
+                    fileType: attachment.type,
+                    fileData: fileDataUrl,
+                    uploadedAt: new Date().toISOString()
+                };
+
+                localStorage.setItem("leaveDocuments", JSON.stringify(storedDocs));
+            }
+
+            const updatedMyApps = await apiGet(`/v1/leave/applications?employee_id=${employeeId}&role=Employee`);
+            if (Array.isArray(updatedMyApps)) {
+                setLeaveHistory(updatedMyApps);
             }
 
             resetForm();
         } catch (error: any) {
             console.error("Error submitting leave:", error);
-            let errorMessage = "Submission failed. Please try again.";
-            if (error?.response?.data?.detail) {
-                errorMessage = Array.isArray(error.response.data.detail)
-                    ? error.response.data.detail[0].msg
-                    : error.response.data.detail;
-            }
-            alert(`Error: ${errorMessage}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -230,7 +227,7 @@ export default function LeaveDashboard() {
                                 <tr className="text-xs font-bold text-gray-500 uppercase tracking-wider">
                                     <th className="py-4 px-6">Leave Details</th>
                                     <th className="py-4 px-6">Duration</th>
-                                    <th className="py-4 px-6 text-right">Status</th>
+                                    <th className="py-4 px-6">Status</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -252,13 +249,18 @@ export default function LeaveDashboard() {
                                                 </div>
                                             </td>
                                             <td className="py-4 px-6 font-semibold text-gray-700">{getDurationDays(leave?.start_date, leave?.end_date)}</td>
-                                            <td className="py-4 px-6 text-right">
+                                            <td className="py-4 px-6">
                                                 {leave?.status?.toUpperCase() === "APPROVED" && (
                                                     <span className="inline-flex items-center space-x-1 bg-green-100 text-green-700 px-2.5 py-1 rounded-md text-xs font-bold">
                                                         <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span><span>Approved</span>
                                                     </span>
                                                 )}
-                                                {(leave?.status?.toUpperCase().includes("PENDING") || !leave?.status) && (
+                                                {leave?.status?.toUpperCase() === "PENDING_HR" && (
+                                                    <span className="inline-flex items-center space-x-1 bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-md text-xs font-bold">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span><span>Pending HR</span>
+                                                    </span>
+                                                )}
+                                                {(leave?.status?.toUpperCase() === "PENDING" || !leave?.status) && (
                                                     <span className="inline-flex items-center space-x-1 bg-amber-100 text-amber-700 px-2.5 py-1 rounded-md text-xs font-bold">
                                                         <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span><span>Pending</span>
                                                     </span>
@@ -312,13 +314,13 @@ export default function LeaveDashboard() {
                                     </div>
                                     <div className="flex gap-4">
                                         <div className="flex flex-col items-center">
-                                            <div className={`w-6 h-6 rounded-full border-2 border-white flex items-center justify-center ${isHRVerified ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
-                                                {isHRVerified ? <Check size={14} strokeWidth={3} /> : <Check size={14} strokeWidth={3} />}
+                                            <div className={`w-6 h-6 rounded-full border-2 border-white flex items-center justify-center ${isHRVerified ? 'bg-green-500 text-white' : latestStatus === 'PENDING_HR' ? 'bg-amber-400 text-white' : 'bg-gray-200 text-gray-400'}`}>
+                                                {isHRVerified ? <Check size={14} strokeWidth={3} /> : latestStatus === 'PENDING_HR' ? <Clock size={14} strokeWidth={3} /> : <Check size={14} strokeWidth={3} />}
                                             </div>
                                         </div>
                                         <div>
-                                            <p className={`font-bold text-sm ${isHRVerified ? 'text-gray-900' : 'text-gray-400'}`}>HR Verification</p>
-                                            <p className="text-xs text-gray-400">{isHRVerified ? 'Completed' : 'If required'}</p>
+                                            <p className={`font-bold text-sm ${isHRVerified || latestStatus === 'PENDING_HR' ? 'text-gray-900' : 'text-gray-400'}`}>HR Verification</p>
+                                            <p className="text-xs text-gray-400">{isHRVerified ? 'Completed' : latestStatus === 'PENDING_HR' ? 'Pending HR Review' : 'If required'}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -328,7 +330,6 @@ export default function LeaveDashboard() {
                         )}
                     </div>
 
-                    {/* Premium Privacy Box */}
                     <div className="bg-slate-900 rounded-xl p-4 flex gap-3 items-start shadow-md border border-slate-800">
                         <Lock className="text-slate-400 shrink-0 mt-0.5" size={20} />
                         <div>
@@ -381,7 +382,7 @@ export default function LeaveDashboard() {
                                 <div className="bg-blue-50/60 p-4 rounded-xl border border-blue-100 animate-in fade-in duration-200">
                                     <label className="text-xs font-bold text-blue-900 mb-2 flex items-center justify-between">
                                         <span className="flex items-center gap-1.5">
-                                            <Paperclip size={14} className="text-blue-600" /> Upload Medical Proof
+                                            <Paperclip size={14} className="text-blue-600" /> Upload Supporting Document
                                         </span>
                                         <span className="bg-red-100 text-red-600 text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider font-extrabold">Required ({threshold} Days)</span>
                                     </label>

@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "../../../shared/auth/AuthContext"; // Added import
-// 🌟 Premium Icons
+import { useAuth } from "../../../shared/auth/AuthContext";
 import { Lightbulb, Plus, Activity, Settings2, Wallet } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -12,18 +11,17 @@ export default function AdminDashboard() {
     const [accrualMethod, setAccrualMethod] = useState("");
     const [carryForwardLimit, setCarryForwardLimit] = useState("");
     const [docThreshold, setDocThreshold] = useState("");
+    const [requiresHrApproval, setRequiresHrApproval] = useState(false);
 
-    // Removed hardcoded "EMP123", set to empty so Admin can type any Employee ID
     const [targetEmployeeId, setTargetEmployeeId] = useState("");
     const [selectedLeaveTypeId, setSelectedLeaveTypeId] = useState("");
     const [allocateBalanceValue, setAllocateBalanceValue] = useState("");
-    const [allocateYear, setAllocateYear] = useState(new Date().getFullYear().toString()); // Dynamically defaults to current year
+    const [allocateYear, setAllocateYear] = useState(new Date().getFullYear().toString());
 
     const [allLeaves, setAllLeaves] = useState<any[]>([]);
     const [leaveTypes, setLeaveTypes] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Fetching logged-in Admin's details (Can be used for audit logs/headers if needed)
     const { employee } = useAuth();
     const adminId = employee?.employee_id;
 
@@ -44,7 +42,7 @@ export default function AdminDashboard() {
                 }
             }
 
-            const appsResponse = await fetch("http://127.0.0.1:8000/api/v1/leave/applications");
+            const appsResponse = await fetch("http://127.0.0.1:8000/api/v1/leave/applications?role=Admin");
             if (appsResponse.ok) {
                 const appsData = await appsResponse.json();
                 setAllLeaves(Array.isArray(appsData) ? appsData : []);
@@ -75,6 +73,32 @@ export default function AdminDashboard() {
         return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
     };
 
+    const handleAction = async (applicationId: string, actionType: 'APPROVED' | 'REJECTED') => {
+        if (!adminId) return;
+
+        try {
+            const payload = {
+                status: actionType,
+                approver_id: adminId
+            };
+
+            const response = await fetch(`http://127.0.0.1:8000/api/v1/leave/applications/${applicationId}/status`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                fetchAdminData();
+            } else {
+                const err = await response.json();
+                console.error(`Failed to update status:`, err.detail || err);
+            }
+        } catch (error) {
+            console.error("Error updating status:", error);
+        }
+    };
+
     const handleSaveLeaveType = async () => {
         if (!leaveName) return;
 
@@ -82,7 +106,8 @@ export default function AdminDashboard() {
             name: leaveName,
             accrual_method: accrualMethod || "Standard",
             carry_forward_limit: carryForwardLimit ? parseInt(carryForwardLimit, 10) : 0,
-            doc_required_threshold: docThreshold ? parseInt(docThreshold, 10) : 0
+            doc_required_threshold: docThreshold ? parseInt(docThreshold, 10) : 0,
+            requires_hr_approval: requiresHrApproval
         };
 
         try {
@@ -99,8 +124,7 @@ export default function AdminDashboard() {
                 setAccrualMethod("");
                 setCarryForwardLimit("");
                 setDocThreshold("");
-            } else {
-                alert("Failed to create leave type.");
+                setRequiresHrApproval(false);
             }
         } catch (error) {
             console.error("Error connecting to backend API:", error);
@@ -109,7 +133,6 @@ export default function AdminDashboard() {
 
     const handleAllocateBalance = async () => {
         if (!targetEmployeeId || !selectedLeaveTypeId || !allocateBalanceValue || !allocateYear) {
-            alert("Please fill all fields!");
             return;
         }
 
@@ -128,18 +151,13 @@ export default function AdminDashboard() {
             });
 
             if (response.ok) {
-                alert(`Leave balance allocated successfully to ${targetEmployeeId}!`);
                 setIsBalanceModalOpen(false);
                 setAllocateBalanceValue("");
-                setTargetEmployeeId(""); // Reset after successful allocation
+                setTargetEmployeeId("");
                 fetchAdminData();
-            } else {
-                const err = await response.json();
-                alert(`Failed to allocate balance: ${JSON.stringify(err.detail || err)}`);
             }
         } catch (error) {
             console.error("Error allocating balance:", error);
-            alert("Network error occurred.");
         }
     };
 
@@ -176,27 +194,50 @@ export default function AdminDashboard() {
                                 <tr className="text-xs font-bold text-gray-400 uppercase tracking-wider">
                                     <th className="py-4 px-6">Employee</th>
                                     <th className="py-4 px-6">Leave Details</th>
-                                    <th className="py-4 px-6 text-right">Status</th>
+                                    <th className="py-4 px-6">Status</th>
+                                    <th className="py-4 px-6">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                                 {allLeaves.length === 0 ? (
-                                    <tr><td colSpan={3} className="py-8 text-center text-gray-500">No leave applications found.</td></tr>
+                                    <tr><td colSpan={4} className="py-8 text-center text-gray-500">No leave applications found.</td></tr>
                                 ) : (
-                                    allLeaves.map((leave) => (
-                                        <tr key={leave.application_id} className="hover:bg-gray-50 transition">
-                                            <td className="py-4 px-6 font-bold text-gray-900">{leave.employee_id}</td>
-                                            <td className="py-4 px-6">
-                                                <span className="font-bold text-sm text-gray-800">{getLeaveName(leave.leave_type_id)}</span>
-                                                <span className="text-xs text-gray-500 block">
-                                                    {formatDate(leave.start_date)} – {formatDate(leave.end_date)} ({getDurationDays(leave.start_date, leave.end_date)} Days)
-                                                </span>
-                                            </td>
-                                            <td className="py-4 px-6 text-right">
-                                                <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs font-bold">{leave.status}</span>
-                                            </td>
-                                        </tr>
-                                    ))
+                                    allLeaves.map((leave) => {
+                                        const currentStatus = leave.status?.toUpperCase() || "";
+                                        const isPendingAction = currentStatus === "PENDING" || currentStatus === "PENDING_HR";
+                                        return (
+                                            <tr key={leave.application_id} className="hover:bg-gray-50 transition">
+                                                <td className="py-4 px-6 font-bold text-gray-900">{leave.employee_id}</td>
+                                                <td className="py-4 px-6">
+                                                    <span className="font-bold text-sm text-gray-800">{getLeaveName(leave.leave_type_id)}</span>
+                                                    <span className="text-xs text-gray-500 block">
+                                                        {formatDate(leave.start_date)} – {formatDate(leave.end_date)} ({getDurationDays(leave.start_date, leave.end_date)} Days)
+                                                    </span>
+                                                </td>
+                                                <td className="py-4 px-6">
+                                                    <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs font-bold">{leave.status}</span>
+                                                </td>
+                                                <td className="py-4 px-6">
+                                                    {isPendingAction ? (
+                                                        <div className="flex space-x-2">
+                                                            <button
+                                                                onClick={() => handleAction(leave.application_id, 'REJECTED')}
+                                                                className="px-3 py-1 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-xs font-bold transition">
+                                                                Reject
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleAction(leave.application_id, 'APPROVED')}
+                                                                className="px-3 py-1 bg-gray-900 hover:bg-black text-white rounded-lg text-xs font-bold transition">
+                                                                Approve
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-xs text-gray-400 font-medium">Completed</span>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
                                 )}
                             </tbody>
                         </table>
@@ -220,6 +261,7 @@ export default function AdminDashboard() {
                                     <th className="py-4 px-6">Accrual Method</th>
                                     <th className="py-4 px-6">Carry Forward</th>
                                     <th className="py-4 px-6">Doc Threshold</th>
+                                    <th className="py-4 px-6">HR Sign-off</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -228,7 +270,16 @@ export default function AdminDashboard() {
                                         <td className="py-4 px-6 font-bold text-gray-900 text-sm">{type.name}</td>
                                         <td className="py-4 px-6 text-xs text-gray-700">{type.accrual_method}</td>
                                         <td className="py-4 px-6 text-xs font-bold text-gray-800">{type.carry_forward_limit} Days</td>
-                                        <td className="py-4 px-6 text-xs text-orange-600 font-medium">{type.doc_required_threshold} Days</td>
+                                        <td className="py-4 px-6 text-xs text-orange-600 font-medium">
+                                            {type.doc_required_threshold > 0 ? `${type.doc_required_threshold} Days` : "None"}
+                                        </td>
+                                        <td className="py-4 px-6 text-xs">
+                                            {type.requires_hr_approval ? (
+                                                <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded font-bold">Required</span>
+                                            ) : (
+                                                <span className="text-gray-500 font-medium">No</span>
+                                            )}
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -268,7 +319,20 @@ export default function AdminDashboard() {
                             <input type="text" value={leaveName} onChange={(e) => setLeaveName(e.target.value)} placeholder="Leave Name (e.g. Casual Leave)" className="w-full border rounded-xl px-4 py-2.5 text-sm outline-none focus:border-indigo-600" />
                             <input type="text" value={accrualMethod} onChange={(e) => setAccrualMethod(e.target.value)} placeholder="Accrual Method" className="w-full border rounded-xl px-4 py-2.5 text-sm outline-none focus:border-indigo-600" />
                             <input type="number" value={carryForwardLimit} onChange={(e) => setCarryForwardLimit(e.target.value)} placeholder="Carry Forward Limit" className="w-full border rounded-xl px-4 py-2.5 text-sm outline-none focus:border-indigo-600" />
-                            <input type="number" value={docThreshold} onChange={(e) => setDocThreshold(e.target.value)} placeholder="Doc Required Threshold" className="w-full border rounded-xl px-4 py-2.5 text-sm outline-none focus:border-indigo-600" />
+                            <input type="number" value={docThreshold} onChange={(e) => setDocThreshold(e.target.value)} placeholder="Doc Required Threshold (Days)" className="w-full border rounded-xl px-4 py-2.5 text-sm outline-none focus:border-indigo-600" />
+
+                            <label className="flex items-center space-x-3 mt-4 cursor-pointer bg-gray-50 p-3 rounded-xl border border-gray-100">
+                                <input
+                                    type="checkbox"
+                                    checked={requiresHrApproval}
+                                    onChange={(e) => setRequiresHrApproval(e.target.checked)}
+                                    className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                                />
+                                <div>
+                                    <p className="text-sm font-bold text-gray-800">Requires HR Approval</p>
+                                    <p className="text-xs text-gray-500">Route to HR after manager approval</p>
+                                </div>
+                            </label>
                         </div>
                         <div className="p-8 pt-6 flex justify-end space-x-3 bg-gray-50 border-t mt-4">
                             <button onClick={() => setIsAddLeaveModalOpen(false)} className="px-5 py-2.5 bg-white border rounded-xl text-sm font-semibold hover:bg-gray-100">Cancel</button>

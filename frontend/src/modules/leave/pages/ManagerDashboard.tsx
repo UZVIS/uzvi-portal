@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { apiGet } from "../../../api/client";
 import { useAuth } from "../../../shared/auth/AuthContext";
-// 🌟 Premium Icons
 import { Users, CheckCircle, X, Check, AlertTriangle } from "lucide-react";
 
 export default function ManagerDashboard() {
@@ -9,7 +8,6 @@ export default function ManagerDashboard() {
     const [leaveTypes, setLeaveTypes] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    // ✅ State to manage the 30% Availability Warning Popup
     const [warningState, setWarningState] = useState({
         isOpen: false,
         applicationId: "",
@@ -17,13 +15,14 @@ export default function ManagerDashboard() {
         percentage: 0
     });
 
-    // Dynamic Employee ID from Context
     const { employee } = useAuth();
     const managerId = employee?.employee_id;
 
     useEffect(() => {
-        fetchManagerData();
-    }, []);
+        if (managerId) {
+            fetchManagerData();
+        }
+    }, [managerId]);
 
     const fetchManagerData = async () => {
         setIsLoading(true);
@@ -31,12 +30,11 @@ export default function ManagerDashboard() {
             const typesData = await apiGet('/v1/leave/leave-types');
             setLeaveTypes(Array.isArray(typesData) ? typesData : []);
 
-            const appsData = await apiGet('/v1/leave/applications');
+            const appsData = await apiGet(`/v1/leave/applications?employee_id=${managerId}&role=Manager`);
             if (Array.isArray(appsData)) {
-                const pendingApps = appsData.filter(app =>
-                    app?.status?.toUpperCase() === "PENDING"
-                );
-                setRequests(pendingApps);
+                setRequests(appsData);
+            } else {
+                setRequests([]);
             }
         } catch (error) {
             console.error("Error fetching Manager dashboard data:", error);
@@ -62,12 +60,8 @@ export default function ManagerDashboard() {
         return new Date(dateString).toLocaleDateString('en-US', options);
     };
 
-    // ✅ Added force parameter (defaults to false)
     const handleAction = async (applicationId: string, actionType: 'APPROVED' | 'REJECTED', force: boolean = false) => {
-        if (!managerId) {
-            alert("User identity not found. Please log in again.");
-            return;
-        }
+        if (!managerId) return;
 
         try {
             const payload = {
@@ -75,7 +69,6 @@ export default function ManagerDashboard() {
                 approver_id: managerId
             };
 
-            // ✅ Appended ?force= to the URL
             const response = await fetch(`http://127.0.0.1:8000/api/v1/leave/applications/${applicationId}/status?force=${force}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
@@ -85,7 +78,6 @@ export default function ManagerDashboard() {
             if (response.ok) {
                 const data = await response.json();
 
-                // ✅ Intercept the warning from backend
                 if (data.warning) {
                     setWarningState({
                         isOpen: true,
@@ -93,19 +85,22 @@ export default function ManagerDashboard() {
                         message: data.message,
                         percentage: data.percentage
                     });
-                    return; // Stop here, wait for manager's decision on the modal
+                    return;
                 }
 
-                alert(data.message || `Leave request ${actionType.toLowerCase()} successfully!`);
-                setWarningState({ isOpen: false, applicationId: "", message: "", percentage: 0 }); // Reset state
+                setWarningState({ isOpen: false, applicationId: "", message: "", percentage: 0 });
+
+                setRequests(prevRequests =>
+                    prevRequests.filter(req => req.application_id !== applicationId)
+                );
+
                 fetchManagerData();
             } else {
                 const err = await response.json();
-                alert(`Failed to update status: ${JSON.stringify(err.detail || err)}`);
+                console.error("Failed to update status:", err.detail || err);
             }
         } catch (error) {
             console.error("Error updating leave status:", error);
-            alert("Network error while updating status.");
         }
     };
 
@@ -114,7 +109,7 @@ export default function ManagerDashboard() {
             <div className="flex justify-between items-end">
                 <div>
                     <h2 className="text-2xl font-extrabold text-gray-800">Team Leave Approvals</h2>
-                    <p className="text-sm text-gray-500 mt-1">Review and manage time-off requests from your team members.</p>
+                    <p className="text-sm text-gray-500 mt-1">Review and manage time-off requests from your direct team members.</p>
                 </div>
             </div>
 
@@ -123,14 +118,14 @@ export default function ManagerDashboard() {
                 <div>
                     <h4 className="font-bold text-blue-900 text-sm">Manager Responsibilities</h4>
                     <p className="text-xs text-blue-700 mt-1">
-                        Ensure team availability before approving long leaves. The system will warn you if 30% or more of your team is absent.
+                        Ensure team availability before approving long leaves. The system will warn you if 30% or more of your team is absent simultaneously.
                     </p>
                 </div>
             </div>
 
             <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden animate-in fade-in duration-300">
                 <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                    <h3 className="font-bold text-gray-800">Pending Actions ({requests.length})</h3>
+                    <h3 className="font-bold text-gray-800">Pending Team Actions ({requests.length})</h3>
                 </div>
 
                 {isLoading ? (
@@ -138,7 +133,7 @@ export default function ManagerDashboard() {
                 ) : requests.length === 0 ? (
                     <div className="p-10 text-center text-gray-500 font-medium flex flex-col items-center">
                         <CheckCircle className="text-gray-300 mb-2" size={32} />
-                        You're all caught up! No pending requests.
+                        You are all caught up! No pending requests from your team.
                     </div>
                 ) : (
                     <div className="overflow-x-auto">
@@ -164,6 +159,7 @@ export default function ManagerDashboard() {
                                                     </div>
                                                     <div>
                                                         <p className="font-bold text-gray-900">{req.employee_id}</p>
+                                                        <p className="text-xs text-gray-500">Team Member</p>
                                                     </div>
                                                 </div>
                                             </td>
@@ -201,7 +197,6 @@ export default function ManagerDashboard() {
                 )}
             </div>
 
-            {/* ✅ Warning Modal UI */}
             {warningState.isOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] px-4">
                     <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">

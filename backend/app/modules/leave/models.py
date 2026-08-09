@@ -9,7 +9,7 @@ and audit logs to track the approval workflow.
 import enum
 from datetime import datetime
 
-from sqlalchemy import Column, String, Integer, Date, DateTime, ForeignKey, Enum
+from sqlalchemy import Column, String, Integer, Date, DateTime, ForeignKey, Enum, Boolean
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -22,6 +22,7 @@ class LeaveStatus(str, enum.Enum):
     PENDING = "pending"
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
+    PENDING_HR = "PENDING_HR"
 
 
 class LeaveType(Base):
@@ -41,6 +42,7 @@ class LeaveType(Base):
     accrual_method = Column(String, nullable=False)
     carry_forward_limit = Column(Integer, nullable=False)
     doc_required_threshold = Column(Integer, nullable=True)
+    requires_hr_approval = Column(Boolean, default=False, nullable=False)
 
     leave_applications = relationship(
         "LeaveApplication",
