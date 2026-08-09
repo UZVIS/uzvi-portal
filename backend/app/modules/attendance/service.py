@@ -260,13 +260,19 @@ class AttendanceService:
             Employee,
             AttendanceRecord.employee_id == Employee.employee_id
         )
+
+
         .filter(
             Employee.team_id == team_id
         )
         .all()
-    )
+        )
 
         return records
+
+
+       
+        
 
     
 

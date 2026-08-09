@@ -29,6 +29,8 @@ import {
 import AttendanceModal from "./components/AttendanceModal";
 import TeamAttendance from "./components/TeamAttendance";
 import UnexplainedAbsences from "./components/UnexplainedAbsences";
+import EmployeeAttendance from "./components/EmployeeAttendance";
+import { exportAttendance } from "./api";
 
 import type {
   Attendance,
@@ -96,6 +98,20 @@ const AttendanceModulePage: React.FC<
   ] = useState<Attendance | null>(
     null
   );
+
+
+  const [managerTab, setManagerTab] = useState<
+  "dashboard" | "team" | "summary" | "absence" | "export"
+>("dashboard");
+
+
+const [adminTab, setAdminTab] = useState<
+  "dashboard" |
+  "records" |
+  "summary" |
+  "absence" |
+  "export"
+>("dashboard");
 
   /* ======================================
      Initial Load
@@ -205,6 +221,80 @@ const AttendanceModulePage: React.FC<
       fetchAttendance();
     };
 
+
+      /* ======================================
+     Export Attendance CSV
+  ====================================== */
+
+  const handleExportAttendance = () => {
+
+    if (records.length === 0) {
+      alert("No attendance records available to export.");
+      return;
+    }
+
+    const headers = [
+      "Employee ID",
+      "Employee Name",
+      "Date",
+      "Status",
+      "Check In",
+      "Check Out",
+      "Source",
+    ];
+
+    const rows = records.map((record) => [
+      record.employee_id,
+      employeeNames[record.employee_id] ?? "Unknown",
+      record.attendance_date,
+      record.status,
+      record.check_in ?? "-",
+      record.check_out ?? "-",
+      record.source ?? "Manual",
+    ]);
+
+    const csvContent = [
+      headers,
+      ...rows,
+    ]
+      .map((row) =>
+        row
+          .map((value) =>
+            `"${String(value).replace(/"/g, '""')}"`
+          )
+          .join(",")
+      )
+      .join("\n");
+
+    const blob = new Blob(
+      [csvContent],
+      {
+        type: "text/csv;charset=utf-8;",
+      }
+    );
+
+    const url =
+      URL.createObjectURL(blob);
+
+    const link =
+      document.createElement("a");
+
+    link.href = url;
+
+    link.download =
+      `attendance-${new Date()
+        .toISOString()
+        .split("T")[0]}.csv`;
+
+    document.body.appendChild(link);
+
+    link.click();
+
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+  };
+
   /* ======================================
      UI Starts
   ====================================== */
@@ -215,7 +305,7 @@ const AttendanceModulePage: React.FC<
             {/* ======================================
           Header
       ====================================== */}
-
+      {role !== "Employee" && (
       <div className="attendance-header">
 
         <div>
@@ -230,6 +320,7 @@ const AttendanceModulePage: React.FC<
         </div>
 
       </div>
+      )}
 
       {/* ======================================
           Error
@@ -241,11 +332,209 @@ const AttendanceModulePage: React.FC<
         </div>
       )}
 
+
+    {role === "Manager" && (
+  <>
+    <div className="attendance-tabs">
+
+      <button
+        className={managerTab === "dashboard" ? "active" : ""}
+        onClick={() => setManagerTab("dashboard")}
+      >
+        Dashboard
+      </button>
+
+      <button
+        className={managerTab === "team" ? "active" : ""}
+        onClick={() => setManagerTab("team")}
+      >
+        Team Attendance
+      </button>
+
+      <button
+        className={managerTab === "summary" ? "active" : ""}
+        onClick={() => setManagerTab("summary")}
+      >
+        Monthly Summary
+      </button>
+
+
+      <button
+  className={managerTab === "absence" ? "active" : ""}
+  onClick={() => setManagerTab("absence")}
+>
+  Unexplained Absences
+</button>
+
+   
+
+      <button
+        className={managerTab === "export" ? "active" : ""}
+        onClick={() => setManagerTab("export")}
+      >
+        Export
+      </button>
+
+    </div>
+
+    {managerTab === "dashboard" && (
+      <div className="manager-dashboard">
+        
+        <h2>Summary Cards</h2>
+
+      </div>
+    )}
+
+   
+
+   {managerTab === "dashboard" && (
+
+  <div className="manager-dashboard">
+
+
+    <div className="summary-grid">
+
+      <div className="summary-card office">
+        <div className="summary-icon">
+          <Briefcase size={26} />
+        </div>
+
+        <div>
+          <h3>In Office</h3>
+          <h2>{summary?.present_days ?? 0}</h2>
+        </div>
+      </div>
+
+      <div className="summary-card wfh">
+        <div className="summary-icon">
+          <Home size={26} />
+        </div>
+
+        <div>
+          <h3>WFH</h3>
+          <h2>{summary?.wfh_days ?? 0}</h2>
+        </div>
+      </div>
+
+      <div className="summary-card leave">
+        <div className="summary-icon">
+          <CalendarDays size={26} />
+        </div>
+
+        <div>
+          <h3>On Leave</h3>
+          <h2>{summary?.leave_days ?? 0}</h2>
+        </div>
+      </div>
+
+      <div className="summary-card absent">
+        <div className="summary-icon">
+          <UserX size={26} />
+        </div>
+
+        <div>
+          <h3>Absent</h3>
+          <h2>{summary?.absent_days ?? 0}</h2>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+)}
+    
+    {managerTab === "team" && (
+      <TeamAttendance teamId={teamId} />
+    )}
+
+    {managerTab === "summary" && (
+  <div className="manager-summary">
+
+    <h2>Monthly Summary</h2>
+
+    <div className="summary-grid">
+
+      <div className="summary-card office">
+        <h3>Present Days</h3>
+        <h2>{summary?.present_days ?? 0}</h2>
+      </div>
+
+      <div className="summary-card wfh">
+        <h3>WFH Days</h3>
+        <h2>{summary?.wfh_days ?? 0}</h2>
+      </div>
+
+      <div className="summary-card leave">
+        <h3>Leave Days</h3>
+        <h2>{summary?.leave_days ?? 0}</h2>
+      </div>
+
+      <div className="summary-card absent">
+        <h3>Absent Days</h3>
+        <h2>{summary?.absent_days ?? 0}</h2>
+      </div>
+
+    </div>
+
+  </div>
+)}
+
+  </>
+)}
+    
+
+{role === "Admin" && (
+
+<div className="attendance-tabs">
+
+  <button
+    className={adminTab === "dashboard" ? "active" : ""}
+    onClick={() => setAdminTab("dashboard")}
+  >
+    Dashboard
+  </button>
+
+  <button
+    className={adminTab === "records" ? "active" : ""}
+    onClick={() => setAdminTab("records")}
+  >
+    Attendance Records
+  </button>
+
+  <button
+    className={adminTab === "summary" ? "active" : ""}
+    onClick={() => setAdminTab("summary")}
+  >
+    Monthly Summary
+  </button>
+
+  <button
+    className={adminTab === "absence" ? "active" : ""}
+    onClick={() => setAdminTab("absence")}
+  >
+    Unexplained Absences
+  </button>
+
+  <button
+    className={adminTab === "export" ? "active" : ""}
+    onClick={() => setAdminTab("export")}
+  >
+    Export
+  </button>
+
+</div>
+
+)}
       {/* ======================================
           Summary Cards
       ====================================== */}
+ 
 
-      {summary && (
+       
+       {role === "Admin" &&
+ adminTab === "dashboard" &&
+ summary && (
 
         <div className="summary-grid">
 
@@ -309,6 +598,9 @@ const AttendanceModulePage: React.FC<
           Toolbar
       ====================================== */}
 
+       
+        {role === "Admin" &&
+adminTab === "records" && (
       <div className="attendance-toolbar">
 
         <div className="search-box">
@@ -327,8 +619,9 @@ const AttendanceModulePage: React.FC<
               setSearch(e.target.value)
             }
           />
-
+          
         </div>
+        
 
         <div className="toolbar-buttons">
 
@@ -358,12 +651,14 @@ const AttendanceModulePage: React.FC<
         </div>
 
       </div>
-
+      )}
+      
             {/* ======================================
           ADMIN - Attendance Records
       ====================================== */}
 
-      {role === "Admin" && (
+      {role === "Admin" && 
+ adminTab === "records" && (
 
         <div className="attendance-table">
 
@@ -563,32 +858,97 @@ const AttendanceModulePage: React.FC<
 
       )}
 
+      
+     
+{role === "Admin" &&
+ adminTab === "summary" && (
+
+<div className="attendance-table">
+
+  <div className="table-header">
+    <h2>Monthly Summary</h2>
+  </div>
+
+  <div className="summary-grid">
+
+    <div className="summary-card office">
+      <h3>Present Days</h3>
+      <h2>{summary?.present_days ?? 0}</h2>
+    </div>
+
+    <div className="summary-card wfh">
+      <h3>WFH Days</h3>
+      <h2>{summary?.wfh_days ?? 0}</h2>
+    </div>
+
+    <div className="summary-card leave">
+      <h3>Leave Days</h3>
+      <h2>{summary?.leave_days ?? 0}</h2>
+    </div>
+
+    <div className="summary-card absent">
+      <h3>Absent Days</h3>
+      <h2>{summary?.absent_days ?? 0}</h2>
+    </div>
+
+  </div>
+
+</div>
+
+)}
+
+
+{role === "Admin" &&
+ adminTab === "absence" && (
+
+  <div className="mt-30">
+
+    <UnexplainedAbsences />
+
+  </div>
+
+)}
+
+    <button
+  className="export-btn"
+  onClick={handleExportAttendance}
+>
+  <Download size={18} />
+
+  Export Attendance
+
+</button>
+
+
       {/* ======================================
-          MANAGER - Team Attendance
-      ====================================== */}
+    EMPLOYEE - Attendance
+====================================== */}
 
-      {role === "Manager" && (
+{role === "Employee" && (
 
-        <TeamAttendance
-          teamId={teamId}
-        />
+  <EmployeeAttendance
+    employeeId={employeeId}
+  />
 
-      )}
+)}
 
             {/* ======================================
           Unexplained Absences
       ====================================== */}
+{(
+  
+  (role === "Manager" &&
+   managerTab === "absence")
 
-      {(role === "Admin" ||
-        role === "Manager") && (
+) && (
 
-        <div className="mt-30">
+  <div className="mt-30">
 
-          <UnexplainedAbsences />
+    <UnexplainedAbsences />
 
-        </div>
+  </div>
 
-      )}
+)}
 
       {/* ======================================
           Attendance Modal
@@ -634,4 +994,3 @@ const AttendanceModulePage: React.FC<
 };
 
 export default AttendanceModulePage;
-  
