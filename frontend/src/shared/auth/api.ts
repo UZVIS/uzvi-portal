@@ -26,5 +26,9 @@ export async function fetchEmployee(employeeId: string): Promise<Employee> {
   if (!res.ok) {
     throw new Error("Couldn't reach the portal. Try again in a moment.");
   }
-  return res.json();
+  const employee: Employee = await res.json();
+  if (employee.employment_status !== "active") {
+    throw new Error("This account is no longer active. Contact your admin if this seems wrong.");
+  }
+  return employee;
 }
