@@ -81,6 +81,66 @@ def delete_scenario(
             detail="Scenario not found",
         )
 
+
+
+@router.post(
+    "/scenarios/{scenario_id}/duplicate",
+    response_model=schemas.QuoteScenarioRead,
+    status_code=201,
+)
+def duplicate_scenario(
+    scenario_id: str,
+    data: schemas.ScenarioDuplicateRequest,
+    db: Session = Depends(get_db),
+):
+    scenario = service.duplicate_scenario(
+        db,
+        scenario_id,
+        data,
+    )
+
+    if not scenario:
+        raise HTTPException(
+            status_code=404,
+            detail="Scenario not found",
+        )
+
+    return scenario
+
+
+@router.post(
+    "/opportunities/{opportunity_id}/scenarios/compare",
+    response_model=schemas.ScenarioComparison,
+)
+def compare_scenarios(
+    opportunity_id: str,
+    scenario_ids: list[str],
+    db: Session = Depends(get_db),
+):
+    if not service.get_opportunity(db, opportunity_id):
+        raise HTTPException(
+            status_code=404,
+            detail="Opportunity not found",
+        )
+
+    if len(scenario_ids) < 2:
+        raise HTTPException(
+            status_code=422,
+            detail="At least two scenarios are required for comparison",
+        )
+
+    try:
+        return service.compare_scenarios(
+            db,
+            opportunity_id,
+            scenario_ids,
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=422,
+            detail=str(e),
+        )
+
 @router.put(
     "/scenarios/{scenario_id}",
     response_model=schemas.QuoteScenarioRead,
@@ -138,7 +198,43 @@ def get_tender_view(scenario_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Scenario not found")
     return service.compute_tender_view(scenario)
 
+@router.post(
+    "/opportunities/{opportunity_id}/scenarios/compare",
+    response_model=schemas.ScenarioComparison,
+)
+def compare_scenarios(
+    opportunity_id: str,
+    scenario_ids: list[str],
+    db: Session = Depends(get_db),
+):
+    if not service.get_opportunity(db, opportunity_id):
+        raise HTTPException(
+            status_code=404,
+            detail="Opportunity not found",
+        )
 
+    if len(scenario_ids) < 2:
+        raise HTTPException(
+            status_code=422,
+            detail="At least two scenarios are required for comparison",
+        )
+
+    try:
+        return service.compare_scenarios(
+            db,
+            opportunity_id,
+            scenario_ids,
+        )
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=422,
+            detail=str(e),
+        )
+
+
+
+    
 @router.put(
     "/line-items/{line_item_id}",
     response_model=schemas.CostLineItemRead,

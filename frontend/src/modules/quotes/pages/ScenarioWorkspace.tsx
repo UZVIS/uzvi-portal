@@ -2,7 +2,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Pencil, Trash2, TrendingUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-
+import ScenarioComparisonDialog from "../components/ScenarioComparisonDialog";
 import Sidebar from "../../assets/components/Sidebar";
 import Header from "../../assets/components/Header";
 
@@ -15,7 +15,10 @@ import {
     addLineItem,
     updateLineItem,
     deleteLineItem,
+     getScenarios,
     getScenarioById,
+     compareScenarios,
+    
 } from "../services/quoteService";
 import type {
     QuoteScenario,
@@ -54,6 +57,12 @@ export default function ScenarioWorkspace() {
     const [showEditDialog, setShowEditDialog] =
     useState(false);
 
+    const [showComparison, setShowComparison] =
+  useState(false);
+
+const [scenarios, setScenarios] =
+  useState<QuoteScenario[]>([]);
+
     useEffect(() => {
 
         async function loadScenario() {
@@ -86,6 +95,33 @@ export default function ScenarioWorkspace() {
         return <p>Loading...</p>;
 
     }
+    const openComparison = async () => {
+  if (!scenario?.opportunity_id) {
+    toast.error("Opportunity information not available.");
+    return;
+  }
+
+  try {
+    const data = await getScenarios(
+      scenario.opportunity_id
+    );
+
+    if (data.length < 2) {
+      toast.error(
+        "At least two scenarios are required for comparison."
+      );
+      return;
+    }
+
+    setScenarios(data);
+    setShowComparison(true);
+
+  } catch {
+    toast.error(
+      "Failed to load scenarios."
+    );
+  }
+};
 
     return (
 
@@ -148,33 +184,35 @@ export default function ScenarioWorkspace() {
 
                         <div className="ws-header-actions">
 
-                            <button
-  className="btn-secondary"
-  onClick={() =>
-    setShowEditDialog(true)
-  }
->
+    <button
+        className="btn-secondary"
+        onClick={openComparison}
+    >
+        <TrendingUp size={15} />
+        Compare Scenarios
+    </button>
 
-  <Pencil size={15} />
+    <button
+        className="btn-secondary"
+        onClick={() =>
+            setShowEditDialog(true)
+        }
+    >
+        <Pencil size={15} />
+        Edit Scenario
+    </button>
 
-  Edit Scenario
+    <button
+        className="btn-danger-outline"
+        onClick={() =>
+            setShowDeleteDialog(true)
+        }
+    >
+        <Trash2 size={15} />
+        Delete Scenario
+    </button>
 
-</button>
-
-<button
-    className="btn-danger-outline"
-    onClick={() =>
-        setShowDeleteDialog(true)
-    }
->
-
-    <Trash2 size={15} />
-
-    Delete Scenario
-
-</button>
-
-                        </div>
+</div>
 
                     </div>
 
@@ -382,6 +420,19 @@ export default function ScenarioWorkspace() {
 
   }}
 />
+<ScenarioComparisonDialog
+    isOpen={showComparison}
+    scenarios={scenarios}
+    currentScenarioId={scenario.scenario_id}
+    onClose={() => setShowComparison(false)}
+    onCompare={async (scenarioIds) => {
+        return await compareScenarios(
+            scenario.opportunity_id,
+            scenarioIds
+        );
+    }}
+/>
+
 
                     {/* Export functionality will be added later as per FRD */}
 
