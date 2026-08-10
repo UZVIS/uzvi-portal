@@ -229,7 +229,7 @@ function AppLayout() {
 <div className="flex h-screen bg-[#F4F6F8] font-sans overflow-hidden">
       {/* ─── SIDEBAR ─────────────────────────────────────────────────── */}
 <aside
-        className={`${collapsed ? "w-[76px]" : "w-[280px]"
+        className={`${collapsed ? "w-[76px]" : "w-[240px]"
           } bg-[#1A1614] flex flex-col justify-between shrink-0 transition-all duration-300 border-r border-black/40`}
 >
 <div

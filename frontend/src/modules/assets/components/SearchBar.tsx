@@ -1,4 +1,4 @@
-import { Search, Plus, ChevronDown } from "lucide-react";
+import {  Plus, ChevronDown } from "lucide-react";
 import "../styles/searchbar.css";
 
 interface SearchBarProps {
@@ -27,7 +27,7 @@ export default function SearchBar({
     <div className="toolbar">
 
       <div className="search-wrapper">
-        <Search className="search-icon" size={18} />
+       
 
         <input
           type="text"
