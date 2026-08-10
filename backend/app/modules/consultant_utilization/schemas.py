@@ -70,7 +70,77 @@
 
 
 
-from datetime import date
+# from datetime import date
+# from typing import Optional, List, Dict
+
+# from pydantic import BaseModel, Field
+
+
+# class ProjectCreate(BaseModel):
+#     project_id: str
+#     name: str
+#     project_type: str  # real project | Bench | Training | Internal | BD/Presales | Leave
+#     billing_rate: Optional[float] = None
+#     cost_rate: Optional[float] = None
+
+
+# class ProjectRead(ProjectCreate):
+#     model_config = {"from_attributes": True}
+
+
+# class TimeEntryCreate(BaseModel):
+#     entry_id: str
+#     employee_id: str
+#     project_id: str
+#     date: date
+#     hours: float = Field(gt=0, le=16)
+#     billable_flag: bool = False
+#     source: str = "manual"  # manual | import
+#     notes: Optional[str] = None
+#     confirm_overtime: bool = False
+
+
+# class TimeEntryRead(TimeEntryCreate):
+#     normal_hours: float
+#     overtime_hours: float
+
+#     model_config = {"from_attributes": True}
+
+
+# class UtilizationSummary(BaseModel):
+#     employee_id: str
+#     period_start: date
+#     period_end: date
+#     billable_hours: float
+#     available_hours: float
+#     utilization_pct: float
+#     flag: Optional[str] = None  # "under_utilized" | "over_allocated" | None
+
+
+# class ProjectMargin(BaseModel):
+#     project_id: str
+#     project_name: str
+#     revenue: float
+#     cost: float
+#     margin: float
+#     margin_pct: Optional[float] = None
+
+
+# class OrgUtilizationDashboard(BaseModel):
+#     period_start: date
+#     period_end: date
+#     utilization_by_employee: List[UtilizationSummary]
+#     bench_risk: List[str]        # employee_ids under 60%
+#     over_allocated: List[str]    # employee_ids over 105%
+#     project_margins: List[ProjectMargin]
+
+
+# class PersonalUtilizationDashboard(BaseModel):
+#     summary: UtilizationSummary
+#     hours_by_project: Dict[str, float]
+#     weekly_trend: Dict[str, float]  # "YYYY-Www" -> hours
+
+from datetime import date, datetime
 from typing import Optional, List, Dict
 
 from pydantic import BaseModel, Field
@@ -97,16 +167,14 @@ class TimeEntryCreate(BaseModel):
     billable_flag: bool = False
     source: str = "manual"  # manual | import
     notes: Optional[str] = None
-    # If a submission would push the day's NORMAL hours past 8, the backend
-    # responds with a 409 asking for confirmation before it commits to
-    # logging the excess as overtime. The client resubmits with this set to
-    # True once the person has confirmed "yes, log the OT."
-    confirm_overtime: bool = False
 
 
 class TimeEntryRead(TimeEntryCreate):
     normal_hours: float
     overtime_hours: float
+    ot_status: Optional[str] = None  # None | "Pending" | "Approved" | "Rejected"
+    ot_decided_by_role: Optional[str] = None
+    ot_decided_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
 

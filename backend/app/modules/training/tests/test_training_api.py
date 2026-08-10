@@ -5,6 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.modules.directory.models import Employee
+from app.modules.training.models import Enrollment
 from app.database import Base
 from app.database import get_db
 from app.modules.training.dependencies import get_current_employee
@@ -425,10 +426,14 @@ def test_duplicate_enrollment():
 
 def create_test_program_unit_and_enrollment():
     """
-    Helper used by completion API tests.
+    Helper used by completion API tests. Enrolls the same identity the
+    default `client` authenticates as (TEST-ADMIN) rather than a
+    different employee — completion is strictly self-only with no
+    privileged-tier exception, so the enrollment owner and the caller
+    must match.
     """
 
-    create_test_employee()
+    seed_employee("TEST-ADMIN", access_tier="Admin/Leadership")
 
     program_response = client.post(
         "/api/training/programs",
@@ -452,7 +457,7 @@ def create_test_program_unit_and_enrollment():
     enrollment_response = client.post(
         "/api/training/enrollments",
         json={
-            "employee_id": "EMP001",
+            "employee_id": "TEST-ADMIN",
             "program_id": program_id,
         },
     )
@@ -563,7 +568,7 @@ def test_duplicate_completion():
 
 
 def test_completion_wrong_program():
-    create_test_employee()
+    seed_employee("TEST-ADMIN", access_tier="Admin/Leadership")
 
     first_program = client.post(
         "/api/training/programs",
@@ -590,7 +595,7 @@ def test_completion_wrong_program():
     enrollment = client.post(
         "/api/training/enrollments",
         json={
-            "employee_id": "EMP001",
+            "employee_id": "TEST-ADMIN",
             "program_id": first_program["program_id"],
         },
     ).json()
@@ -644,14 +649,29 @@ def create_completed_training():
         },
     ).json()
 
-    client.post(
-        "/api/training/completions",
-        json={
-            "enrollment_id": enrollment["enrollment_id"],
-            "unit_id": unit["unit_id"],
-            "score": 95,
-        },
-    )
+    # Completion is self-only now — impersonate EMP001 for this one call,
+    # then restore the default TEST-ADMIN identity.
+    def _as_emp001():
+        return Employee(
+            employee_id="EMP001",
+            name="Test Employee",
+            access_tier="Employee",
+            employment_status="active",
+        )
+
+    app.dependency_overrides[get_current_employee] = _as_emp001
+
+    try:
+        client.post(
+            "/api/training/completions",
+            json={
+                "enrollment_id": enrollment["enrollment_id"],
+                "unit_id": unit["unit_id"],
+                "score": 95,
+            },
+        )
+    finally:
+        app.dependency_overrides[get_current_employee] = _default_test_employee
 
 
 def test_employee_progress_complete():
@@ -760,14 +780,46 @@ def enroll(employee_id, program_id):
 
 
 def complete_unit(enrollment_id, unit_id, score=None):
-    client.post(
-        "/api/training/completions",
-        json={
-            "enrollment_id": enrollment_id,
-            "unit_id": unit_id,
-            "score": score,
-        },
+    """
+    Complete a unit as whichever employee actually owns the enrollment,
+    not as the default TEST-ADMIN identity — completion is strictly
+    self-only now, so the caller must match the enrollment's employee_id.
+    The override is restored to the default afterward so later calls in
+    the same test (via `client`) keep behaving as before.
+    """
+
+    db = TestingSessionLocal()
+    enrollment = (
+        db.query(Enrollment)
+        .filter(Enrollment.enrollment_id == enrollment_id)
+        .first()
     )
+    db.close()
+
+    owner_id = enrollment.employee_id if enrollment else None
+
+    def _as_owner():
+        return Employee(
+            employee_id=owner_id,
+            name=f"Employee {owner_id}",
+            access_tier="Employee",
+            employment_status="active",
+        )
+
+    if owner_id:
+        app.dependency_overrides[get_current_employee] = _as_owner
+
+    try:
+        client.post(
+            "/api/training/completions",
+            json={
+                "enrollment_id": enrollment_id,
+                "unit_id": unit_id,
+                "score": score,
+            },
+        )
+    finally:
+        app.dependency_overrides[get_current_employee] = _default_test_employee
 
 
 def test_cohort_progress_missing_program():
@@ -1026,3 +1078,245 @@ def test_manager_can_view_any_employee_progress():
     )
 
     assert response.status_code == 200
+
+
+# --------------------------------------------------
+# Enrollment / Completion ownership tests (closes the gap where the
+# frontend hid these actions for non-privileged tiers but the API still
+# let anyone act on anyone else's behalf).
+# --------------------------------------------------
+
+
+def test_employee_can_self_enroll():
+    seed_employee("EMP001", access_tier="Employee")
+    seed_employee("ADMIN1", access_tier="Admin/Leadership")
+
+    program = raw_client.post(
+        "/api/training/programs",
+        json={"name": "Self-Enroll Program"},
+        headers=auth_headers("ADMIN1"),
+    ).json()
+
+    response = raw_client.post(
+        "/api/training/enrollments",
+        json={"employee_id": "EMP001", "program_id": program["program_id"]},
+        headers=auth_headers("EMP001"),
+    )
+
+    assert response.status_code == 201
+
+
+def test_employee_cannot_enroll_someone_else():
+    seed_employee("EMP001", access_tier="Employee")
+    seed_employee("EMP002", access_tier="Employee")
+    seed_employee("ADMIN1", access_tier="Admin/Leadership")
+
+    program = raw_client.post(
+        "/api/training/programs",
+        json={"name": "No-Proxy-Enroll Program"},
+        headers=auth_headers("ADMIN1"),
+    ).json()
+
+    response = raw_client.post(
+        "/api/training/enrollments",
+        json={"employee_id": "EMP002", "program_id": program["program_id"]},
+        headers=auth_headers("EMP001"),
+    )
+
+    assert response.status_code == 403
+
+
+def test_manager_can_enroll_someone_else():
+    seed_employee("EMP001", access_tier="Employee")
+    seed_employee("MGR1", access_tier="Manager")
+    seed_employee("ADMIN1", access_tier="Admin/Leadership")
+
+    program = raw_client.post(
+        "/api/training/programs",
+        json={"name": "Manager-Enroll Program"},
+        headers=auth_headers("ADMIN1"),
+    ).json()
+
+    response = raw_client.post(
+        "/api/training/enrollments",
+        json={"employee_id": "EMP001", "program_id": program["program_id"]},
+        headers=auth_headers("MGR1"),
+    )
+
+    assert response.status_code == 201
+
+
+def test_employee_can_complete_own_unit():
+    seed_employee("EMP001", access_tier="Employee")
+    seed_employee("ADMIN1", access_tier="Admin/Leadership")
+
+    program = raw_client.post(
+        "/api/training/programs",
+        json={"name": "Self-Complete Program"},
+        headers=auth_headers("ADMIN1"),
+    ).json()
+
+    unit = raw_client.post(
+        f"/api/training/programs/{program['program_id']}/units",
+        json={"name": "Unit One", "sequence": 1},
+        headers=auth_headers("ADMIN1"),
+    ).json()
+
+    enrollment = raw_client.post(
+        "/api/training/enrollments",
+        json={"employee_id": "EMP001", "program_id": program["program_id"]},
+        headers=auth_headers("EMP001"),
+    ).json()
+
+    response = raw_client.post(
+        "/api/training/completions",
+        json={
+            "enrollment_id": enrollment["enrollment_id"],
+            "unit_id": unit["unit_id"],
+            "score": 90,
+        },
+        headers=auth_headers("EMP001"),
+    )
+
+    assert response.status_code == 201
+
+
+def test_employee_cannot_complete_someone_elses_unit():
+    seed_employee("EMP001", access_tier="Employee")
+    seed_employee("EMP002", access_tier="Employee")
+    seed_employee("ADMIN1", access_tier="Admin/Leadership")
+
+    program = raw_client.post(
+        "/api/training/programs",
+        json={"name": "No-Proxy-Complete Program"},
+        headers=auth_headers("ADMIN1"),
+    ).json()
+
+    unit = raw_client.post(
+        f"/api/training/programs/{program['program_id']}/units",
+        json={"name": "Unit One", "sequence": 1},
+        headers=auth_headers("ADMIN1"),
+    ).json()
+
+    enrollment = raw_client.post(
+        "/api/training/enrollments",
+        json={"employee_id": "EMP002", "program_id": program["program_id"]},
+        headers=auth_headers("EMP002"),
+    ).json()
+
+    response = raw_client.post(
+        "/api/training/completions",
+        json={
+            "enrollment_id": enrollment["enrollment_id"],
+            "unit_id": unit["unit_id"],
+            "score": 90,
+        },
+        headers=auth_headers("EMP001"),
+    )
+
+    assert response.status_code == 403
+
+
+def test_admin_cannot_complete_unit_on_behalf_of_employee():
+    seed_employee("EMP001", access_tier="Employee")
+    seed_employee("ADMIN1", access_tier="Admin/Leadership")
+
+    program = raw_client.post(
+        "/api/training/programs",
+        json={"name": "No-Admin-Override Program"},
+        headers=auth_headers("ADMIN1"),
+    ).json()
+
+    unit = raw_client.post(
+        f"/api/training/programs/{program['program_id']}/units",
+        json={"name": "Unit One", "sequence": 1},
+        headers=auth_headers("ADMIN1"),
+    ).json()
+
+    enrollment = raw_client.post(
+        "/api/training/enrollments",
+        json={"employee_id": "EMP001", "program_id": program["program_id"]},
+        headers=auth_headers("EMP001"),
+    ).json()
+
+    # Completion is self-attested with no privileged-tier exception —
+    # only the enrolled employee themselves knows whether they actually
+    # did the training, so even Admin/Leadership is blocked here.
+    response = raw_client.post(
+        "/api/training/completions",
+        json={
+            "enrollment_id": enrollment["enrollment_id"],
+            "unit_id": unit["unit_id"],
+            "score": 90,
+        },
+        headers=auth_headers("ADMIN1"),
+    )
+
+    assert response.status_code == 403
+
+
+def test_employee_cannot_see_others_enrollments():
+    seed_employee("EMP001", access_tier="Employee")
+    seed_employee("EMP002", access_tier="Employee")
+    seed_employee("ADMIN1", access_tier="Admin/Leadership")
+
+    program = raw_client.post(
+        "/api/training/programs",
+        json={"name": "Privacy Enrollment Program"},
+        headers=auth_headers("ADMIN1"),
+    ).json()
+
+    raw_client.post(
+        "/api/training/enrollments",
+        json={"employee_id": "EMP001", "program_id": program["program_id"]},
+        headers=auth_headers("EMP001"),
+    )
+    raw_client.post(
+        "/api/training/enrollments",
+        json={"employee_id": "EMP002", "program_id": program["program_id"]},
+        headers=auth_headers("EMP002"),
+    )
+
+    response = raw_client.get(
+        "/api/training/enrollments",
+        headers=auth_headers("EMP001"),
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert len(data) == 1
+    assert data[0]["employee_id"] == "EMP001"
+
+
+def test_manager_sees_all_enrollments():
+    seed_employee("EMP001", access_tier="Employee")
+    seed_employee("EMP002", access_tier="Employee")
+    seed_employee("MGR1", access_tier="Manager")
+    seed_employee("ADMIN1", access_tier="Admin/Leadership")
+
+    program = raw_client.post(
+        "/api/training/programs",
+        json={"name": "Manager Enrollment Visibility Program"},
+        headers=auth_headers("ADMIN1"),
+    ).json()
+
+    raw_client.post(
+        "/api/training/enrollments",
+        json={"employee_id": "EMP001", "program_id": program["program_id"]},
+        headers=auth_headers("EMP001"),
+    )
+    raw_client.post(
+        "/api/training/enrollments",
+        json={"employee_id": "EMP002", "program_id": program["program_id"]},
+        headers=auth_headers("EMP002"),
+    )
+
+    response = raw_client.get(
+        "/api/training/enrollments",
+        headers=auth_headers("MGR1"),
+    )
+
+    assert response.status_code == 200
+    assert len(response.json()) == 2

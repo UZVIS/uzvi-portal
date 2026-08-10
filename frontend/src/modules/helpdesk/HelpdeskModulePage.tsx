@@ -3,8 +3,13 @@ import "./HelpdeskModulePage.css";
 
 import TicketListPage from "./TicketListPage";
 import CreateTicketPage from "./CreateTicketPage";
+import { useAuth } from "../../shared/auth/AuthContext";
+import { isHelpdeskPrivileged } from "./roles";
 
 export default function HelpdeskModulePage() {
+  const { employee } = useAuth();
+  const privileged = isHelpdeskPrivileged(employee?.access_tier);
+
   const [activeTab, setActiveTab] = useState<"tickets" | "create">("tickets");
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -18,8 +23,15 @@ export default function HelpdeskModulePage() {
       <div className="helpdesk-header">
         <div>
           <h1>Helpdesk</h1>
-          <p>Manage support tickets and track their status.</p>
+          <p>
+            {privileged
+              ? "Manage the full support ticket queue and track SLA status."
+              : "Raise support tickets and track the status of your own requests."}
+          </p>
         </div>
+        {privileged && (
+          <span className="helpdesk-role-badge">{employee?.access_tier} view</span>
+        )}
       </div>
 
       <div className="helpdesk-tabs">

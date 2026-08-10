@@ -84,6 +84,18 @@
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
+.form-group input:disabled {
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.field-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #9ca3af;
+}
+
 .form-error {
   background: #fef2f2;
   color: #dc2626;
@@ -121,12 +133,12 @@
 }
 
 .submit-btn {
-  background: #2563eb;
+  background: #E2622E;
   color: #ffffff;
 }
 
 .submit-btn:hover:not(:disabled) {
-  background: #1d4ed8;
+  background: #c9541f;
 }
 
 .cancel-btn:disabled,

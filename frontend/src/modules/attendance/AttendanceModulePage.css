@@ -1,0 +1,1212 @@
+/* ===================================================
+   Attendance Module
+=================================================== */
+
+.attendance-page{
+
+    padding:30px;
+
+    background:#f4f7fc;
+
+    min-height:100vh;
+
+    width:100%;
+
+}
+
+/* ===================================================
+   Header
+=================================================== */
+
+.attendance-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:30px;
+
+}
+
+.attendance-header h1{
+
+    font-size:34px;
+
+    color:#1f2937;
+
+    margin:0;
+
+    font-weight:700;
+
+}
+
+.attendance-header p{
+
+    color:#64748b;
+
+    margin-top:8px;
+
+    font-size:15px;
+
+}
+
+/* ===================================================
+   Error
+=================================================== */
+
+.error-message{
+
+    background:#fee2e2;
+
+    color:#dc2626;
+
+    padding:14px 18px;
+
+    border-radius:12px;
+
+    margin-bottom:20px;
+
+    font-weight:600;
+
+}
+
+/* ===================================================
+   Summary Cards
+=================================================== */
+
+.summary-grid{
+
+    display:grid;
+
+    grid-template-columns:repeat(4,1fr);
+
+    gap:22px;
+
+    margin-bottom:30px;
+
+}
+
+.summary-card{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:20px;
+
+    padding:24px;
+
+    border-radius:18px;
+
+    background:#ffffff;
+
+    box-shadow:0 10px 25px rgba(0,0,0,.08);
+
+    transition:.3s;
+
+}
+
+.summary-card:hover{
+
+    transform:translateY(-4px);
+
+}
+
+.summary-card h3{
+
+    margin:0;
+
+    font-size:15px;
+
+    color:#64748b;
+
+}
+
+.summary-card h2{
+
+    margin-top:8px;
+
+    margin-bottom:0;
+
+    font-size:30px;
+
+    color:#111827;
+
+}
+
+.summary-icon{
+
+    width:60px;
+
+    height:60px;
+
+    border-radius:50%;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    color:white;
+
+}
+
+/* Office */
+
+.summary-card.office{
+
+    border-left:6px solid #2563eb;
+
+}
+
+.summary-card.office .summary-icon{
+
+    background:#2563eb;
+
+}
+
+/* WFH */
+
+.summary-card.wfh{
+
+    border-left:6px solid #14b8a6;
+
+}
+
+.summary-card.wfh .summary-icon{
+
+    background:#14b8a6;
+
+}
+
+/* Leave */
+
+.summary-card.leave{
+
+    border-left:6px solid #f59e0b;
+
+}
+
+.summary-card.leave .summary-icon{
+
+    background:#f59e0b;
+
+}
+
+/* Absent */
+
+.summary-card.absent{
+
+    border-left:6px solid #ef4444;
+
+}
+
+.summary-card.absent .summary-icon{
+
+    background:#ef4444;
+
+}
+
+/* ===================================================
+   Toolbar
+=================================================== */
+
+.attendance-toolbar{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:25px;
+
+    gap:20px;
+
+    flex-wrap:wrap;
+
+}
+
+/* ===================================================
+   Search Box
+=================================================== */
+
+.search-box{
+
+    flex:1;
+
+    min-width:320px;
+
+    display:flex;
+
+    align-items:center;
+
+    background:#ffffff;
+
+    border:1px solid #e5e7eb;
+
+    border-radius:12px;
+
+    padding:0 16px;
+
+    height:52px;
+
+    box-shadow:0 4px 12px rgba(0,0,0,.05);
+
+}
+
+.search-box:focus-within{
+
+    border-color:#2563eb;
+
+    box-shadow:0 0 0 3px rgba(37,99,235,.15);
+
+}
+
+.search-icon{
+
+    color:#64748b;
+
+    margin-right:10px;
+
+}
+
+.search-input{
+
+    border:none;
+
+    outline:none;
+
+    width:100%;
+
+    font-size:15px;
+
+    background:transparent;
+
+    color:#111827;
+
+}
+
+.search-input::placeholder{
+
+    color:#9ca3af;
+
+}
+
+/* ===================================================
+   Toolbar Buttons
+=================================================== */
+
+.toolbar-buttons{
+
+    display:flex;
+
+    gap:15px;
+
+}
+
+/* ===================================================
+   Export Button
+=================================================== */
+
+.export-btn{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:8px;
+
+    padding:12px 22px;
+
+    border:none;
+
+    border-radius:10px;
+
+    background:#0f766e;
+
+    color:white;
+
+    font-size:14px;
+
+    font-weight:600;
+
+    cursor:pointer;
+
+    transition:.3s;
+
+}
+
+.export-btn:hover{
+
+    background:#115e59;
+
+    transform:translateY(-2px);
+
+}
+
+/* ===================================================
+   Add Button
+=================================================== */
+
+.add-btn{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:8px;
+
+    padding:12px 22px;
+
+    border:none;
+
+    border-radius:10px;
+
+    background:#2563eb;
+
+    color:white;
+
+    font-size:14px;
+
+    font-weight:600;
+
+    cursor:pointer;
+
+    transition:.3s;
+
+}
+
+.add-btn:hover{
+
+    background:#1d4ed8;
+
+    transform:translateY(-2px);
+
+}
+
+/* ===================================================
+   Attendance Table Card
+=================================================== */
+
+.attendance-table{
+
+    background:#ffffff;
+
+    border-radius:18px;
+
+    padding:25px;
+
+    box-shadow:0 10px 30px rgba(0,0,0,.08);
+
+    margin-bottom:30px;
+
+}
+
+/* ===================================================
+   Table Header
+=================================================== */
+
+.table-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:25px;
+
+}
+
+.table-header h2{
+
+    margin:0;
+
+    font-size:22px;
+
+    color:#111827;
+
+}
+
+.table-header p{
+
+    margin-top:5px;
+
+    color:#64748b;
+
+    font-size:14px;
+
+}
+
+/* ===================================================
+   Record Count
+=================================================== */
+
+.record-count{
+
+    background:#eff6ff;
+
+    color:#2563eb;
+
+    padding:10px 18px;
+
+    border-radius:30px;
+
+    font-size:14px;
+
+    font-weight:600;
+
+}
+
+/* ===================================================
+   Table Wrapper
+=================================================== */
+
+.table-wrapper{
+
+    width:100%;
+
+    overflow-x:auto;
+
+    border-radius:16px;
+
+}
+
+/* ===================================================
+   Table
+=================================================== */
+
+.table-wrapper table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+    min-width:1100px;
+
+    background:#ffffff;
+
+}
+
+/* ===================================================
+   Table Head
+=================================================== */
+
+.table-wrapper thead{
+
+    background:#f8fafc;
+
+}
+
+.table-wrapper th{
+
+    padding:18px;
+
+    text-align:left;
+
+    font-size:14px;
+
+    font-weight:700;
+
+    color:#374151;
+
+    border-bottom:2px solid #e5e7eb;
+
+    white-space:nowrap;
+
+}
+
+/* ===================================================
+   Table Body
+=================================================== */
+
+.table-wrapper td{
+
+    padding:18px;
+
+    font-size:14px;
+
+    color:#4b5563;
+
+    border-bottom:1px solid #eef2f7;
+
+    vertical-align:middle;
+
+}
+
+.table-wrapper tbody tr{
+
+    transition:.25s ease;
+
+}
+
+.table-wrapper tbody tr:hover{
+
+    background:#f9fbff;
+
+}
+
+/* ===================================================
+   Employee ID
+=================================================== */
+
+.employee-id{
+
+    font-weight:700;
+
+    color:#2563eb;
+
+}
+
+/* ===================================================
+   Employee Name
+=================================================== */
+
+.employee-name{
+
+    font-weight:600;
+
+    color:#111827;
+
+}
+
+/* ===================================================
+   Date
+=================================================== */
+
+.attendance-date{
+
+    color:#64748b;
+
+    font-weight:500;
+
+}
+
+/* ===================================================
+   Source
+=================================================== */
+
+.source-badge{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    padding:6px 12px;
+
+    border-radius:18px;
+
+    background:#f1f5f9;
+
+    color:#475569;
+
+    font-size:12px;
+
+    font-weight:600;
+
+}
+
+/* ===================================================
+   Status Badge
+=================================================== */
+
+.status-badge{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    padding:8px 14px;
+
+    border-radius:25px;
+
+    font-size:12px;
+
+    font-weight:700;
+
+    text-transform:capitalize;
+
+}
+
+/* In Office */
+
+.status-badge.office{
+
+    background:#dbeafe;
+
+    color:#2563eb;
+
+}
+
+/* WFH */
+
+.status-badge.wfh{
+
+    background:#ccfbf1;
+
+    color:#0f766e;
+
+}
+
+/* Leave */
+
+.status-badge.leave{
+
+    background:#fef3c7;
+
+    color:#b45309;
+
+}
+
+/* Absent */
+
+.status-badge.absent{
+
+    background:#fee2e2;
+
+    color:#dc2626;
+
+}
+
+/* ===================================================
+   Empty State
+=================================================== */
+
+.empty-state{
+
+    text-align:center;
+
+    padding:60px;
+
+    color:#6b7280;
+
+    font-size:16px;
+
+    font-weight:500;
+
+}
+
+/* ===================================================
+   Action Buttons
+=================================================== */
+
+.action-buttons{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+}
+
+.view-btn,
+.edit-btn,
+.delete-btn{
+
+    width:38px;
+
+    height:38px;
+
+    border:none;
+
+    border-radius:10px;
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    cursor:pointer;
+
+    transition:.25s;
+
+}
+
+/* ===================================================
+   View
+=================================================== */
+
+.view-btn{
+
+    background:#eff6ff;
+
+    color:#2563eb;
+
+}
+
+.view-btn:hover{
+
+    background:#2563eb;
+
+    color:#ffffff;
+
+    transform:translateY(-2px);
+
+}
+
+/* ===================================================
+   Edit
+=================================================== */
+
+.edit-btn{
+
+    background:#ecfdf5;
+
+    color:#059669;
+
+}
+
+.edit-btn:hover{
+
+    background:#059669;
+
+    color:#ffffff;
+
+    transform:translateY(-2px);
+
+}
+
+/* ===================================================
+   Delete
+=================================================== */
+
+.delete-btn{
+
+    background:#fef2f2;
+
+    color:#dc2626;
+
+}
+
+.delete-btn:hover{
+
+    background:#dc2626;
+
+    color:#ffffff;
+
+    transform:translateY(-2px);
+
+}
+
+/* ===================================================
+   Unexplained Absences
+=================================================== */
+
+.unexplained-absences{
+
+    margin-top:30px;
+
+    background:#ffffff;
+
+    border-radius:18px;
+
+    padding:25px;
+
+    box-shadow:0 10px 30px rgba(0,0,0,.08);
+
+}
+
+.unexplained-absences h2{
+
+    margin:0 0 20px;
+
+    font-size:22px;
+
+    color:#111827;
+
+}
+
+/* ===================================================
+   Unexplained Table
+=================================================== */
+
+.unexplained-absences table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+}
+
+.unexplained-absences thead{
+
+    background:#f8fafc;
+
+}
+
+.unexplained-absences th{
+
+    padding:18px;
+
+    text-align:left;
+
+    color:#374151;
+
+    font-size:14px;
+
+    font-weight:700;
+
+    border-bottom:2px solid #e5e7eb;
+
+}
+
+.unexplained-absences td{
+
+    padding:18px;
+
+    border-bottom:1px solid #eef2f7;
+
+    color:#4b5563;
+
+    font-size:14px;
+
+}
+
+.unexplained-absences tbody tr{
+
+    transition:.25s;
+
+}
+
+.unexplained-absences tbody tr:hover{
+
+    background:#f9fbff;
+
+}
+
+/* ===================================================
+   Days Badge
+=================================================== */
+
+.days-badge{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    min-width:34px;
+
+    height:34px;
+
+    border-radius:50%;
+
+    background:#fee2e2;
+
+    color:#dc2626;
+
+    font-weight:700;
+
+}
+
+/* ===================================================
+   Department Badge
+=================================================== */
+
+.department-badge{
+
+    display:inline-flex;
+
+    align-items:center;
+
+    padding:6px 12px;
+
+    border-radius:18px;
+
+    background:#eef2ff;
+
+    color:#4338ca;
+
+    font-size:12px;
+
+    font-weight:600;
+
+}
+
+/* ===================================================
+   Loading
+=================================================== */
+
+.loading-state{
+
+    display:flex;
+
+    justify-content:center;
+
+    align-items:center;
+
+    padding:60px;
+
+    font-size:16px;
+
+    color:#64748b;
+
+    font-weight:600;
+
+}
+
+/* ===================================================
+   Card Hover Animation
+=================================================== */
+
+.summary-card,
+.attendance-table,
+.unexplained-absences{
+
+    transition:all .30s ease;
+
+}
+
+.summary-card:hover,
+.attendance-table:hover,
+.unexplained-absences:hover{
+
+    box-shadow:0 18px 40px rgba(0,0,0,.12);
+
+}
+
+/* ===================================================
+   Fade Animation
+=================================================== */
+
+@keyframes fadeIn{
+
+    from{
+
+        opacity:0;
+
+        transform:translateY(10px);
+
+    }
+
+    to{
+
+        opacity:1;
+
+        transform:translateY(0);
+
+    }
+
+}
+
+.attendance-page{
+
+    animation:fadeIn .4s ease;
+
+}
+
+/* ===================================================
+   Responsive
+=================================================== */
+
+@media (max-width:1200px){
+
+.summary-grid{
+
+grid-template-columns:repeat(2,1fr);
+
+}
+
+}
+
+@media (max-width:768px){
+
+.attendance-page{
+
+padding:18px;
+
+}
+
+.attendance-header{
+
+flex-direction:column;
+
+align-items:flex-start;
+
+gap:15px;
+
+}
+
+.summary-grid{
+
+grid-template-columns:1fr;
+
+}
+
+.attendance-toolbar{
+
+flex-direction:column;
+
+align-items:stretch;
+
+}
+
+.search-box{
+
+min-width:100%;
+
+}
+
+.toolbar-buttons{
+
+width:100%;
+
+display:flex;
+
+flex-direction:column;
+
+gap:12px;
+
+}
+
+.export-btn,
+.add-btn{
+
+width:100%;
+
+justify-content:center;
+
+}
+
+.table-header{
+
+flex-direction:column;
+
+align-items:flex-start;
+
+gap:15px;
+
+}
+
+.record-count{
+
+align-self:flex-start;
+
+}
+
+.action-buttons{
+
+justify-content:center;
+
+}
+
+}
+
+@media (max-width:480px){
+
+.attendance-header h1{
+
+font-size:28px;
+
+}
+
+.summary-card{
+
+padding:18px;
+
+}
+
+.summary-icon{
+
+width:50px;
+
+height:50px;
+
+}
+
+.summary-card h2{
+
+font-size:24px;
+
+}
+
+.table-wrapper{
+
+overflow-x:auto;
+
+}
+
+.table-wrapper table{
+
+min-width:900px;
+
+}
+
+}
+
+/* ===================================================
+   Utility Classes
+=================================================== */
+
+.mt-10{
+
+margin-top:10px;
+
+}
+
+.mt-20{
+
+margin-top:20px;
+
+}
+
+.mt-30{
+
+margin-top:30px;
+
+}
+
+.mb-20{
+
+margin-bottom:20px;
+
+}
+
+.text-center{
+
+text-align:center;
+
+}
+
+.w-100{
+
+width:100%;
+
+}
+
+.pointer{
+
+cursor:pointer;
+
+}
+
+.rounded{
+
+border-radius:18px;
+
+}
+
+.shadow{
+
+box-shadow:0 10px 25px rgba(0,0,0,.08);
+
+}
+
+.bg-white{
+
+background:#ffffff;
+
+}
+
+

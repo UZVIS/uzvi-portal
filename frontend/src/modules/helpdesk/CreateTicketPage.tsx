@@ -3,6 +3,8 @@ import "./CreateTicketPage.css";
 
 import { helpdeskApi } from "./api";
 import type { TicketCreate } from "./types";
+import { useAuth } from "../../shared/auth/AuthContext";
+import { isHelpdeskPrivileged } from "./roles";
 
 interface CreateTicketPageProps {
   onTicketCreated: () => void;
@@ -28,8 +30,14 @@ export default function CreateTicketPage({
   onTicketCreated,
   onCancel,
 }: CreateTicketPageProps) {
+  const { employee } = useAuth();
+  // Only Manager/Admin-Leadership/HR-Restricted can log a ticket on behalf
+  // of someone else or pre-assign an owner while raising it (FR-HLP-01/02).
+  // A plain Employee always raises for themselves.
+  const privileged = isHelpdeskPrivileged(employee?.access_tier);
+
   const [form, setForm] = useState<TicketCreate>({
-    raised_by: "",
+    raised_by: privileged ? "" : employee?.employee_id ?? "",
     category: "",
     priority: "Medium",
     description: "",
@@ -144,22 +152,36 @@ export default function CreateTicketPage({
                 value={form.raised_by}
                 onChange={handleChange}
                 placeholder="Employee name or ID"
+                readOnly={!privileged}
+                disabled={!privileged}
+                title={
+                  !privileged
+                    ? "Tickets are raised under your own employee ID."
+                    : undefined
+                }
               />
+              {!privileged && (
+                <span className="field-hint">
+                  Raised under your own account.
+                </span>
+              )}
             </div>
 
-            <div className="form-group">
-              <label>
-                Assigned To
-              </label>
+            {privileged && (
+              <div className="form-group">
+                <label>
+                  Assigned To
+                </label>
 
-              <input
-                type="text"
-                name="assigned_to"
-                value={form.assigned_to ?? ""}
-                onChange={handleChange}
-                placeholder="Optional"
-              />
-            </div>
+                <input
+                  type="text"
+                  name="assigned_to"
+                  value={form.assigned_to ?? ""}
+                  onChange={handleChange}
+                  placeholder="Optional — leave blank to auto-route by category"
+                />
+              </div>
+            )}
 
             <div className="form-group">
               <label>
