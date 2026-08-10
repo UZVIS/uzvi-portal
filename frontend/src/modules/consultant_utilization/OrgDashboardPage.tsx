@@ -773,8 +773,8 @@ export function OrgDashboardPage() {
   async function handleAddProject(input: {
     name: string;
     projectType: string;
-    billingRate: number | null;
-    costRate: number | null;
+    billingRate: number ;
+    costRate: number;
   }) {
     await utilizationApi.createProject({
       project_id: `P-${Date.now()}`,
