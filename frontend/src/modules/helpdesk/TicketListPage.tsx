@@ -3,8 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { helpdeskApi } from "./api";
 import type { Ticket } from "./types";
 import "./TicketListPage.css";
+import { useAuth } from "../../shared/auth/AuthContext";
+import { isHelpdeskPrivileged } from "./roles";
 
 export default function TicketListPage() {
+  const { employee } = useAuth();
+  const privileged = isHelpdeskPrivileged(employee?.access_tier);
+
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -171,9 +176,11 @@ export default function TicketListPage() {
 
         <div className="ticket-card-header">
           <div>
-            <h3>Your Tickets</h3>
+            <h3>{privileged ? "Ticket Queue" : "My Tickets"}</h3>
             <span>
-              {filteredTickets.length} tickets
+              {privileged
+                ? `${filteredTickets.length} tickets across the org`
+                : `${filteredTickets.length} tickets you've raised`}
             </span>
           </div>
         </div>
@@ -186,6 +193,8 @@ export default function TicketListPage() {
 
           <span>Priority</span>
 
+          {privileged && <span>Raised By</span>}
+
           <span>Status</span>
 
         </div>
@@ -194,7 +203,9 @@ export default function TicketListPage() {
           <div className="empty-state">
             <h4>No tickets found</h4>
             <p>
-              Try a different search or create a new ticket.
+              {privileged
+                ? "Try a different search or filter."
+                : "Try a different search or create a new ticket."}
             </p>
           </div>
 
@@ -225,6 +236,10 @@ export default function TicketListPage() {
                   {ticket.priority}
                 </span>
               </div>
+
+              {privileged && (
+                <div className="ticket-raised-by">{ticket.raised_by}</div>
+              )}
 
               <div className="ticket-status">
 

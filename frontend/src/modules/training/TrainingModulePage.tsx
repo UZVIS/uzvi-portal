@@ -5,8 +5,14 @@ import TrainingProgramsPage from "./TrainingProgramsPage";
 import EnrollmentPage from "./EnrollmentPage";
 import ProgressPage from "./ProgressPage";
 import UnitCompletionPage from "./UnitCompletionPage";
+import { useAuth } from "../../shared/auth/AuthContext";
+import { isTrainingAdmin, isTrainingCohortViewer } from "./roles";
 
 export default function TrainingModulePage() {
+  const { employee } = useAuth();
+  const admin = isTrainingAdmin(employee?.access_tier);
+  const cohortViewer = isTrainingCohortViewer(employee?.access_tier);
+
   const [activeTab, setActiveTab] = useState<
     "programs" | "enrollments" | "completion" | "progress"
   >("programs");
@@ -17,10 +23,16 @@ export default function TrainingModulePage() {
         <div>
           <h1>Training</h1>
           <p>
-            Manage training programs, enroll employees, and
-            track training progress.
+            {admin
+              ? "Define training programs and units, and track progress across the org."
+              : cohortViewer
+              ? "Enroll employees, oversee completions, and track cohort-wide progress."
+              : "View available training programs, enroll, and track your own progress."}
           </p>
         </div>
+        {(admin || cohortViewer) && (
+          <span className="training-role-badge">{employee?.access_tier} view</span>
+        )}
       </div>
 
       <div className="training-tabs">

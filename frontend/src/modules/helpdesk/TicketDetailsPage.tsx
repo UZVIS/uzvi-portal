@@ -3,12 +3,15 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import { helpdeskApi } from "./api";
 import type { Ticket } from "./types";
+import { useAuth } from "../../shared/auth/AuthContext";
+import { isHelpdeskPrivileged } from "./roles";
 
 import "./TicketDetailsPage.css";
 
 export default function TicketDetailsPage() {
   const { ticketId } = useParams();
   const navigate = useNavigate();
+  const { employee } = useAuth();
 
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [loading, setLoading] = useState(true);
@@ -22,11 +25,16 @@ export default function TicketDetailsPage() {
 
   const [saving, setSaving] = useState(false);
 
-  const [authorId, setAuthorId] =
-    useState("");
-
   const [comment, setComment] =
     useState("");
+
+  // Mirrors the backend rule in change_ticket_status: only a privileged
+  // tier or the ticket's assigned owner may update status/assignment
+  // (FR-HLP-05). Everyone else gets a read-only view of this ticket.
+  const privileged = isHelpdeskPrivileged(employee?.access_tier);
+  const canManage =
+    !!ticket &&
+    (privileged || employee?.employee_id === ticket.assigned_to);
 
   useEffect(() => {
     async function loadTicket() {
@@ -100,13 +108,13 @@ export default function TicketDetailsPage() {
   async function handleAddComment() {
     if (!ticket) return;
 
-    if (
-      !authorId.trim() ||
-      !comment.trim()
-    ) {
-      alert(
-        "Please enter Author ID and Comment."
-      );
+    if (!employee?.employee_id) {
+      alert("You need to be signed in to comment.");
+      return;
+    }
+
+    if (!comment.trim()) {
+      alert("Please enter a comment.");
       return;
     }
 
@@ -114,12 +122,11 @@ export default function TicketDetailsPage() {
       await helpdeskApi.addComment(
         ticket.ticket_id,
         {
-          author_id: authorId,
+          author_id: employee.employee_id,
           comment,
         }
       );
 
-      setAuthorId("");
       setComment("");
 
       const updatedTicket =
@@ -250,16 +257,22 @@ export default function TicketDetailsPage() {
               Assigned To
             </span>
 
-            <input
-              type="text"
-              value={assignedTo}
-              placeholder="Assign employee"
-              onChange={(e) =>
-                setAssignedTo(
-                  e.target.value
-                )
-              }
-            />
+            {canManage ? (
+              <input
+                type="text"
+                value={assignedTo}
+                placeholder="Assign employee"
+                onChange={(e) =>
+                  setAssignedTo(
+                    e.target.value
+                  )
+                }
+              />
+            ) : (
+              <strong>
+                {ticket.assigned_to || "Unassigned"}
+              </strong>
+            )}
           </div>
 
         </div>
@@ -271,44 +284,54 @@ export default function TicketDetailsPage() {
         <p>{ticket.description}</p>
       </div>
 
-      <div className="status-update-card">
-        <h2>Update Ticket</h2>
+      {canManage ? (
+        <div className="status-update-card">
+          <h2>Update Ticket</h2>
 
-        <div className="form-group">
-          <label>Status</label>
+          <div className="form-group">
+            <label>Status</label>
 
-          <select
-            value={selectedStatus}
-            onChange={(e) =>
-              setSelectedStatus(
-                e.target.value
-              )
-            }
+            <select
+              value={selectedStatus}
+              onChange={(e) =>
+                setSelectedStatus(
+                  e.target.value
+                )
+              }
+            >
+              <option value="Open">
+                Open
+              </option>
+
+              <option value="In Progress">
+                In Progress
+              </option>
+
+              <option value="Resolved">
+                Resolved
+              </option>
+            </select>
+          </div>
+
+          <button
+            className="save-button"
+            onClick={handleStatusUpdate}
+            disabled={saving}
           >
-            <option value="Open">
-              Open
-            </option>
-
-            <option value="In Progress">
-              In Progress
-            </option>
-
-            <option value="Resolved">
-              Resolved
-            </option>
-          </select>
+            {saving
+              ? "Saving..."
+              : "Save Changes"}
+          </button>
         </div>
-
-        <button
-          className="save-button"
-          onClick={handleStatusUpdate}
-          disabled={saving}
-        >
-          {saving
-            ? "Saving..."
-            : "Save Changes"}
-        </button>
-      </div>
+      ) : (
+        <div className="status-update-card readonly-note">
+          <h2>Update Ticket</h2>
+          <p>
+            Only the assigned owner or a Manager/Admin-Leadership/HR-Restricted
+            account can change this ticket's status or assignment.
+          </p>
+        </div>
+      )}
 
       <div className="comments-card">
         <h2>Comments</h2>
@@ -343,17 +366,6 @@ export default function TicketDetailsPage() {
         )}
 
         <div className="comment-form">
-          <input
-            type="text"
-            placeholder="Author ID"
-            value={authorId}
-            onChange={(e) =>
-              setAuthorId(
-                e.target.value
-              )
-            }
-          />
-
           <textarea
             placeholder="Write a comment..."
             value={comment}

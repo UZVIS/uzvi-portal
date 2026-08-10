@@ -3,10 +3,15 @@ import { useNavigate, useParams } from "react-router-dom";
 import { trainingApi } from "./api";
 import type { TrainingUnit } from "./types";
 import "./ProgramDetailsPage.css";
+import { useAuth } from "../../shared/auth/AuthContext";
+import { isTrainingAdmin } from "./roles";
 
 export default function ProgramDetailsPage() {
   const navigate = useNavigate();
   const { programId } = useParams();
+  const { employee } = useAuth();
+  // FR-LMS-01: only Admin/Leadership may add units to a program.
+  const admin = isTrainingAdmin(employee?.access_tier);
   const [units, setUnits] = useState<TrainingUnit[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -143,18 +148,20 @@ export default function ProgramDetailsPage() {
 
         <div className="training-card-header">
           <h3>Training Units</h3>
-          <button
-            className="create-program-button"
-            onClick={() =>
-              setShowCreateForm(!showCreateForm)
-            }
-          >
-            {showCreateForm
-              ? "Cancel"
-              : "+ Add Unit"}
-          </button>
+          {admin && (
+            <button
+              className="create-program-button"
+              onClick={() =>
+                setShowCreateForm(!showCreateForm)
+              }
+            >
+              {showCreateForm
+                ? "Cancel"
+                : "+ Add Unit"}
+            </button>
+          )}
         </div>
-        {showCreateForm && (
+        {admin && showCreateForm && (
           <div className="create-program-form">
 
             <input

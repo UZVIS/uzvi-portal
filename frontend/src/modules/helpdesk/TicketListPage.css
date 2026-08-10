@@ -118,6 +118,16 @@
   gap: 20px;
 }
 
+.ticket-table-header:has(span:nth-child(5)),
+.ticket-item:has(.ticket-raised-by) {
+  grid-template-columns: 1fr 2fr 1.2fr 1.4fr 1.2fr;
+}
+
+.ticket-raised-by {
+  color: #374151;
+  font-size: 14px;
+}
+
 .ticket-table-header {
   background: #f8fafc;
   padding: 14px 24px;

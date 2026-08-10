@@ -133,6 +133,13 @@
   margin-top: 0;
 }
 
+.update-note {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
 .status-update-card select {
   width: 100%;
   padding: 10px;
@@ -143,7 +150,7 @@
 }
 
 .save-button {
-  background: #2563eb;
+  background: #E2622E;
   color: #ffffff;
   border: none;
   padding: 10px 20px;
@@ -153,7 +160,7 @@
 }
 
 .save-button:hover:not(:disabled) {
-  background: #1d4ed8;
+  background: #c9541f;
 }
 
 .save-button:disabled {
@@ -180,6 +187,12 @@
 .comment-form textarea {
   resize: vertical;
   min-height: 120px;
+}
+
+.comment-form input:disabled {
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
 }
 .comments-list {
   display: flex;

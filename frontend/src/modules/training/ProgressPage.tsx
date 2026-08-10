@@ -6,8 +6,16 @@ import type {
   TrainingProgram,
 } from "./types";
 import "./ProgressPage.css";
+import { useAuth } from "../../shared/auth/AuthContext";
+import { isTrainingCohortViewer } from "./roles";
 
 export default function ProgressPage() {
+  const { employee } = useAuth();
+  // FR-LMS-05: cohort-wide progress is restricted to
+  // Manager/Admin-Leadership/HR-Restricted. A plain Employee gets a
+  // self-service view of their own progress only.
+  const cohortViewer = isTrainingCohortViewer(employee?.access_tier);
+
   const [programs, setPrograms] = useState<TrainingProgram[]>([]);
   const [employeeId, setEmployeeId] = useState("");
   const [selectedProgram, setSelectedProgram] = useState("");
@@ -18,7 +26,11 @@ export default function ProgressPage() {
   const [cohortError, setCohortError] = useState("");
 
   const handleEmployeeProgress = async () => {
-    if (!employeeId.trim()) {
+    const targetId = cohortViewer
+      ? employeeId.trim()
+      : employee?.employee_id ?? "";
+
+    if (!targetId) {
       setEmployeeError("Employee ID is required.");
       return;
     }
@@ -28,7 +40,7 @@ export default function ProgressPage() {
       setEmployeeError("");
 
       const data = await trainingApi.getEmployeeProgress(
-        employeeId.trim()
+        targetId
       );
 
       setEmployeeProgress(data);
@@ -88,6 +100,22 @@ export default function ProgressPage() {
     }
 
     loadPrograms();
+
+    // Employees get their own progress loaded automatically —
+    // there's no reason to make them type in their own ID.
+    if (!cohortViewer && employee?.employee_id) {
+      trainingApi
+        .getEmployeeProgress(employee.employee_id)
+        .then(setEmployeeProgress)
+        .catch((err) =>
+          setEmployeeError(
+            err instanceof Error
+              ? err.message
+              : "Failed to load your progress."
+          )
+        );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -95,7 +123,9 @@ export default function ProgressPage() {
         <div className="progress-header">
           <h2>Training Progress</h2>
           <p>
-            Track employee and cohort training progress.
+            {cohortViewer
+              ? "Track employee and cohort training progress."
+              : "Track your own training progress."}
           </p>
         </div>
 
@@ -103,22 +133,24 @@ export default function ProgressPage() {
 
           {/* Employee Progress */}
           <div className="progress-card">
-            <h3>Employee Progress</h3>
+            <h3>{cohortViewer ? "Employee Progress" : "My Progress"}</h3>
 
-            <input
-              type="text"
-              placeholder="Employee ID"
-              value={employeeId}
-              onChange={(e) =>
-                setEmployeeId(e.target.value)
-              }
-            />
+            {cohortViewer && (
+              <input
+                type="text"
+                placeholder="Employee ID"
+                value={employeeId}
+                onChange={(e) =>
+                  setEmployeeId(e.target.value)
+                }
+              />
+            )}
 
             <button
               onClick={handleEmployeeProgress}
               disabled={loading}
             >
-              {loading ? "Loading..." : "View Progress"}
+              {loading ? "Loading..." : cohortViewer ? "View Progress" : "Refresh"}
             </button>
 
             {employeeError && (
@@ -129,49 +161,51 @@ export default function ProgressPage() {
           </div>
 
           {/* Cohort Progress */}
-          <div className="progress-card">
-            <h3>Cohort Progress</h3>
+          {cohortViewer && (
+            <div className="progress-card">
+              <h3>Cohort Progress</h3>
 
-            <select
-              value={selectedProgram}
-              onChange={(e) =>
-                setSelectedProgram(e.target.value)
-              }
-            >
-              <option value="">
-                Select Program
-              </option>
-
-              {programs.map((program) => (
-                <option
-                  key={program.program_id}
-                  value={program.program_id}
-                >
-                  {program.name}
+              <select
+                value={selectedProgram}
+                onChange={(e) =>
+                  setSelectedProgram(e.target.value)
+                }
+              >
+                <option value="">
+                  Select Program
                 </option>
-              ))}
-            </select>
 
-            <button
-              onClick={handleCohortProgress}
-              disabled={loading}
-            >
-              {loading
-                ? "Loading..."
-                : "View Progress"}
-            </button>
+                {programs.map((program) => (
+                  <option
+                    key={program.program_id}
+                    value={program.program_id}
+                  >
+                    {program.name}
+                  </option>
+                ))}
+              </select>
 
-            {cohortError && (
-              <p className="form-error">
-                {cohortError}
-              </p>
-            )}
-          </div>
+              <button
+                onClick={handleCohortProgress}
+                disabled={loading}
+              >
+                {loading
+                  ? "Loading..."
+                  : "View Progress"}
+              </button>
+
+              {cohortError && (
+                <p className="form-error">
+                  {cohortError}
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         {employeeProgress && (
           <div className="summary-card">
-            <h3>Employee Progress</h3>
+            <h3>{cohortViewer ? "Employee Progress" : "My Progress"}</h3>
 
             <p className="summary-title">
               Employee ID:
