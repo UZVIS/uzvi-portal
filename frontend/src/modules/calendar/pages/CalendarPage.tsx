@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useCalendar } from "../hooks/useCalendar";
 import type { HolidayForm, EventForm } from "../types";
-// 🌟 Premium Icons
 import { Palmtree, CalendarDays, User, MapPin, Search, X, Plus } from "lucide-react";
 
 export default function CalendarPage({ role = "Admin" }: { role?: string }) {
@@ -78,17 +77,15 @@ export default function CalendarPage({ role = "Admin" }: { role?: string }) {
             });
 
             if (response.ok) {
-                alert("✅ Holiday added successfully!");
                 setShowHolidayModal(false);
                 setHolidayForm({ name: "", date: "", state: "" });
                 refresh();
             } else {
                 const err = await response.json();
-                alert(`❌ Failed to add holiday: ${JSON.stringify(err.detail || err)}`);
+                console.error("Failed to add holiday:", err.detail || err);
             }
         } catch (error) {
-            console.error(error);
-            alert("Network error. Is the backend running?");
+            console.error("Network error while adding holiday:", error);
         }
     };
 
@@ -102,24 +99,22 @@ export default function CalendarPage({ role = "Admin" }: { role?: string }) {
             });
 
             if (response.ok) {
-                alert("✅ Event added successfully!");
                 setShowEventModal(false);
                 setEventForm({ title: "", date: "", location: "" });
                 refresh();
             } else {
                 const err = await response.json();
-                alert(`❌ Failed to add event: ${JSON.stringify(err.detail || err)}`);
+                console.error("Failed to add event:", err.detail || err);
             }
         } catch (error) {
-            console.error(error);
-            alert("Network error. Is the backend running?");
+            console.error("Network error while adding event:", error);
         }
     };
 
     return (
-        <div className="flex flex-col gap-6 max-w-[1500px] mx-auto p-2">
+        <div className="flex flex-col gap-6 max-w-[1500px] mx-auto p-4 md:p-6">
 
-            {/* 🌟 Top Summary Cards */}
+            {/* Top Summary Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm flex items-center justify-between">
                     <div><p className="text-sm font-bold text-gray-500">Holidays</p><p className="text-2xl font-black text-emerald-600">{holidayCount}</p></div>
@@ -139,7 +134,7 @@ export default function CalendarPage({ role = "Admin" }: { role?: string }) {
                 </div>
             </div>
 
-            {/* 🌟 Filters & Actions */}
+            {/* Filters and Actions Toolbar */}
             <div className="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center space-x-4 flex-wrap gap-y-2">
                     <div className="flex items-center space-x-2 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200">
@@ -184,7 +179,7 @@ export default function CalendarPage({ role = "Admin" }: { role?: string }) {
                 </div>
             </div>
 
-            {/* 🌟 Calendar Grid & Sidebar */}
+            {/* Calendar Grid and Sidebar */}
             <div className="flex flex-col lg:flex-row gap-6">
 
                 {/* Main Calendar Grid */}
@@ -220,7 +215,7 @@ export default function CalendarPage({ role = "Admin" }: { role?: string }) {
                 {/* Right Sidebar Summaries */}
                 <div className="w-full lg:w-[350px] flex flex-col space-y-6">
 
-                    {/* Common for all roles */}
+                    {/* Today's Events Summary */}
                     <div>
                         <h3 className="text-sm font-black text-gray-400 uppercase tracking-wider mb-3">Today's Summary</h3>
                         <div className="space-y-3">
@@ -235,7 +230,7 @@ export default function CalendarPage({ role = "Admin" }: { role?: string }) {
                         </div>
                     </div>
 
-                    {/* Common for all roles */}
+                    {/* Upcoming Events List */}
                     <div>
                         <h3 className="text-sm font-black text-gray-400 uppercase tracking-wider mb-3">Upcoming Events</h3>
                         <div className="space-y-3">
@@ -250,7 +245,7 @@ export default function CalendarPage({ role = "Admin" }: { role?: string }) {
                         </div>
                     </div>
 
-                    {/* Only for Employee */}
+                    {/* Personal Leaves Section for Employees */}
                     {role === "Employee" && (
                         <div>
                             <h3 className="text-sm font-black text-gray-400 uppercase tracking-wider mb-3">My Leaves</h3>
@@ -267,7 +262,7 @@ export default function CalendarPage({ role = "Admin" }: { role?: string }) {
                         </div>
                     )}
 
-                    {/* For Employee, Manager, and HR (Hidden for Admin) */}
+                    {/* Team or All Employee Leaves based on role */}
                     {(role === "Employee" || role === "Manager" || role === "HR") && (
                         <div>
                             <h3 className="text-sm font-black text-gray-400 uppercase tracking-wider mb-3">
@@ -292,7 +287,7 @@ export default function CalendarPage({ role = "Admin" }: { role?: string }) {
                 </div>
             </div>
 
-            {/* 🌟 Holiday Modal */}
+            {/* Holiday Creation Modal */}
             {showHolidayModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
                     <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
@@ -328,7 +323,7 @@ export default function CalendarPage({ role = "Admin" }: { role?: string }) {
                 </div>
             )}
 
-            {/* 🌟 Event Modal */}
+            {/* Event Creation Modal */}
             {showEventModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
                     <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">

@@ -3,7 +3,6 @@ Leave Management (M2) Pydantic Schemas
 ======================================
 This module defines the Pydantic models used for data validation, 
 request payload parsing, and response serialization in the API layer.
-
 """
 
 from pydantic import BaseModel, Field, ConfigDict
@@ -14,11 +13,12 @@ from enum import Enum
 
 class LeaveStatusEnum(str, Enum):
     """
-    Enumeration for leave application statuses.
+    Enumeration representing the possible states of a leave application.
     """
     PENDING = "pending"
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
+    PENDING_HR = "PENDING_HR"
 
 
 # ==========================================
@@ -27,16 +27,17 @@ class LeaveStatusEnum(str, Enum):
 
 class LeaveTypeCreate(BaseModel):
     """
-    Schema for creating a new leave type.
+    Schema for creating a new leave type configuration.
     """
-    name: str = Field(..., description="Name of the leave (e.g., Casual Leave, Sick Leave)")
+    name: str = Field(..., description="Name of the leave type (e.g., Casual Leave, Sick Leave)")
     accrual_method: str
     carry_forward_limit: int
     doc_required_threshold: Optional[int] = None
+    requires_hr_approval: bool = False
 
 class LeaveTypeResponse(LeaveTypeCreate):
     """
-    Schema for returning leave type details.
+    Schema for returning leave type details including its unique identifier.
     """
     leave_type_id: str
 
@@ -49,7 +50,7 @@ class LeaveTypeResponse(LeaveTypeCreate):
 
 class LeaveApplicationCreate(BaseModel):
     """
-    Schema for an employee applying for a new leave.
+    Schema for processing a new leave application request from an employee.
     """
     employee_id: str
     leave_type_id: str
@@ -58,7 +59,7 @@ class LeaveApplicationCreate(BaseModel):
 
 class LeaveApplicationResponse(LeaveApplicationCreate):
     """
-    Schema for returning leave application details, including its current status.
+    Schema for returning leave application details, tracking its current status and approver.
     """
     application_id: str
     status: LeaveStatusEnum
@@ -68,17 +69,17 @@ class LeaveApplicationResponse(LeaveApplicationCreate):
 
 class LeaveStatusUpdate(BaseModel):
     """
-    Schema for managers to approve or reject a leave application.
+    Schema for actors (Managers or HR) to approve or reject a leave application.
     """
-    status: LeaveStatusEnum = Field(..., description="Leave status (APPROVED or REJECTED)")
-    approver_id: str = Field(..., description="Employee ID of the manager taking action")
+    status: LeaveStatusEnum = Field(..., description="Target leave status action")
+    approver_id: str = Field(..., description="Employee ID of the actor executing the change")
 
 class LeaveApprovalResponse(BaseModel):
     """
-    Schema for returning the result of a leave approval action.
-    Includes fields for team availability warnings (e.g., if 30% of the team is already on leave).
+    Schema for returning the result of an approval action, including target status and warnings.
     """
     approved: bool
+    status: LeaveStatusEnum
     warning: bool = False
     percentage: Optional[float] = 0.0
     message: str
@@ -90,7 +91,7 @@ class LeaveApprovalResponse(BaseModel):
 
 class LeaveBalanceCreate(BaseModel):
     """
-    Schema for initializing or adding to an employee's leave balance wallet.
+    Schema for initializing or allocating a digital leave balance wallet for an employee.
     """
     employee_id: str
     leave_type_id: str
@@ -99,7 +100,7 @@ class LeaveBalanceCreate(BaseModel):
 
 class LeaveBalanceResponse(LeaveBalanceCreate):
     """
-    Schema for returning an employee's leave balance details.
+    Schema for returning an employee's leave balance details with a unique identifier.
     """
     id: str
 
@@ -112,7 +113,7 @@ class LeaveBalanceResponse(LeaveBalanceCreate):
 
 class LeaveAuditLogResponse(BaseModel):
     """
-    Schema for returning audit log entries to track the history of leave actions.
+    Schema for returning audit log entries tracking the complete history of leave actions.
     """
     log_id: str
     application_id: str

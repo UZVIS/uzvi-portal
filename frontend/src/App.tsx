@@ -479,14 +479,10 @@ function AppLayout() {
                 activeRole === "Manager" ? (
                   <div className="space-y-8">
                     <ManagerDashboard />
-                    <hr className="border-gray-200 border-2 rounded-full" />
-                    <LeaveDashboard />
                   </div>
                 ) : activeRole === "HR" ? (
                   <div className="space-y-8">
                     <HRDashboard />
-                    <hr className="border-gray-200 border-2 rounded-full" />
-                    <LeaveDashboard />
                   </div>
                 ) : activeRole === "Admin" ? (
                   <AdminDashboard />

@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { apiPost, apiGet } from "../../../api/client";
-import { useAuth } from "../../../shared/auth/AuthContext"; // Added import
-// Premium Icons imported
-import { CalendarPlus, Paperclip, Lock, Check, X, Clock } from "lucide-react";
+import { useAuth } from "../../../shared/auth/AuthContext";
+import { CalendarPlus, Paperclip, Lock, Check, X, Clock, AlertCircle } from "lucide-react";
 
 export default function LeaveDashboard() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [leaveTypes, setLeaveTypes] = useState<any[]>([]);
     const [leaveBalances, setLeaveBalances] = useState<any[]>([]);
     const [leaveHistory, setLeaveHistory] = useState<any[]>([]);
+    const [holidays, setHolidays] = useState<string[]>([]);
     const [leaveTypeId, setLeaveTypeId] = useState("");
 
     const [startDate, setStartDate] = useState("");
@@ -16,13 +16,12 @@ export default function LeaveDashboard() {
     const [attachment, setAttachment] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Dynamic Employee ID from Context
     const { employee } = useAuth();
     const employeeId = employee?.employee_id;
 
     useEffect(() => {
         async function fetchDashboardData() {
-            if (!employeeId) return; // Guard clause in case it's loading
+            if (!employeeId) return;
 
             try {
                 const typesData = await apiGet('/v1/leave/leave-types');
@@ -35,19 +34,27 @@ export default function LeaveDashboard() {
                 const balancesData = await apiGet(`/v1/leave/leave-balances/${employeeId}`);
                 setLeaveBalances(Array.isArray(balancesData) ? balancesData : [balancesData]);
 
-                const allApplications = await apiGet('/v1/leave/applications');
-                if (Array.isArray(allApplications)) {
-                    const myApplications = allApplications.filter(app => app.employee_id === employeeId);
-                    setLeaveHistory(myApplications);
-                } else {
-                    setLeaveHistory([]);
+                const myApplications = await apiGet(`/v1/leave/applications?employee_id=${employeeId}&role=Employee`);
+                setLeaveHistory(Array.isArray(myApplications) ? myApplications : []);
+
+                try {
+                    const holidaysData = await apiGet('/v1/calendar/holidays');
+                    if (Array.isArray(holidaysData)) {
+                        const hDates = holidaysData.map((h: any) => {
+                            if (typeof h.date === 'string') return h.date.split('T')[0];
+                            return new Date(h.date).toISOString().split('T')[0];
+                        });
+                        setHolidays(hDates);
+                    }
+                } catch (calErr) {
+                    console.error("Error fetching calendar holidays:", calErr);
                 }
             } catch (error) {
                 console.error("Error fetching dashboard data:", error);
             }
         }
         fetchDashboardData();
-    }, [employeeId]); // Added employeeId to dependency array
+    }, [employeeId]);
 
     const getBalanceFor = (leaveName: string) => {
         if (!leaveTypes.length || !leaveBalances.length) return "0";
@@ -68,28 +75,61 @@ export default function LeaveDashboard() {
         return new Date(dateString).toLocaleDateString('en-US', options);
     };
 
+    // --- NEW LEAVE BREAKDOWN LOGIC ---
+    const getLeaveBreakdown = (start: string, end: string) => {
+        if (!start || !end) return null;
+
+        const [sYear, sMonth, sDay] = start.split('-').map(Number);
+        const [eYear, eMonth, eDay] = end.split('-').map(Number);
+
+        let currDate = new Date(sYear, sMonth - 1, sDay);
+        const endDateObj = new Date(eYear, eMonth - 1, eDay);
+
+        if (currDate > endDateObj) return null;
+
+        let totalDays = 0;
+        let workingDays = 0;
+        let weekendDays = 0;
+        let holidayDays = 0;
+
+        while (currDate <= endDateObj) {
+            totalDays++;
+            const dayOfWeek = currDate.getDay();
+
+            const yyyy = currDate.getFullYear();
+            const mm = String(currDate.getMonth() + 1).padStart(2, '0');
+            const dd = String(currDate.getDate()).padStart(2, '0');
+            const formattedDate = `${yyyy}-${mm}-${dd}`;
+
+            const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+            const isHoliday = holidays.includes(formattedDate);
+
+            if (isWeekend) {
+                weekendDays++;
+            } else if (isHoliday) {
+                holidayDays++;
+            } else {
+                workingDays++;
+            }
+
+            currDate.setDate(currDate.getDate() + 1);
+        }
+
+        return { totalDays, workingDays, weekendDays, holidayDays };
+    };
+
+    const breakdown = getLeaveBreakdown(startDate, endDate);
+    const appliedDaysNumber = breakdown ? breakdown.workingDays : 0;
+
     const getDurationDays = (start: string, end: string) => {
-        if (!start || !end) return "-";
-        const s = new Date(start);
-        const e = new Date(end);
-        const diffTime = Math.abs(e.getTime() - s.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-        return `${diffDays} Day${diffDays > 1 ? 's' : ''}`;
+        const bkdn = getLeaveBreakdown(start, end);
+        if (!bkdn || bkdn.workingDays <= 0) return "-";
+        return `${bkdn.workingDays} Day${bkdn.workingDays > 1 ? 's' : ''}`;
     };
 
-    const getDurationNumber = (start: string, end: string) => {
-        if (!start || !end) return 0;
-        const diffTime = Math.abs(new Date(end).getTime() - new Date(start).getTime());
-        return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-    };
-
-    const appliedDaysNumber = getDurationNumber(startDate, endDate);
     const selectedTypeDetails = (leaveTypes || []).find(t => t?.leave_type_id === leaveTypeId);
     const threshold = selectedTypeDetails?.doc_required_threshold ?? 0;
-    const typeNameLower = selectedTypeDetails?.name?.toLowerCase() || "";
-
-    const isSpecialLeave = typeNameLower.includes("maternity") || typeNameLower.includes("paternity");
-    const isDocumentMandatory = isSpecialLeave || (threshold > 0 && appliedDaysNumber > threshold);
+    const isDocumentMandatory = threshold > 0 && appliedDaysNumber > threshold;
 
     const resetForm = () => {
         setIsFormOpen(false);
@@ -98,33 +138,25 @@ export default function LeaveDashboard() {
         setAttachment(null);
     };
 
+    const fileToDataUrl = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    };
+
     const handleSubmit = async () => {
-        if (!startDate || !endDate) {
-            alert("Please select start and end dates.");
-            return;
-        }
+        if (!startDate || !endDate || appliedDaysNumber === 0) return;
 
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        if (new Date(startDate) < today) {
-            alert("Leave start date cannot be in the past!");
-            return;
-        }
+        if (new Date(startDate) < today) return;
+        if (new Date(startDate) > new Date(endDate)) return;
 
-        if (new Date(startDate) > new Date(endDate)) {
-            alert("End date cannot be before start date.");
-            return;
-        }
-
-        if (isDocumentMandatory && !attachment) {
-            alert("Please upload the required medical/proof document to proceed.");
-            return;
-        }
-
-        if (!employeeId) {
-            alert("User identity not found. Please log in again.");
-            return;
-        }
+        if (isDocumentMandatory && !attachment) return;
+        if (!employeeId) return;
 
         setIsSubmitting(true);
 
@@ -136,24 +168,28 @@ export default function LeaveDashboard() {
         };
 
         try {
-            await apiPost('/v1/leave/applications', leaveData);
-            alert("Leave request submitted successfully!");
+            const response: any = await apiPost('/v1/leave/applications', leaveData);
 
-            const updatedAllApps = await apiGet('/v1/leave/applications');
-            if (Array.isArray(updatedAllApps)) {
-                setLeaveHistory(updatedAllApps.filter(app => app.employee_id === employeeId));
+            if (attachment && response?.application_id) {
+                const fileDataUrl = await fileToDataUrl(attachment);
+                const storedDocs = JSON.parse(localStorage.getItem("leaveDocuments") || "{}");
+
+                storedDocs[response.application_id] = {
+                    fileName: attachment.name,
+                    fileType: attachment.type,
+                    fileData: fileDataUrl,
+                    uploadedAt: new Date().toISOString()
+                };
+
+                localStorage.setItem("leaveDocuments", JSON.stringify(storedDocs));
             }
+
+            const updatedMyApps = await apiGet(`/v1/leave/applications?employee_id=${employeeId}&role=Employee`);
+            setLeaveHistory(Array.isArray(updatedMyApps) ? updatedMyApps : []);
 
             resetForm();
         } catch (error: any) {
             console.error("Error submitting leave:", error);
-            let errorMessage = "Submission failed. Please try again.";
-            if (error?.response?.data?.detail) {
-                errorMessage = Array.isArray(error.response.data.detail)
-                    ? error.response.data.detail[0].msg
-                    : error.response.data.detail;
-            }
-            alert(`Error: ${errorMessage}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -230,7 +266,7 @@ export default function LeaveDashboard() {
                                 <tr className="text-xs font-bold text-gray-500 uppercase tracking-wider">
                                     <th className="py-4 px-6">Leave Details</th>
                                     <th className="py-4 px-6">Duration</th>
-                                    <th className="py-4 px-6 text-right">Status</th>
+                                    <th className="py-4 px-6">Status</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -252,13 +288,18 @@ export default function LeaveDashboard() {
                                                 </div>
                                             </td>
                                             <td className="py-4 px-6 font-semibold text-gray-700">{getDurationDays(leave?.start_date, leave?.end_date)}</td>
-                                            <td className="py-4 px-6 text-right">
+                                            <td className="py-4 px-6">
                                                 {leave?.status?.toUpperCase() === "APPROVED" && (
                                                     <span className="inline-flex items-center space-x-1 bg-green-100 text-green-700 px-2.5 py-1 rounded-md text-xs font-bold">
                                                         <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span><span>Approved</span>
                                                     </span>
                                                 )}
-                                                {(leave?.status?.toUpperCase().includes("PENDING") || !leave?.status) && (
+                                                {leave?.status?.toUpperCase() === "PENDING_HR" && (
+                                                    <span className="inline-flex items-center space-x-1 bg-indigo-100 text-indigo-700 px-2.5 py-1 rounded-md text-xs font-bold">
+                                                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></span><span>Pending HR</span>
+                                                    </span>
+                                                )}
+                                                {(leave?.status?.toUpperCase() === "PENDING" || !leave?.status) && (
                                                     <span className="inline-flex items-center space-x-1 bg-amber-100 text-amber-700 px-2.5 py-1 rounded-md text-xs font-bold">
                                                         <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span><span>Pending</span>
                                                     </span>
@@ -312,13 +353,13 @@ export default function LeaveDashboard() {
                                     </div>
                                     <div className="flex gap-4">
                                         <div className="flex flex-col items-center">
-                                            <div className={`w-6 h-6 rounded-full border-2 border-white flex items-center justify-center ${isHRVerified ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-400'}`}>
-                                                {isHRVerified ? <Check size={14} strokeWidth={3} /> : <Check size={14} strokeWidth={3} />}
+                                            <div className={`w-6 h-6 rounded-full border-2 border-white flex items-center justify-center ${isHRVerified ? 'bg-green-500 text-white' : latestStatus === 'PENDING_HR' ? 'bg-amber-400 text-white' : 'bg-gray-200 text-gray-400'}`}>
+                                                {isHRVerified ? <Check size={14} strokeWidth={3} /> : latestStatus === 'PENDING_HR' ? <Clock size={14} strokeWidth={3} /> : <Check size={14} strokeWidth={3} />}
                                             </div>
                                         </div>
                                         <div>
-                                            <p className={`font-bold text-sm ${isHRVerified ? 'text-gray-900' : 'text-gray-400'}`}>HR Verification</p>
-                                            <p className="text-xs text-gray-400">{isHRVerified ? 'Completed' : 'If required'}</p>
+                                            <p className={`font-bold text-sm ${isHRVerified || latestStatus === 'PENDING_HR' ? 'text-gray-900' : 'text-gray-400'}`}>HR Verification</p>
+                                            <p className="text-xs text-gray-400">{isHRVerified ? 'Completed' : latestStatus === 'PENDING_HR' ? 'Pending HR Review' : 'If required'}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -328,7 +369,6 @@ export default function LeaveDashboard() {
                         )}
                     </div>
 
-                    {/* Premium Privacy Box */}
                     <div className="bg-slate-900 rounded-xl p-4 flex gap-3 items-start shadow-md border border-slate-800">
                         <Lock className="text-slate-400 shrink-0 mt-0.5" size={20} />
                         <div>
@@ -341,7 +381,7 @@ export default function LeaveDashboard() {
 
             {isFormOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
-                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-[500px] max-h-[85vh] overflow-hidden flex flex-col relative animate-in fade-in zoom-in-95 duration-200">
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-[500px] max-h-[90vh] overflow-hidden flex flex-col relative animate-in fade-in zoom-in-95 duration-200">
                         <div className="p-6 pb-3 shrink-0 border-b border-gray-50">
                             <div className="flex justify-between items-start">
                                 <div>
@@ -354,7 +394,7 @@ export default function LeaveDashboard() {
                             </div>
                         </div>
 
-                        <div className="px-6 py-4 space-y-3 overflow-y-auto flex-1">
+                        <div className="px-6 py-4 space-y-4 overflow-y-auto flex-1">
                             <div>
                                 <label className="block text-xs font-semibold text-gray-700 mb-1">Leave type</label>
                                 <select className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 bg-white" value={leaveTypeId} onChange={(e) => setLeaveTypeId(e.target.value)}>
@@ -366,6 +406,7 @@ export default function LeaveDashboard() {
                                     {(!leaveTypes || leaveTypes.length === 0) && <option value="">Loading types...</option>}
                                 </select>
                             </div>
+
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-700 mb-1">From</label>
@@ -377,11 +418,54 @@ export default function LeaveDashboard() {
                                 </div>
                             </div>
 
+                            {/* --- DYNAMIC LEAVE BREAKDOWN BOX --- */}
+                            {breakdown && breakdown.totalDays > 0 && (
+                                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 animate-in fade-in duration-200">
+                                    <h4 className="text-xs font-bold text-slate-700 mb-3 flex items-center space-x-1.5">
+                                        <Clock size={14} /> <span>Leave Calculation Summary</span>
+                                    </h4>
+                                    <div className="space-y-1.5">
+                                        <div className="flex justify-between text-xs text-slate-600">
+                                            <span>Total Selected Days:</span>
+                                            <span className="font-semibold">{breakdown.totalDays} Days</span>
+                                        </div>
+
+                                        {breakdown.weekendDays > 0 && (
+                                            <div className="flex justify-between text-xs text-slate-600">
+                                                <span>Weekends (Skipped):</span>
+                                                <span className="font-semibold text-amber-600">-{breakdown.weekendDays} Days</span>
+                                            </div>
+                                        )}
+
+                                        {breakdown.holidayDays > 0 && (
+                                            <div className="flex justify-between text-xs text-slate-600">
+                                                <span>Company/Public Holidays (Skipped):</span>
+                                                <span className="font-semibold text-emerald-600">-{breakdown.holidayDays} Days</span>
+                                            </div>
+                                        )}
+
+                                        <div className="flex justify-between text-[13px] font-black text-slate-900 pt-2 mt-2 border-t border-slate-200">
+                                            <span>Actual Chargeable Leave:</span>
+                                            <span>{breakdown.workingDays} Day{breakdown.workingDays !== 1 ? 's' : ''}</span>
+                                        </div>
+                                    </div>
+
+                                    {breakdown.workingDays === 0 && (
+                                        <div className="mt-3 flex items-start space-x-2 text-red-600 bg-red-50 p-2.5 rounded-lg border border-red-100">
+                                            <AlertCircle size={16} className="shrink-0 mt-0.5" />
+                                            <p className="text-[11px] font-bold leading-relaxed">
+                                                You have only selected holidays or weekends. You do not need to apply for leave.
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             {isDocumentMandatory && (
                                 <div className="bg-blue-50/60 p-4 rounded-xl border border-blue-100 animate-in fade-in duration-200">
                                     <label className="text-xs font-bold text-blue-900 mb-2 flex items-center justify-between">
                                         <span className="flex items-center gap-1.5">
-                                            <Paperclip size={14} className="text-blue-600" /> Upload Medical Proof
+                                            <Paperclip size={14} className="text-blue-600" /> Upload Supporting Document
                                         </span>
                                         <span className="bg-red-100 text-red-600 text-[9px] px-2 py-0.5 rounded-full uppercase tracking-wider font-extrabold">Required ({threshold} Days)</span>
                                     </label>
@@ -393,7 +477,11 @@ export default function LeaveDashboard() {
 
                         <div className="p-4 px-6 flex justify-end space-x-3 shrink-0 bg-gray-50/80 border-t border-gray-100">
                             <button onClick={resetForm} className="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-xs font-semibold rounded-xl hover:bg-gray-50 transition">Cancel</button>
-                            <button onClick={handleSubmit} disabled={isSubmitting} className="px-4 py-2 bg-gray-900 text-white text-xs font-semibold rounded-xl hover:bg-gray-800 transition disabled:opacity-50 shadow-sm">
+                            <button
+                                onClick={handleSubmit}
+                                disabled={isSubmitting || appliedDaysNumber === 0}
+                                className="px-4 py-2 bg-gray-900 text-white text-xs font-semibold rounded-xl hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                            >
                                 {isSubmitting ? 'Submitting...' : 'Submit request'}
                             </button>
                         </div>
