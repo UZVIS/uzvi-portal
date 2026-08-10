@@ -108,6 +108,35 @@ export default function HRDashboard() {
         }
     };
 
+    // --- FIX: Secure way to view Base64 documents in a new tab ---
+    const handleViewDocument = (fileData: string, fileType: string) => {
+        if (!fileData) return;
+        try {
+            // Split the Base64 string from the "data:application/pdf;base64," prefix
+            const base64Str = fileData.split(',')[1];
+            const byteCharacters = atob(base64Str);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+
+            // Create a Blob and an Object URL
+            const blob = new Blob([byteArray], { type: fileType || 'application/pdf' });
+            const blobUrl = URL.createObjectURL(blob);
+
+            // Open the safe Blob URL in a new tab
+            window.open(blobUrl, '_blank');
+        } catch (error) {
+            console.error("Error viewing document:", error);
+            // Fallback (for older browsers)
+            const newWindow = window.open();
+            if (newWindow) {
+                newWindow.document.write(`<iframe src="${fileData}" frameborder="0" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`);
+            }
+        }
+    };
+
     const handleAction = async (applicationId: string, actionType: 'APPROVED' | 'REJECTED') => {
         if (!hrId) return;
 
@@ -182,9 +211,7 @@ export default function HRDashboard() {
                         All sensitive requests have been verified.
                     </div>
                 ) : (
-                    <div className="overflow-hidden"> {/* FIX: Changed overflow-x-auto to overflow-hidden to kill the scrollbar completely */}
-
-                        {/* FIX: Using table-fixed to strictly obey column widths */}
+                    <div className="overflow-hidden">
                         <table className="w-full text-left border-collapse table-fixed">
                             <thead className="bg-white border-b border-gray-100">
                                 <tr className="text-xs font-bold text-gray-400 uppercase tracking-wider">
@@ -235,22 +262,21 @@ export default function HRDashboard() {
                                                     <div className="bg-blue-50/70 border border-blue-100 rounded-lg p-2 flex items-center justify-between w-full gap-2">
                                                         <div className="flex items-center space-x-1.5 min-w-0 flex-1">
                                                             <Paperclip size={14} className="text-blue-600 shrink-0" />
-                                                            {/* FIX: Proper truncation logic for filename */}
                                                             <span className="text-[11px] font-bold text-blue-900 truncate w-full" title={attachedDoc.fileName}>
                                                                 {attachedDoc.fileName}
                                                             </span>
                                                         </div>
                                                         <div className="flex items-center space-x-1 shrink-0">
                                                             <button
-                                                                onClick={() => window.open(attachedDoc.fileData, "_blank")}
-                                                                className="px-2 py-1 bg-blue-600 text-white rounded text-[10px] font-semibold hover:bg-blue-700 transition"
+                                                                onClick={() => handleViewDocument(attachedDoc.fileData, attachedDoc.fileType)}
+                                                                className="px-2 py-1 bg-blue-600 text-white rounded text-[10px] font-semibold hover:bg-blue-700 transition cursor-pointer"
                                                             >
                                                                 View
                                                             </button>
                                                             <a
                                                                 href={attachedDoc.fileData}
                                                                 download={attachedDoc.fileName}
-                                                                className="p-1 bg-white border border-blue-200 text-blue-600 rounded hover:bg-blue-50 transition flex items-center justify-center"
+                                                                className="p-1 bg-white border border-blue-200 text-blue-600 rounded hover:bg-blue-50 transition flex items-center justify-center cursor-pointer"
                                                                 title="Download"
                                                             >
                                                                 <Download size={12} />
@@ -263,7 +289,6 @@ export default function HRDashboard() {
                                             </td>
                                             <td className="py-4 px-4 align-top text-right">
                                                 <div className="flex justify-end space-x-2 mt-1">
-                                                    {/* FIX: shrink-0 added to buttons to stop squishing */}
                                                     <button onClick={() => handleAction(req.application_id, 'REJECTED')} className="px-3 py-1.5 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-sm font-bold transition flex items-center space-x-1 shrink-0">
                                                         <X size={14} /> <span>Reject</span>
                                                     </button>
