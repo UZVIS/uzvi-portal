@@ -84,11 +84,13 @@ const NavLink = ({
   icon: Icon,
   label,
   isSubItem = false,
+  collapsed = false,
 }: {
   to: string;
   icon: any;
   label: string;
   isSubItem?: boolean;
+  collapsed?: boolean;
 }) => {
   const location = useLocation();
   const isActive =
@@ -97,8 +99,12 @@ const NavLink = ({
   return (
     <Link
       to={to}
-      className={`group flex items-center justify-between rounded-lg font-semibold transition-all duration-200
-    ${isSubItem ? "ml-6 text-[12.5px] px-3 py-2" : "text-[13px] px-3 py-2"}
+      title={collapsed ? label : undefined}
+      className={`group flex items-center rounded-lg font-semibold transition-all duration-200
+    ${collapsed
+          ? "justify-center px-2 py-2.5"
+          : `justify-between ${isSubItem ? "ml-6 text-[12.5px] px-3 py-2" : "text-[13px] px-3 py-2"}`
+        }
     ${isSubItem
           ? isActive
             ? "bg-[#F37021] text-white shadow-sm shadow-[#F37021]/30"
@@ -108,7 +114,7 @@ const NavLink = ({
             : "text-white hover:bg-white/10"
         }`}
     >
-      <div className="flex items-center space-x-3">
+      <div className={`flex items-center ${collapsed ? "" : "space-x-3"}`}>
         <span
           className={`transition-colors duration-200 ${isActive
             ? "text-[#F37021]"
@@ -117,12 +123,14 @@ const NavLink = ({
         >
           <Icon size={16} strokeWidth={2.25} />
         </span>
- 
-        <span className="tracking-wide text-white">
-          {label}
-        </span>
+
+        {!collapsed && (
+          <span className="tracking-wide text-white">
+            {label}
+          </span>
+        )}
       </div>
-      {isActive && !isSubItem && (
+      {isActive && !isSubItem && !collapsed && (
         <span className="w-1.5 h-1.5 rounded-full bg-[#F37021]" />
       )}
     </Link>
@@ -130,12 +138,17 @@ const NavLink = ({
 };
  
 // ─── Sidebar section label ───────────────────────────────────────────────────
-const SectionLabel = ({ label }: { label: string }) => (
-  <p className="px-3 pt-4 pb-1.5 text-[10px] font-bold tracking-[0.14em] text-gray-500 uppercase select-none">
-    {label}
-  </p>
-);
- 
+const SectionLabel = ({ label, collapsed = false }: { label: string; collapsed?: boolean }) => {
+  if (collapsed) {
+    return <div className="pt-4 pb-1.5 flex justify-center"><div className="w-6 border-t border-white/10" /></div>;
+  }
+  return (
+    <p className="px-3 pt-4 pb-1.5 text-[10px] font-bold tracking-[0.14em] text-gray-500 uppercase select-none">
+      {label}
+    </p>
+  );
+};
+
 // ─── Helper: Normalize DB Roles to our 4 standard roles ──────────────────────
 const normalizeRole = (roleStr: string | undefined | null) => {
   if (!roleStr) return "Employee";
@@ -156,10 +169,13 @@ function AppLayout() {
   const [assetsOpen, setAssetsOpen] = useState(
     location.pathname.startsWith("/assets")
   );
- 
+
+  // Sidebar collapse state
+  const [collapsed, setCollapsed] = useState(false);
+
   const { employee, logout } = useAuth();
  
-  // 🛠️ The actual normalized database role of the logged-in user
+  //  The actual normalized database role of the logged-in user
   const actualRole = normalizeRole(employee?.access_tier);
  
   // State controls which view they are currently looking at (from dropdown)
@@ -212,62 +228,90 @@ function AppLayout() {
   return (
     <div className="flex h-screen bg-[#F4F6F8] font-sans overflow-hidden">
       {/* ─── SIDEBAR ─────────────────────────────────────────────────── */}
-      <aside className="w-[280px] bg-[#1A1614] flex flex-col justify-between shrink-0 transition-all border-r border-black/40">
-        <div className="px-4 py-3 flex items-center justify-between border-b border-white/5">
-          <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 bg-[#F37021] text-white rounded-full flex items-center justify-center font-black text-lg shadow-lg shadow-[#F37021]/20">
+      <aside
+        className={`${collapsed ? "w-[76px]" : "w-[280px]"
+          } bg-[#1A1614] flex flex-col justify-between shrink-0 transition-all duration-300 border-r border-black/40`}
+      >
+        <div
+          className={`px-4 py-3 flex items-center border-b border-white/5 ${collapsed ? "justify-center" : "justify-between"
+            }`}
+        >
+          <div className={`flex items-center ${collapsed ? "" : "space-x-3"}`}>
+            <div className="w-9 h-9 bg-[#F37021] text-white rounded-full flex items-center justify-center font-black text-lg shadow-lg shadow-[#F37021]/20 shrink-0">
               U
             </div>
-            <div>
-              <h1 className="font-extrabold text-white text-[15px] tracking-wide leading-tight">
-                UZVI PORTAL
-              </h1>
-              <p className="text-[10.5px] text-[#F37021] font-bold tracking-[0.08em] uppercase">
-                Employee Portal
-              </p>
-            </div>
+            {!collapsed && (
+              <div>
+                <h1 className="font-extrabold text-white text-[15px] tracking-wide leading-tight">
+                  UZVI PORTAL
+                </h1>
+                <p className="text-[10.5px] text-[#F37021] font-bold tracking-[0.08em] uppercase">
+                  Employee Portal
+                </p>
+              </div>
+            )}
           </div>
-          <button className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition">
-            <ChevronLeft size={16} />
-          </button>
+          {!collapsed && (
+            <button
+              type="button"
+              onClick={() => setCollapsed(true)}
+              className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition"
+            >
+              <ChevronLeft size={16} />
+            </button>
+          )}
         </div>
- 
+
+        {/* Collapsed-state expand button, shown just under the header */}
+        {collapsed && (
+          <div className="flex justify-center py-2 border-b border-white/5">
+            <button
+              type="button"
+              onClick={() => setCollapsed(false)}
+              className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition"
+            >
+              <ChevronLeft size={16} className="rotate-180" />
+            </button>
+          </div>
+        )}
+
         <div className="flex-1 overflow-y-auto px-3 py-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-          <SectionLabel label="Workspace" />
+          <SectionLabel label="Workspace" collapsed={collapsed} />
           <div className="space-y-0.5">
-            <NavLink to="/directory" icon={BookUser} label="Directory" />
-            <NavLink to="/attendance" icon={Clock} label="Attendance" /> {/* <-- Added NavLink */}
-            <NavLink to="/performance" icon={Award} label="Performance & Goals" /> {/* <-- Added NavLink */}
-            <NavLink to="/onboarding" icon={ClipboardList} label="Onboarding" />
-            <NavLink to="/calendar" icon={CalendarDays} label="Company Calendar" />
-            <NavLink to="/documents" icon={FolderOpen} label="Documents" />
+            <NavLink to="/directory" icon={BookUser} label="Directory" collapsed={collapsed} />
+            <NavLink to="/onboarding" icon={ClipboardList} label="Onboarding" collapsed={collapsed} />
+            <NavLink to="/calendar" icon={CalendarDays} label="Company Calendar" collapsed={collapsed} />
+            <NavLink to="/documents" icon={FolderOpen} label="Documents" collapsed={collapsed} />
           </div>
- 
-          <SectionLabel label="People" />
+
+          <SectionLabel label="People" collapsed={collapsed} />
           <div className="space-y-0.5">
-            <NavLink to="/" icon={Briefcase} label="Leave Management" />
-            <NavLink to="/dashboard" icon={Megaphone} label="Announcements" />
-            <NavLink to="/utilization" icon={Users} label="Consultant Utilization" />
-            <NavLink to="/recruiting" icon={UserPlus} label="Recruiting" />
-            <NavLink to="/training" icon={GraduationCap} label="Training" />
+            <NavLink to="/" icon={Briefcase} label="Leave Management" collapsed={collapsed} />
+            <NavLink to="/dashboard" icon={Megaphone} label="Announcements" collapsed={collapsed} />
+            <NavLink to="/utilization" icon={Users} label="Consultant Utilization" collapsed={collapsed} />
+            <NavLink to="/recruiting" icon={UserPlus} label="Recruiting" collapsed={collapsed} />
+            <NavLink to="/training" icon={GraduationCap} label="Training" collapsed={collapsed} />
           </div>
- 
-          <SectionLabel label="Operations" />
+
+          <SectionLabel label="Operations" collapsed={collapsed} />
           <div className="space-y-0.5">
             <div>
  
               {/* Parent Item */}
               <div
-                className={`flex items-center justify-between rounded-lg transition-all duration-200 ${location.pathname.startsWith("/assets")
-                  ? "bg-white/10 text-white"
-                  : "text-white hover:bg-white/10"
+                className={`flex items-center rounded-lg transition-all duration-200 ${collapsed ? "justify-center" : "justify-between"
+                  } ${location.pathname.startsWith("/assets")
+                    ? "bg-white/10 text-white"
+                    : "text-white hover:bg-white/10"
                   }`}
               >
                 <Link
                   to="/assets"
-                  className={`flex items-center gap-3 flex-1 px-3 py-2 text-[13px] font-semibold transition-colors ${location.pathname === "/assets"
-                    ? "text-white"
-                    : "text-white hover:text-white"
+                  title={collapsed ? "Assets" : undefined}
+                  className={`flex items-center flex-1 text-[13px] font-semibold transition-colors ${collapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2"
+                    } ${location.pathname === "/assets"
+                      ? "text-white"
+                      : "text-white hover:text-white"
                     }`}
                 >
                   <Package
@@ -278,10 +322,10 @@ function AppLayout() {
                       : "text-white"
                       }`}
                   />
-                  <span className="tracking-wide">Assets</span>
+                  {!collapsed && <span className="tracking-wide">Assets</span>}
                 </Link>
- 
-                {actualRole === "Admin" && (
+
+                {actualRole === "Admin" && !collapsed && (
                   <button
                     type="button"
                     onClick={() => setAssetsOpen(!assetsOpen)}
@@ -297,7 +341,7 @@ function AppLayout() {
               </div>
  
               {/* Sub Menu */}
-              {assetsOpen && actualRole === "Admin" && (
+              {assetsOpen && actualRole === "Admin" && !collapsed && (
                 <div className="ml-5 mt-1 space-y-1 border-l border-white/10 pl-3">
  
                   <Link
@@ -328,9 +372,9 @@ function AppLayout() {
               )}
  
             </div>
-            <NavLink to="/expenses" icon={CreditCard} label="Expense Claims" />
-            <NavLink to="/helpdesk" icon={Headphones} label="Helpdesk" />
-            <NavLink to="/quotes" icon={ReceiptText} label="Quotes" />
+            <NavLink to="/expenses" icon={CreditCard} label="Expense Claims" collapsed={collapsed} />
+            <NavLink to="/helpdesk" icon={Headphones} label="Helpdesk" collapsed={collapsed} />
+            <NavLink to="/quotes" icon={ReceiptText} label="Quotes" collapsed={collapsed} />
           </div>
         </div>
       </aside>
