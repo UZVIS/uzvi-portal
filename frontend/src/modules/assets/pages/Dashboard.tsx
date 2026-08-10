@@ -134,7 +134,7 @@ const [returnEmployeeName, setReturnEmployeeName] = useState("");
 
                 <main className="dashboard-body">
 
-                    <DashboardCards />
+                    <DashboardCards reload={reloadAssets} />
 
                     <SearchBar
                         onAddAsset={() => {

@@ -282,7 +282,7 @@ export default function AssetForm({
 
                                 <option value="">Select Status</option>
                                 <option value="In Stock">In Stock</option>
-                                <option value="Assigned">Assigned</option>
+                               
                                 <option value="Under Repair">Under Repair</option>
                                 <option value="Retired">Retired</option>
 
