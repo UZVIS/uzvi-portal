@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../../shared/auth/AuthContext";
+import { apiGet } from "../../../api/client";
 import { Lightbulb, Plus, Activity, Settings2, Wallet } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -11,7 +12,6 @@ export default function AdminDashboard() {
     const [accrualMethod, setAccrualMethod] = useState("");
     const [carryForwardLimit, setCarryForwardLimit] = useState("");
     const [docThreshold, setDocThreshold] = useState("");
-    const [requiresHrApproval, setRequiresHrApproval] = useState(false);
 
     const [targetEmployeeId, setTargetEmployeeId] = useState("");
     const [selectedLeaveTypeId, setSelectedLeaveTypeId] = useState("");
@@ -20,10 +20,48 @@ export default function AdminDashboard() {
 
     const [allLeaves, setAllLeaves] = useState<any[]>([]);
     const [leaveTypes, setLeaveTypes] = useState<any[]>([]);
+    const [holidays, setHolidays] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const { employee } = useAuth();
     const adminId = employee?.employee_id;
+
+    // Timezone-safe Working Days Calculation (Skipping Sat, Sun & Holidays)
+    const getDurationNumber = (start: string, end: string) => {
+        if (!start || !end) return 0;
+
+        const [sYear, sMonth, sDay] = start.split('-').map(Number);
+        const [eYear, eMonth, eDay] = end.split('-').map(Number);
+
+        let currDate = new Date(sYear, sMonth - 1, sDay);
+        const endDateObj = new Date(eYear, eMonth - 1, eDay);
+
+        if (currDate > endDateObj) return 0;
+
+        let workingDays = 0;
+        while (currDate <= endDateObj) {
+            const dayOfWeek = currDate.getDay();
+            const yyyy = currDate.getFullYear();
+            const mm = String(currDate.getMonth() + 1).padStart(2, '0');
+            const dd = String(currDate.getDate()).padStart(2, '0');
+            const formattedDate = `${yyyy}-${mm}-${dd}`;
+
+            const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+            const isHoliday = holidays.includes(formattedDate);
+
+            if (!isWeekend && !isHoliday) {
+                workingDays++;
+            }
+            currDate.setDate(currDate.getDate() + 1);
+        }
+        return workingDays;
+    };
+
+    const getDurationDays = (start: string, end: string) => {
+        const days = getDurationNumber(start, end);
+        if (days <= 0) return 0;
+        return days;
+    };
 
     useEffect(() => {
         fetchAdminData();
@@ -32,20 +70,27 @@ export default function AdminDashboard() {
     const fetchAdminData = async () => {
         setIsLoading(true);
         try {
-            const typesResponse = await fetch("http://127.0.0.1:8000/api/v1/leave/leave-types");
-            if (typesResponse.ok) {
-                const typesData = await typesResponse.json();
-                const validTypes = Array.isArray(typesData) ? typesData : [];
-                setLeaveTypes(validTypes);
-                if (validTypes.length > 0) {
-                    setSelectedLeaveTypeId(validTypes[0].leave_type_id);
-                }
+            const typesData = await apiGet('/v1/leave/leave-types');
+            const validTypes = Array.isArray(typesData) ? typesData : [];
+            setLeaveTypes(validTypes);
+            if (validTypes.length > 0) {
+                setSelectedLeaveTypeId(validTypes[0].leave_type_id);
             }
 
-            const appsResponse = await fetch("http://127.0.0.1:8000/api/v1/leave/applications?role=Admin");
-            if (appsResponse.ok) {
-                const appsData = await appsResponse.json();
-                setAllLeaves(Array.isArray(appsData) ? appsData : []);
+            const appsData = await apiGet('/v1/leave/applications?role=Admin');
+            setAllLeaves(Array.isArray(appsData) ? appsData : []);
+
+            try {
+                const holidaysData = await apiGet('/v1/calendar/holidays');
+                if (Array.isArray(holidaysData)) {
+                    const hDates = holidaysData.map((h: any) => {
+                        if (typeof h.date === 'string') return h.date.split('T')[0];
+                        return new Date(h.date).toISOString().split('T')[0];
+                    });
+                    setHolidays(hDates);
+                }
+            } catch (calErr) {
+                console.error("Error fetching holidays:", calErr);
             }
         } catch (error) {
             console.error("Error fetching admin data:", error);
@@ -63,14 +108,6 @@ export default function AdminDashboard() {
         if (!dateString) return "";
         const options: Intl.DateTimeFormatOptions = { month: 'short', day: '2-digit' };
         return new Date(dateString).toLocaleDateString('en-US', options);
-    };
-
-    const getDurationDays = (start: string, end: string) => {
-        if (!start || !end) return 0;
-        const s = new Date(start);
-        const e = new Date(end);
-        const diffTime = Math.abs(e.getTime() - s.getTime());
-        return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
     };
 
     const handleAction = async (applicationId: string, actionType: 'APPROVED' | 'REJECTED') => {
@@ -107,7 +144,7 @@ export default function AdminDashboard() {
             accrual_method: accrualMethod || "Standard",
             carry_forward_limit: carryForwardLimit ? parseInt(carryForwardLimit, 10) : 0,
             doc_required_threshold: docThreshold ? parseInt(docThreshold, 10) : 0,
-            requires_hr_approval: requiresHrApproval
+            requires_hr_approval: false
         };
 
         try {
@@ -124,7 +161,6 @@ export default function AdminDashboard() {
                 setAccrualMethod("");
                 setCarryForwardLimit("");
                 setDocThreshold("");
-                setRequiresHrApproval(false);
             }
         } catch (error) {
             console.error("Error connecting to backend API:", error);
@@ -205,13 +241,14 @@ export default function AdminDashboard() {
                                     allLeaves.map((leave) => {
                                         const currentStatus = leave.status?.toUpperCase() || "";
                                         const isPendingAction = currentStatus === "PENDING" || currentStatus === "PENDING_HR";
+                                        const daysCount = getDurationDays(leave.start_date, leave.end_date);
                                         return (
                                             <tr key={leave.application_id} className="hover:bg-gray-50 transition">
                                                 <td className="py-4 px-6 font-bold text-gray-900">{leave.employee_id}</td>
                                                 <td className="py-4 px-6">
                                                     <span className="font-bold text-sm text-gray-800">{getLeaveName(leave.leave_type_id)}</span>
                                                     <span className="text-xs text-gray-500 block">
-                                                        {formatDate(leave.start_date)} – {formatDate(leave.end_date)} ({getDurationDays(leave.start_date, leave.end_date)} Days)
+                                                        {formatDate(leave.start_date)} – {formatDate(leave.end_date)} ({daysCount} Day{daysCount > 1 ? 's' : ''})
                                                     </span>
                                                 </td>
                                                 <td className="py-4 px-6">
@@ -261,7 +298,6 @@ export default function AdminDashboard() {
                                     <th className="py-4 px-6">Accrual Method</th>
                                     <th className="py-4 px-6">Carry Forward</th>
                                     <th className="py-4 px-6">Doc Threshold</th>
-                                    <th className="py-4 px-6">HR Sign-off</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -272,13 +308,6 @@ export default function AdminDashboard() {
                                         <td className="py-4 px-6 text-xs font-bold text-gray-800">{type.carry_forward_limit} Days</td>
                                         <td className="py-4 px-6 text-xs text-orange-600 font-medium">
                                             {type.doc_required_threshold > 0 ? `${type.doc_required_threshold} Days` : "None"}
-                                        </td>
-                                        <td className="py-4 px-6 text-xs">
-                                            {type.requires_hr_approval ? (
-                                                <span className="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded font-bold">Required</span>
-                                            ) : (
-                                                <span className="text-gray-500 font-medium">No</span>
-                                            )}
                                         </td>
                                     </tr>
                                 ))}
@@ -320,19 +349,6 @@ export default function AdminDashboard() {
                             <input type="text" value={accrualMethod} onChange={(e) => setAccrualMethod(e.target.value)} placeholder="Accrual Method" className="w-full border rounded-xl px-4 py-2.5 text-sm outline-none focus:border-indigo-600" />
                             <input type="number" value={carryForwardLimit} onChange={(e) => setCarryForwardLimit(e.target.value)} placeholder="Carry Forward Limit" className="w-full border rounded-xl px-4 py-2.5 text-sm outline-none focus:border-indigo-600" />
                             <input type="number" value={docThreshold} onChange={(e) => setDocThreshold(e.target.value)} placeholder="Doc Required Threshold (Days)" className="w-full border rounded-xl px-4 py-2.5 text-sm outline-none focus:border-indigo-600" />
-
-                            <label className="flex items-center space-x-3 mt-4 cursor-pointer bg-gray-50 p-3 rounded-xl border border-gray-100">
-                                <input
-                                    type="checkbox"
-                                    checked={requiresHrApproval}
-                                    onChange={(e) => setRequiresHrApproval(e.target.checked)}
-                                    className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
-                                />
-                                <div>
-                                    <p className="text-sm font-bold text-gray-800">Requires HR Approval</p>
-                                    <p className="text-xs text-gray-500">Route to HR after manager approval</p>
-                                </div>
-                            </label>
                         </div>
                         <div className="p-8 pt-6 flex justify-end space-x-3 bg-gray-50 border-t mt-4">
                             <button onClick={() => setIsAddLeaveModalOpen(false)} className="px-5 py-2.5 bg-white border rounded-xl text-sm font-semibold hover:bg-gray-100">Cancel</button>

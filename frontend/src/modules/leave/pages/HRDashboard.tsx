@@ -6,9 +6,9 @@ import { ShieldAlert, CheckCircle, X, Check, Paperclip, Download, AlertCircle } 
 export default function HRDashboard() {
     const [requests, setRequests] = useState<any[]>([]);
     const [leaveTypes, setLeaveTypes] = useState<any[]>([]);
+    const [holidays, setHolidays] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Modal State for Errors/Alerts
     const [modalState, setModalState] = useState({
         isOpen: false,
         title: "",
@@ -19,10 +19,41 @@ export default function HRDashboard() {
     const { employee } = useAuth();
     const hrId = employee?.employee_id;
 
-    const getDurationDays = (start: string, end: string) => {
+    // Timezone-safe Working Days Calculation (Skipping Sat, Sun & Holidays)
+    const getDurationNumber = (start: string, end: string) => {
         if (!start || !end) return 0;
-        const diffTime = Math.abs(new Date(end).getTime() - new Date(start).getTime());
-        return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+
+        const [sYear, sMonth, sDay] = start.split('-').map(Number);
+        const [eYear, eMonth, eDay] = end.split('-').map(Number);
+
+        let currDate = new Date(sYear, sMonth - 1, sDay);
+        const endDateObj = new Date(eYear, eMonth - 1, eDay);
+
+        if (currDate > endDateObj) return 0;
+
+        let workingDays = 0;
+        while (currDate <= endDateObj) {
+            const dayOfWeek = currDate.getDay();
+            const yyyy = currDate.getFullYear();
+            const mm = String(currDate.getMonth() + 1).padStart(2, '0');
+            const dd = String(currDate.getDate()).padStart(2, '0');
+            const formattedDate = `${yyyy}-${mm}-${dd}`;
+
+            const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+            const isHoliday = holidays.includes(formattedDate);
+
+            if (!isWeekend && !isHoliday) {
+                workingDays++;
+            }
+            currDate.setDate(currDate.getDate() + 1);
+        }
+        return workingDays;
+    };
+
+    const getDurationDays = (start: string, end: string) => {
+        const days = getDurationNumber(start, end);
+        if (days <= 0) return "-";
+        return `${days} Day${days > 1 ? 's' : ''}`;
     };
 
     useEffect(() => {
@@ -33,14 +64,22 @@ export default function HRDashboard() {
         setIsLoading(true);
         try {
             const typesData = await apiGet('/v1/leave/leave-types');
-            const validTypes = Array.isArray(typesData) ? typesData : [];
-            setLeaveTypes(validTypes);
+            setLeaveTypes(Array.isArray(typesData) ? typesData : []);
 
             const appsData = await apiGet('/v1/leave/applications?role=HR');
-            if (Array.isArray(appsData)) {
-                setRequests(appsData);
-            } else {
-                setRequests([]);
+            setRequests(Array.isArray(appsData) ? appsData : []);
+
+            try {
+                const holidaysData = await apiGet('/v1/calendar/holidays');
+                if (Array.isArray(holidaysData)) {
+                    const hDates = holidaysData.map((h: any) => {
+                        if (typeof h.date === 'string') return h.date.split('T')[0];
+                        return new Date(h.date).toISOString().split('T')[0];
+                    });
+                    setHolidays(hDates);
+                }
+            } catch (calErr) {
+                console.error("Error fetching holidays:", calErr);
             }
         } catch (error) {
             console.error("Error fetching HR dashboard data:", error);
@@ -56,7 +95,7 @@ export default function HRDashboard() {
 
     const formatDate = (dateString: string) => {
         if (!dateString) return "";
-        const options: Intl.DateTimeFormatOptions = { month: 'short', day: '2-digit', year: 'numeric' };
+        const options: Intl.DateTimeFormatOptions = { month: 'short', day: '2-digit' };
         return new Date(dateString).toLocaleDateString('en-US', options);
     };
 
@@ -85,9 +124,7 @@ export default function HRDashboard() {
             });
 
             if (response.ok) {
-                setRequests(prevRequests =>
-                    prevRequests.filter(req => req.application_id !== applicationId)
-                );
+                setRequests(prevRequests => prevRequests.filter(req => req.application_id !== applicationId));
                 fetchHRData();
 
                 setModalState({
@@ -145,14 +182,16 @@ export default function HRDashboard() {
                         All sensitive requests have been verified.
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                    <div className="overflow-hidden"> {/* FIX: Changed overflow-x-auto to overflow-hidden to kill the scrollbar completely */}
+
+                        {/* FIX: Using table-fixed to strictly obey column widths */}
+                        <table className="w-full text-left border-collapse table-fixed">
                             <thead className="bg-white border-b border-gray-100">
                                 <tr className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                                    <th className="py-4 px-6">Employee</th>
-                                    <th className="py-4 px-6">Leave Type</th>
-                                    <th className="py-4 px-6">Private Notes & Document</th>
-                                    <th className="py-4 px-6 text-right">Actions</th>
+                                    <th className="py-4 px-4 w-[25%]">Employee</th>
+                                    <th className="py-4 px-4 w-[20%]">Leave Type</th>
+                                    <th className="py-4 px-4 w-[30%]">Private Notes & Document</th>
+                                    <th className="py-4 px-4 w-[25%] text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -163,44 +202,55 @@ export default function HRDashboard() {
 
                                     return (
                                         <tr key={req.application_id} className="hover:bg-gray-50 transition">
-                                            <td className="py-4 px-6">
-                                                <div className="flex items-center space-x-3">
-                                                    <div className="w-9 h-9 rounded-full bg-purple-100 flex items-center justify-center font-bold text-purple-700 text-xs">
+                                            <td className="py-4 px-4 align-top">
+                                                <div className="flex items-center space-x-3 mt-1">
+                                                    <div className="w-9 h-9 rounded-full bg-purple-100 flex items-center justify-center font-bold text-purple-700 text-xs shrink-0">
                                                         {req.employee_id.charAt(0)}
                                                     </div>
-                                                    <div>
-                                                        <p className="font-bold text-gray-900">{req.employee_id}</p>
+                                                    <div className="min-w-0">
+                                                        <p className="font-bold text-gray-900 truncate">{req.employee_id}</p>
                                                         <p className="text-xs text-gray-500">Employee</p>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="py-4 px-6">
-                                                <div className="flex flex-col items-start">
-                                                    <span className="px-2 py-0.5 rounded text-xs font-bold mb-1 bg-pink-100 text-pink-700">{leaveName}</span>
-                                                    <span className="font-semibold text-gray-800 text-sm">{formatDate(req.start_date)} – {formatDate(req.end_date)}</span>
-                                                    <span className="text-xs text-gray-500">{totalDays} Days</span>
+                                            <td className="py-4 px-4 align-top">
+                                                <div className="flex flex-col items-start mt-1 min-w-0">
+                                                    <span className="px-2 py-0.5 rounded text-xs font-bold mb-1.5 bg-pink-100 text-pink-700 inline-block">
+                                                        {leaveName}
+                                                    </span>
+                                                    <span className="font-semibold text-gray-800 text-sm truncate w-full">
+                                                        {req.start_date === req.end_date
+                                                            ? formatDate(req.start_date)
+                                                            : `${formatDate(req.start_date)} – ${formatDate(req.end_date)}`}
+                                                    </span>
+                                                    <span className="text-xs text-gray-500 mt-0.5">{totalDays}</span>
                                                 </div>
                                             </td>
-                                            <td className="py-4 px-6 max-w-sm">
-                                                <p className="text-sm text-gray-800 font-medium mb-2">{req.reason || "Medical leave request exceeding threshold."}</p>
+                                            <td className="py-4 px-4 align-top pr-6">
+                                                <p className="text-sm text-gray-800 font-medium mb-2 mt-1 break-words line-clamp-2">
+                                                    {req.reason || "Medical leave request exceeding threshold."}
+                                                </p>
 
                                                 {attachedDoc ? (
-                                                    <div className="bg-blue-50/70 border border-blue-100 rounded-lg p-2.5 flex items-center justify-between">
-                                                        <div className="flex items-center space-x-2 overflow-hidden">
+                                                    <div className="bg-blue-50/70 border border-blue-100 rounded-lg p-2 flex items-center justify-between w-full gap-2">
+                                                        <div className="flex items-center space-x-1.5 min-w-0 flex-1">
                                                             <Paperclip size={14} className="text-blue-600 shrink-0" />
-                                                            <span className="text-xs font-bold text-blue-900 truncate">{attachedDoc.fileName}</span>
+                                                            {/* FIX: Proper truncation logic for filename */}
+                                                            <span className="text-[11px] font-bold text-blue-900 truncate w-full" title={attachedDoc.fileName}>
+                                                                {attachedDoc.fileName}
+                                                            </span>
                                                         </div>
-                                                        <div className="flex items-center space-x-1 shrink-0 ml-2">
+                                                        <div className="flex items-center space-x-1 shrink-0">
                                                             <button
                                                                 onClick={() => window.open(attachedDoc.fileData, "_blank")}
-                                                                className="px-2 py-1 bg-blue-600 text-white rounded text-[11px] font-semibold hover:bg-blue-700 transition"
+                                                                className="px-2 py-1 bg-blue-600 text-white rounded text-[10px] font-semibold hover:bg-blue-700 transition"
                                                             >
                                                                 View
                                                             </button>
                                                             <a
                                                                 href={attachedDoc.fileData}
                                                                 download={attachedDoc.fileName}
-                                                                className="p-1 bg-white border border-blue-200 text-blue-600 rounded hover:bg-blue-50 transition"
+                                                                className="p-1 bg-white border border-blue-200 text-blue-600 rounded hover:bg-blue-50 transition flex items-center justify-center"
                                                                 title="Download"
                                                             >
                                                                 <Download size={12} />
@@ -208,15 +258,16 @@ export default function HRDashboard() {
                                                         </div>
                                                     </div>
                                                 ) : (
-                                                    <span className="text-xs text-amber-600 font-medium italic">No document attached locally</span>
+                                                    <span className="text-xs text-amber-600 font-medium italic mt-1 block">No document attached locally</span>
                                                 )}
                                             </td>
-                                            <td className="py-4 px-6 text-right">
-                                                <div className="flex justify-end space-x-2">
-                                                    <button onClick={() => handleAction(req.application_id, 'REJECTED')} className="px-4 py-1.5 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-sm font-bold transition flex items-center space-x-1">
+                                            <td className="py-4 px-4 align-top text-right">
+                                                <div className="flex justify-end space-x-2 mt-1">
+                                                    {/* FIX: shrink-0 added to buttons to stop squishing */}
+                                                    <button onClick={() => handleAction(req.application_id, 'REJECTED')} className="px-3 py-1.5 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-sm font-bold transition flex items-center space-x-1 shrink-0">
                                                         <X size={14} /> <span>Reject</span>
                                                     </button>
-                                                    <button onClick={() => handleAction(req.application_id, 'APPROVED')} className="px-4 py-1.5 bg-slate-900 hover:bg-black text-white rounded-lg text-sm font-bold shadow-sm transition flex items-center space-x-1">
+                                                    <button onClick={() => handleAction(req.application_id, 'APPROVED')} className="px-3 py-1.5 bg-slate-900 hover:bg-black text-white rounded-lg text-sm font-bold shadow-sm transition flex items-center space-x-1 shrink-0">
                                                         <Check size={14} /> <span>Approve</span>
                                                     </button>
                                                 </div>
@@ -230,7 +281,6 @@ export default function HRDashboard() {
                 )}
             </div>
 
-            {/* Custom Modal Popup for Success/Error */}
             {modalState.isOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] px-4">
                     <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">

@@ -6,7 +6,8 @@ balances, applications, and the approval workflow. It acts as a bridge
 between the API routers and the database CRUD operations.
 """
 
-from datetime import datetime, date
+import holidays
+from datetime import datetime, date, timedelta
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
@@ -161,7 +162,7 @@ def update_leave_status(db: Session, application_id: str, leave_status: LeaveSta
     """
     Handles the approval or rejection workflow of a leave application.
     Enforces role security, dynamic HR routing, team availability thresholds,
-    and final balance deductions.
+    and final balance deductions (excluding weekends & holidays).
     """
     application = crud.get_leave_application_by_id(db=db, application_id=application_id)
     if not application:
@@ -185,7 +186,46 @@ def update_leave_status(db: Session, application_id: str, leave_status: LeaveSta
         raise HTTPException(status_code=403, detail="Access denied. You are not authorized to perform this action.")
     
     leave_type = db.query(LeaveType).filter(LeaveType.leave_type_id == application.leave_type_id).first()
-    total_days = (application.end_date - application.start_date).days + 1
+    
+    # =========================================================================
+    # --- WORKING DAYS CALCULATION (Skipping Sat, Sun & ALL Holidays) ---
+    # =========================================================================
+    holiday_dates = set()
+
+    # 1. Fetch custom company holidays from Calendar DB safely
+    try:
+        from app.modules.calendar.models import Holiday
+        custom_holidays = db.query(Holiday).all()
+        for h in custom_holidays:
+            if h.date:
+                holiday_dates.add(h.date.isoformat() if hasattr(h.date, 'isoformat') else str(h.date))
+    except Exception as e:
+        print("Calendar Holiday model not accessible directly, skipping custom DB holidays.")
+
+    # 2. Fetch Indian Public Holidays automatically
+    target_year = application.start_date.year
+    public_holidays = holidays.country_holidays('IN', years=target_year)
+    for p_date in public_holidays.keys():
+        holiday_dates.add(str(p_date))
+
+    # 3. Calculate actual working days
+    curr_date = application.start_date
+    end_date = application.end_date
+    working_days_count = 0
+
+    while curr_date <= end_date:
+        is_weekend = curr_date.weekday() >= 5 # 5 is Sat, 6 is Sun
+        formatted_date = curr_date.isoformat() if hasattr(curr_date, 'isoformat') else str(curr_date)
+        is_holiday = formatted_date in holiday_dates
+
+        if not is_weekend and not is_holiday:
+            working_days_count += 1
+            
+        curr_date += timedelta(days=1)
+
+    # Use actual count (even if 0). Removed 'max(1, count)' constraint!
+    total_days = working_days_count
+    # =========================================================================
 
     requested_action = getattr(leave_status.status, "value", leave_status.status).upper()
     target_status = requested_action
@@ -242,14 +282,16 @@ def update_leave_status(db: Session, application_id: str, leave_status: LeaveSta
         if not leave_balance:
             raise HTTPException(status_code=404, detail="Leave balance not found for this employee")
 
-        if leave_balance.balance < total_days:
-             raise HTTPException(
-                 status_code=400, 
-                 detail=f"Insufficient leave balance. Requested {total_days} days, but only {leave_balance.balance} available."
-             )
+        # Allow processing even if total_days is 0 (i.e. applied leave falls entirely on holidays/weekends)
+        if total_days > 0:
+            if leave_balance.balance < total_days:
+                 raise HTTPException(
+                     status_code=400, 
+                     detail=f"Insufficient leave balance. Requested {total_days} working days, but only {leave_balance.balance} available."
+                 )
 
-        leave_balance.balance -= total_days
-        crud.update_leave_balance(db=db, leave_balance=leave_balance)
+            leave_balance.balance -= total_days
+            crud.update_leave_balance(db=db, leave_balance=leave_balance)
 
     application.status = target_status
     application.approver_id = leave_status.approver_id
