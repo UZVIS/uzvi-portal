@@ -229,7 +229,7 @@ function AppLayout() {
 <div className="flex h-screen bg-[#F4F6F8] font-sans overflow-hidden">
       {/* ─── SIDEBAR ─────────────────────────────────────────────────── */}
 <aside
-        className={`${collapsed ? "w-[76px]" : "w-[240px]"
+        className={`${collapsed ? "w-[76px]" : "w-[220px]"
           } bg-[#1A1614] flex flex-col justify-between shrink-0 transition-all duration-300 border-r border-black/40`}
 >
 <div
@@ -374,8 +374,9 @@ function AppLayout() {
  
             </div>
 <NavLink to="/expenses" icon={CreditCard} label="Expense Claims" collapsed={collapsed} />
-<NavLink to="/helpdesk" icon={Headphones} label="Helpdesk" collapsed={collapsed} />
 <NavLink to="/quotes" icon={ReceiptText} label="Quotes" collapsed={collapsed} />
+<NavLink to="/helpdesk" icon={Headphones} label="Helpdesk" collapsed={collapsed} />
+
 </div>
 </div>
 </aside>
