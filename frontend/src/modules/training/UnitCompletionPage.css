@@ -27,6 +27,12 @@
   margin-bottom: 18px;
 }
 
+.completion-audit-note {
+  color: #6b7280;
+  font-size: 13px;
+  margin: -6px 0 16px;
+}
+
 .form-group label {
   display: block;
   margin-bottom: 8px;
@@ -45,7 +51,7 @@
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #2563eb;
+  border-color: #E2622E;
 }
 
 .complete-button {
@@ -53,7 +59,7 @@
   padding: 12px;
   border: none;
   border-radius: 8px;
-  background: #2563eb;
+  background: #E2622E;
   color: white;
   font-weight: 600;
   cursor: pointer;
@@ -61,7 +67,7 @@
 }
 
 .complete-button:hover:not(:disabled) {
-  background: #1d4ed8;
+  background: #c9541f;
 }
 
 .complete-button:disabled {

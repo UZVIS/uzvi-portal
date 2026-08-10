@@ -57,18 +57,23 @@ export default function AddLineItemDialog({
         }
     }, [isOpen, initialData]);
 
-    useEffect(() => {
-        async function loadLibrary() {
-            try {
-                const items = await getLibraryItems();
-                setLibraryItems(items);
-            } catch {
-                console.error("Failed to load library items.");
-            }
-        }
+   useEffect(() => {
+    if (!isOpen) return;
 
-        loadLibrary();
-    }, []);
+    async function loadLibrary() {
+        try {
+            const items = await getLibraryItems();
+
+            console.log("Library items:", items);
+
+            setLibraryItems(items);
+        } catch (error) {
+            console.error("Failed to load library items:", error);
+        }
+    }
+
+    loadLibrary();
+}, [isOpen]);
 
     if (!isOpen) return null;
 

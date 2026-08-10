@@ -1,11 +1,10 @@
+
 .cu-page {
   max-width: 900px;
   margin: 0 auto;
-  padding: 32px 24px 60px;
+  padding: 8px 0 60px;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #1f2430;
-  background: #f7f5f2;
-  min-height: 100vh;
 }
 
 .cu-page--status {
@@ -61,6 +60,8 @@
   color: #9aa1ab;
 }
 
+/* ---------- Tables ---------- */
+
 .cu-table {
   width: 100%;
   border-collapse: collapse;
@@ -70,41 +71,101 @@
 .cu-table th {
   text-align: left;
   color: #6b7280;
-  font-weight: 500;
-  padding-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 12px 10px;
   border-bottom: 1px solid #eef0f2;
 }
 
 .cu-table td {
-  padding: 8px 0;
+  padding: 12px 10px;
   border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
 }
 
-/* .cu-panel--entries {
-  margin-top: 24px;
-} */
+.cu-table tbody tr:last-child td {
+  border-bottom: none;
+}
+/* Recent Entries column alignment */
+
+.cu-table--entries th:nth-child(3),
+.cu-table--entries td:nth-child(3),
+.cu-table--entries th:nth-child(4),
+.cu-table--entries td:nth-child(4),
+.cu-table--entries th:nth-child(5),
+.cu-table--entries td:nth-child(5),
+.cu-table--entries th:nth-child(6),
+.cu-table--entries td:nth-child(6) {
+  text-align: center;
+}
+
+/* Date, Project and Notes remain left aligned */
+
+.cu-table--entries th:nth-child(1),
+.cu-table--entries td:nth-child(1),
+.cu-table--entries th:nth-child(2),
+.cu-table--entries td:nth-child(2),
+.cu-table--entries th:nth-child(7),
+.cu-table--entries td:nth-child(7) {
+  text-align: left;
+}
+/* Hours by Project table */
+
+.cu-page__grid .cu-table {
+  table-layout: fixed;
+}
+
+.cu-page__grid .cu-table th,
+.cu-page__grid .cu-table td {
+  width: 50%;
+}
+
+.cu-page__grid .cu-table th:first-child,
+.cu-page__grid .cu-table td:first-child {
+  text-align: left;
+}
+
+.cu-page__grid .cu-table th:last-child,
+.cu-page__grid .cu-table td:last-child {
+  text-align: center;
+}
+
+/* Recent Entries */
 
 .cu-panel--entries {
   margin-top: 24px;
   overflow-x: auto;
 }
 
-.cu-panel__empty-inline {
-  color: #9aa1ab;
+.cu-table--entries {
+  table-layout: auto;
 }
 
 .cu-table--entries th,
 .cu-table--entries td {
-  padding-right: 16px;
+  padding: 12px 8px;
+}
+
+.cu-panel__empty-inline {
+  color: #9aa1ab;
+}
+
+.cu-table__ot {
+  color: #b8433a;
+  font-weight: 600;
 }
 
 .cu-table__notes {
-  max-width: 260px;
+  max-width: 160px;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
   color: #4b5563;
 }
+
+/* ---------- Weekly Trend ---------- */
 
 .cu-trend__row {
   display: flex;
@@ -137,4 +198,38 @@
   width: 48px;
   text-align: right;
   color: #1f2430;
+}
+
+.cu-ot-notice {
+  background: #fff7ed;
+  border: 1px solid #fbd7a5;
+  border-left: 4px solid #E2622E;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #9a5a1c;
+  margin: 16px 0;
+}
+
+.cu-ot-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.cu-ot-badge--pending {
+  background: #fff7ed;
+  color: #9a5a1c;
+}
+
+.cu-ot-badge--approved {
+  background: #e8f5ee;
+  color: #2f6b46;
+}
+
+.cu-ot-badge--rejected {
+  background: #fdeceb;
+  color: #b8433a;
 }
