@@ -241,3 +241,14 @@
   color: #6b7280;
   font-size: 13px;
 }
+
+.od-page__ot-notice {
+  background: #fff7ed;
+  border: 1px solid #fbd7a5;
+  border-left: 4px solid #E2622E;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #9a5a1c;
+  margin: 16px 0;
+}
