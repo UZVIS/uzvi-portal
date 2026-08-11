@@ -8,6 +8,9 @@ import {
   Navigate,
 } from "react-router-dom";
 import { useState, useEffect } from "react";
+import QuoteDashboard from "./modules/quotes/pages/quoteDashboard";
+import OpportunityDetailsPage from "./modules/quotes/pages/OpportunityDetailsPage";
+import ScenarioWorkspace from "./modules/quotes/pages/ScenarioWorkspace";
 import {
   CalendarDays,
   LogOut,
@@ -666,7 +669,32 @@ function AppLayout() {
               }
             />
  
-            {quoteRoutes}
+            <Route
+  path="/quotes"
+  element={
+    <ProtectedRoute>
+      <QuoteDashboard />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/quotes/opportunity/:id"
+  element={
+    <ProtectedRoute>
+      <OpportunityDetailsPage />
+    </ProtectedRoute>
+  }
+/>
+
+<Route
+  path="/quotes/scenario/:scenarioId"
+  element={
+    <ProtectedRoute>
+      <ScenarioWorkspace />
+    </ProtectedRoute>
+  }
+/>
             {assetRoutes}
  
             <Route

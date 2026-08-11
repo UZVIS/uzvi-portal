@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X, CheckCircle2, TrendingUp } from "lucide-react";
 import type { QuoteScenario } from "../types/quote";
 import "../styles/scenario-comparison.css";
@@ -43,6 +43,13 @@ export default function ScenarioComparisonDialog({
     const [results, setResults] = useState<ComparisonResult[]>([]);
 
     const [loading, setLoading] = useState(false);
+      useEffect(() => {
+    if (isOpen) {
+        setSelectedIds([]);
+        setResults([]);
+        setLoading(false);
+    }
+}, [isOpen]);
 
     if (!isOpen) {
         return null;
@@ -103,7 +110,7 @@ export default function ScenarioComparisonDialog({
     };
 
     const bestScenario = getBestScenario();
-
+    
     return (
         <div className="comparison-overlay">
 
@@ -125,7 +132,12 @@ export default function ScenarioComparisonDialog({
 
                     <button
                         className="comparison-close"
-                        onClick={onClose}
+                        onClick={() => {
+    setResults([]);
+    setSelectedIds([]);
+    setLoading(false);
+    onClose();
+}}
                     >
                         <X size={20} />
                     </button>
@@ -248,13 +260,18 @@ export default function ScenarioComparisonDialog({
                 {/* Actions */}
                 <div className="comparison-actions">
 
-                    <button
-                        type="button"
-                        className="comparison-cancel"
-                        onClick={onClose}
-                    >
-                        Close
-                    </button>
+                   <button
+    type="button"
+    className="comparison-cancel"
+    onClick={() => {
+        setResults([]);
+        setSelectedIds([]);
+        setLoading(false);
+        onClose();
+    }}
+>
+    Close
+</button>
 
                     <button
                         type="button"

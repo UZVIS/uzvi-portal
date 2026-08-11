@@ -3,7 +3,8 @@ import Header from "../../assets/components/Header";
 
 import OpportunityDetails from "../components/OpportunityDetails";
 
-import "../styles/quote-dashboard.css";
+
+import "../styles/opportunity-details.css";
 
 export default function OpportunityDetailsPage() {
   return (
