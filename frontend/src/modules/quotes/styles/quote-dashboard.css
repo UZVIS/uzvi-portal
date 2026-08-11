@@ -39,7 +39,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--accent);
+  background: var(--accent) !important;
   color: white;
   border: none;
   padding: 10px 18px;
@@ -1649,3 +1649,6 @@ tbody tr:hover .opp-name {
     width: 100%;
   }
 }
+
+
+

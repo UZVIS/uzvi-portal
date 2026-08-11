@@ -10,14 +10,14 @@ import {
   useParams,
 } from "react-router-dom";
 
-import {
-  useEffect,
-  useState,
-} from "react";
+import { useEffect, useState } from "react";
 
 import {
   getOpportunityById,
   getScenarios,
+  createScenario,
+  updateScenario,
+  deleteScenario,
 } from "../services/quoteService";
 
 import type {
@@ -27,18 +27,13 @@ import type {
 
 import ScenarioTable from "./ScenarioTable";
 import ScenarioDialog from "./ScenarioDialog";
+import ConfirmDialog from "./confirmDialog";
+
 import { useAuth } from "../../../shared/auth/AuthContext";
-
-import { createScenario,
-  updateScenario,
-  deleteScenario
- } from "../services/quoteService";
-import ConfirmDialog from "./confirmDialog"
 import { toast } from "sonner";
+
 export default function OpportunityDetails() {
-
   const navigate = useNavigate();
-
   const { id } = useParams();
 
   const [opportunity, setOpportunity] =
@@ -52,27 +47,22 @@ export default function OpportunityDetails() {
   const [showScenarioDialog, setShowScenarioDialog] =
     useState(false);
 
-  const [reload, setReload] =
-    useState(false);
+  const [reload, setReload] = useState(false);
 
   const [showDeleteDialog, setShowDeleteDialog] =
     useState(false);
 
- const [selectedScenarioId, setSelectedScenarioId] =
+  const [selectedScenarioId, setSelectedScenarioId] =
     useState("");
 
   const [editingScenario, setEditingScenario] =
-useState<QuoteScenario | null>(null);
-
+    useState<QuoteScenario | null>(null);
 
   useEffect(() => {
-
     async function load() {
-
       if (!id) return;
 
       try {
-
         const opportunityData =
           await getOpportunityById(id);
 
@@ -82,27 +72,22 @@ useState<QuoteScenario | null>(null);
           await getScenarios(id);
 
         setScenarios(scenarioData);
-
       } catch (error) {
-
         console.error(error);
-
       }
-
     }
 
     load();
-
-  }, [id,reload]);
+  }, [id, reload]);
 
   if (!opportunity) {
-
     return (
       <div className="opportunity-details">
-        <p className="loading-text">Loading opportunity…</p>
+        <p className="loading-text">
+          Loading opportunity…
+        </p>
       </div>
     );
-
   }
 
   const totalScenarios = scenarios.length;
@@ -115,232 +100,353 @@ useState<QuoteScenario | null>(null);
     (s) => s.output_type === "tender"
   ).length;
 
-  const createdDateLabel = new Date().toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+  const createdDateLabel = new Date().toLocaleDateString(
+    "en-GB",
+    {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }
+  );
 
   return (
-
     <div className="opportunity-details">
+
+      {/* =====================================================
+          BACK
+      ===================================================== */}
 
       <button
         className="back-btn"
         onClick={() => navigate("/quotes")}
       >
-
         <ArrowLeft size={18} />
-
-        Back to Opportunities
-
+        <span>Back to Opportunities</span>
       </button>
+
+
+      {/* =====================================================
+          OPPORTUNITY HEADER
+      ===================================================== */}
 
       <div className="details-card">
 
         <div className="details-header">
 
-          <div>
+          <div className="details-header-left">
 
-            <h2>
+            <div className="opportunity-icon">
+              <Building2 size={24} />
+            </div>
 
-              {opportunity.name}
+            <div className="details-header-info">
 
-            </h2>
+              <h2>
+                {opportunity.name}
+              </h2>
 
-            <p>
+              <div className="details-header-subtitle">
 
-              <Building2 size={16} />
+                <Building2 size={15} />
 
-              {opportunity.client}
+                <span>
+                  {opportunity.client}
+                </span>
 
-            </p>
+                <span className="header-separator">
+                  •
+                </span>
 
-            <p>
+                <Calendar size={15} />
 
-              <Calendar size={16} />
+                <span>
+                  {createdDateLabel}
+                </span>
 
-              {createdDateLabel}
+              </div>
 
-            </p>
-
-            <div className="details-id">
-              {opportunity.opportunity_id}
             </div>
 
           </div>
 
-           
+
+          {/* RIGHT SIDE */}
+
+          <div className="details-header-right">
+
+            <span className="details-id-label">
+              Opportunity ID
+            </span>
+
+            <span className="details-id">
+              {opportunity.opportunity_id}
+            </span>
+
+          </div>
 
         </div>
 
       </div>
 
-      {/* Summary card */}
-      <div className="summary-card">
 
-        <div className="summary-item">
-          <span className="summary-label">Opportunity Name</span>
-          <span className="summary-value">{opportunity.name}</span>
+      {/* =====================================================
+          OPPORTUNITY OVERVIEW
+      ===================================================== */}
+
+      <section className="opportunity-overview">
+
+        <div className="overview-heading">
+
+          <div>
+            <h3>
+              Opportunity Overview
+            </h3>
+
+            <p>
+              Summary of this opportunity and its scenarios.
+            </p>
+          </div>
+
         </div>
 
-        <div className="summary-item">
-          <span className="summary-label">Client Name</span>
-          <span className="summary-value">{opportunity.client}</span>
+
+        {/* SUMMARY */}
+
+        <div className="summary-card">
+
+          <div className="summary-item">
+            <span className="summary-label">
+              Opportunity
+            </span>
+
+            <span className="summary-value">
+              {opportunity.name}
+            </span>
+          </div>
+
+
+          <div className="summary-item">
+            <span className="summary-label">
+              Client
+            </span>
+
+            <span className="summary-value">
+              {opportunity.client}
+            </span>
+          </div>
+
+
+          <div className="summary-item">
+            <span className="summary-label">
+              Created
+            </span>
+
+            <span className="summary-value">
+              {createdDateLabel}
+            </span>
+          </div>
+
+
+          <div className="summary-item">
+            <span className="summary-label">
+              Scenarios
+            </span>
+
+            <span className="summary-number blue">
+              {totalScenarios}
+            </span>
+          </div>
+
+
+          <div className="summary-item">
+            <span className="summary-label">
+              Quotes Generated
+            </span>
+
+            <span className="summary-number orange">
+              {totalQuotes}
+            </span>
+          </div>
+
+
+          <div className="summary-item">
+            <span className="summary-label">
+              Tenders Generated
+            </span>
+
+            <span className="summary-number amber">
+              {totalTenders}
+            </span>
+          </div>
+
         </div>
 
-        <div className="summary-item">
-          <span className="summary-label">Opportunity ID</span>
-          <span className="summary-value summary-value-muted">
-            {opportunity.opportunity_id}
-          </span>
+      </section>
+
+
+      {/* =====================================================
+          SCENARIOS
+      ===================================================== */}
+
+      <section className="scenarios-section">
+
+       <div className="section-head-row">
+
+  <div className="section-head-left">
+    <div>
+      <h3 className="section-title">
+        Scenarios
+        <span className="section-count">
+          {scenarios.length}
+        </span>
+      </h3>
+
+      <p className="section-description">
+        Manage quote and tender scenarios.
+      </p>
+    </div>
+  </div>
+
+  <button
+    className="add-btn"
+    onClick={() => setShowScenarioDialog(true)}
+  >
+    <FolderPlus size={18} />
+    New Scenario
+  </button>
+
+</div>
+
+
+        {/* ===================================================
+            SCENARIO TABLE
+        =================================================== */}
+
+        <div className="scenario-table-wrapper">
+
+          <ScenarioTable
+            scenarios={scenarios}
+            onNewScenario={() =>
+              setShowScenarioDialog(true)
+            }
+
+            onDeleteScenario={(scenarioId) => {
+              setSelectedScenarioId(scenarioId);
+              setShowDeleteDialog(true);
+            }}
+
+            onEditScenario={(scenario) => {
+              setEditingScenario(scenario);
+              setShowScenarioDialog(true);
+            }}
+          />
+
         </div>
 
-        <div className="summary-item">
-          <span className="summary-label">Created Date</span>
-          <span className="summary-value">{createdDateLabel}</span>
-        </div>
+      </section>
 
-        <div className="summary-item">
-          <span className="summary-label">Total Scenarios</span>
-          <span className="summary-value">{totalScenarios}</span>
-        </div>
 
-        <div className="summary-item">
-          <span className="summary-label">Total Quotes Generated</span>
-          <span className="summary-value">{totalQuotes}</span>
-        </div>
+      {/* =====================================================
+          CREATE / EDIT
+      ===================================================== */}
 
-        <div className="summary-item">
-          <span className="summary-label">Total Tender Views</span>
-          <span className="summary-value">{totalTenders}</span>
-        </div>
+      <ScenarioDialog
+        isOpen={showScenarioDialog}
+        scenario={editingScenario}
 
-      </div>
+        onClose={() => {
+          setShowScenarioDialog(false);
+          setEditingScenario(null);
+        }}
 
-      <div className="section-head-row">
-        <h3 className="section-title">
-          Scenarios <span className="section-count">({scenarios.length})</span>
-        </h3>
+        onSave={async (data) => {
+          if (!employee || !id) return;
 
-        <button
-          className="add-btn"
-          onClick={() =>
-            setShowScenarioDialog(true)
+          try {
+            if (editingScenario) {
+
+              await updateScenario(
+                editingScenario.scenario_id,
+                data
+              );
+
+              toast.success(
+                "Scenario updated successfully."
+              );
+
+            } else {
+
+              await createScenario({
+                opportunity_id: id,
+                created_by: employee.employee_id,
+                ...data,
+              });
+
+              toast.success(
+                "Scenario created successfully."
+              );
+            }
+
+            setReload((prev) => !prev);
+
+            setShowScenarioDialog(false);
+
+            setEditingScenario(null);
+
+          } catch {
+
+            toast.error(
+              editingScenario
+                ? "Failed to update scenario."
+                : "Failed to create scenario."
+            );
           }
-        >
-          <FolderPlus size={18} />
-          New Scenario
-        </button>
-      </div>
+        }}
+      />
 
-      <ScenarioTable
-  scenarios={scenarios}
-  onNewScenario={() => setShowScenarioDialog(true)}
-onDeleteScenario={(scenarioId) => {
 
-    setSelectedScenarioId(scenarioId);
+      {/* =====================================================
+          DELETE
+      ===================================================== */}
 
-    setShowDeleteDialog(true);
+      <ConfirmDialog
+        isOpen={showDeleteDialog}
 
-}}
- onEditScenario={(scenario) => {
-    setEditingScenario(scenario);
-    setShowScenarioDialog(true);
-  }}
+        title="Delete Scenario"
 
-/>
+        message="Are you sure you want to delete this scenario?"
 
-  <ScenarioDialog
-  isOpen={showScenarioDialog}
-  scenario={editingScenario}
-  onClose={() => {
-    setShowScenarioDialog(false);
-    setEditingScenario(null);
-  }}
-  onSave={async (data) => {
+        onCancel={() =>
+          setShowDeleteDialog(false)
+        }
 
-    if (!employee || !id) return;
-
-    try {
-
-      if (editingScenario) {
-
-        await updateScenario(
-          editingScenario.scenario_id,
-          data
-        );
-
-        toast.success("Scenario updated successfully.");
-
-      } else {
-
-        await createScenario({
-          opportunity_id: id,
-          created_by: employee.employee_id,
-          ...data,
-        });
-
-        toast.success("Scenario created successfully.");
-
-      }
-
-      setReload(prev => !prev);
-
-      setShowScenarioDialog(false);
-
-      setEditingScenario(null);
-
-    } catch {
-
-      toast.error(
-        editingScenario
-          ? "Failed to update scenario."
-          : "Failed to create scenario."
-      );
-
-    }
-
-  }}
-/>
-   <ConfirmDialog
-    isOpen={showDeleteDialog}
-    title="Delete Scenario"
-    message="Are you sure you want to delete this scenario?"
-    onCancel={() =>
-        setShowDeleteDialog(false)
-    }
-    onConfirm={async () => {
-
-        try {
+        onConfirm={async () => {
+          try {
 
             await deleteScenario(
-                selectedScenarioId
+              selectedScenarioId
             );
 
             toast.success(
-                "Scenario deleted."
+              "Scenario deleted."
             );
 
-            setReload(prev => !prev);
+            setReload((prev) => !prev);
 
-        } catch {
+          } catch {
 
             toast.error(
-                "Failed to delete scenario."
+              "Failed to delete scenario."
             );
 
-        } finally {
+          } finally {
 
             setShowDeleteDialog(false);
 
-        }
-
-    }}
-/>
+          }
+        }}
+      />
 
     </div>
-
   );
-
 }
