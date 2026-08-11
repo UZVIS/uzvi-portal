@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { Plus, FolderOpen, Pencil, Trash2, Inbox } from "lucide-react";
+import {
+  Plus,
+  Search,
+  FolderOpen,
+  Inbox,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import type { Opportunity } from "../types/quote";
@@ -48,27 +53,28 @@ export default function OpportunityTable({
   );
 
   return (
-
     <div className="table-card">
 
+      {/* =========================
+          TOOLBAR
+      ========================= */}
       <div className="table-toolbar">
 
-        <div className="search-wrap">
+        {/* Search */}
+        <div className="opportunity-search">
+          <Search size={17} />
 
           <input
             type="text"
-            placeholder="Search opportunity..."
-            className="search-input"
+            placeholder="Search opportunities..."
             value={search}
-            onChange={(e) =>
-              setSearch(e.target.value)
-            }
+            onChange={(e) => setSearch(e.target.value)}
           />
-
         </div>
 
         <div className="toolbar-spacer" />
 
+        {/* New Opportunity */}
         <button
           className="add-btn"
           onClick={onAddOpportunity}
@@ -79,26 +85,21 @@ export default function OpportunityTable({
 
       </div>
 
+      {/* =========================
+          TABLE
+      ========================= */}
       <table className="data-table">
 
         <thead>
-
           <tr>
-
             <th>Opportunity</th>
-
             <th>Client</th>
-
             <th>Scenarios</th>
-
             <th>Created</th>
-
             <th className="col-actions">
               Actions
             </th>
-
           </tr>
-
         </thead>
 
         <tbody>
@@ -106,52 +107,39 @@ export default function OpportunityTable({
           {filteredOpportunities.length === 0 ? (
 
             <tr>
-
               <td colSpan={5}>
 
                 <div className="empty-state">
 
                   <div className="empty-icon">
-
                     <Inbox size={28} />
-
                   </div>
 
                   <h3>
-
                     {search
                       ? "No matching opportunities"
                       : "No opportunities yet"}
-
                   </h3>
 
                   <p>
-
                     {search
                       ? "Try a different search."
                       : "Create your first opportunity to start building quote scenarios and generating tenders for a client."}
-
                   </p>
 
                   {!search && (
-
                     <button
                       className="add-btn"
                       onClick={onAddOpportunity}
                     >
-
                       <Plus size={16} />
-
                       Create Opportunity
-
                     </button>
-
                   )}
 
                 </div>
 
               </td>
-
             </tr>
 
           ) : (
@@ -160,76 +148,61 @@ export default function OpportunityTable({
 
               <tr key={item.opportunity_id}>
 
+                {/* Opportunity */}
                 <td>
-
                   <div className="opp-name">
-
                     {item.name}
-
                   </div>
-
                 </td>
 
+                {/* Client */}
                 <td>
-
                   <div className="client-cell">
 
                     <div className="client-avatar">
-
                       {getInitials(item.client)}
-
                     </div>
 
                     <span>
-
                       {item.client}
-
                     </span>
 
                   </div>
-
                 </td>
 
+                {/* Scenarios */}
                 <td>
-
                   <span className="badge badge-zero">
-
                     {item.scenarioCount ?? 0}{" "}
 
                     {(item.scenarioCount ?? 0) === 1
                       ? "scenario"
                       : "scenarios"}
-
                   </span>
-
                 </td>
 
+                {/* Created */}
                 <td className="date-cell">
-
                   {formatDate()}
-
                 </td>
 
-                <td className="action-buttons">
+                {/* Actions */}
+                <td>
+                  <div className="action-buttons">
 
-                  <button
-                    className="icon-btn"
-                    title="Open Opportunity"
-                    onClick={() =>
-                      navigate(
-                        `/quotes/opportunity/${item.opportunity_id}`
-                      )
-                    }
-                  >
+                    <button
+                      className="icon-btn"
+                      title="Open Opportunity"
+                      onClick={() =>
+                        navigate(
+                          `/quotes/opportunity/${item.opportunity_id}`
+                        )
+                      }
+                    >
+                      <FolderOpen size={16} />
+                    </button>
 
-                    <FolderOpen size={16} />
-
-                  </button>
-
-                  
-
-                  
-
+                  </div>
                 </td>
 
               </tr>
@@ -242,22 +215,20 @@ export default function OpportunityTable({
 
       </table>
 
+      {/* =========================
+          FOOTER
+      ========================= */}
       {opportunities.length > 0 && (
-
         <div className="table-footer">
 
           <span>
-
-            Showing {filteredOpportunities.length} of {opportunities.length} opportunities
-
+            Showing {filteredOpportunities.length} of{" "}
+            {opportunities.length} opportunities
           </span>
 
         </div>
-
       )}
 
     </div>
-
   );
-
 }
