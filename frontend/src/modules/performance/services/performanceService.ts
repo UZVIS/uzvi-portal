@@ -250,23 +250,16 @@ async(
 
 
 
-
 // ================= ACTIVE REVIEW CYCLE =================
-
-
 export const getActiveCycle =
-async():
-Promise<ReviewCycle | null> => {
-
-
-  const response =
-    await api.get(
-      "/cycles/active"
-    );
-
+async (
+  employeeId: string = "EMP001"
+): Promise<ReviewCycle | null> => {
+  const response = await api.get(
+    `/cycles/active?employee_id=${employeeId}`
+  );
 
   return response.data;
-
 };
 
 
