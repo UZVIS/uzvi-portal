@@ -4,7 +4,7 @@ import "./AddCategoryForm.css";
 interface Props {
   onSubmit: (input: {
     name: string;
-    capAmount: number | null;
+    capAmount: number;
   }) => Promise<void>;
 }
 
@@ -25,12 +25,24 @@ export function AddCategoryForm({ onSubmit }: Props) {
       return;
     }
 
+    if (!capAmount.trim()) {
+      setStatus("error");
+      setErrorMsg("Enter a cap amount.");
+      return;
+    }
+
+    const parsedCap = parseFloat(capAmount);
+
+    if (isNaN(parsedCap) || parsedCap < 0) {
+      setStatus("error");
+      setErrorMsg("Enter a valid cap amount.");
+      return;
+    }
+
     setStatus("saving");
     setErrorMsg("");
 
     try {
-      const parsedCap = capAmount ? parseFloat(capAmount) : null;
-
       await onSubmit({
         name: name.trim(),
         capAmount: parsedCap,
@@ -40,7 +52,6 @@ export function AddCategoryForm({ onSubmit }: Props) {
       setCapAmount("");
       setStatus("saved");
 
-      // Hide success message after 2 seconds
       setTimeout(() => {
         setStatus("idle");
       }, 2000);
@@ -70,14 +81,15 @@ export function AddCategoryForm({ onSubmit }: Props) {
         </label>
 
         <label>
-          Cap amount (optional)
+          Cap amount
           <input
             type="number"
             min="0"
             step="0.01"
-            placeholder="No cap"
+            placeholder="Enter cap amount"
             value={capAmount}
             onChange={(e) => setCapAmount(e.target.value)}
+            required
           />
         </label>
       </div>
