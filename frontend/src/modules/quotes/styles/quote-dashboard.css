@@ -946,111 +946,246 @@ tbody tr:hover .opp-name {
   color: var(--accent-dark);
   font-variant-numeric: tabular-nums;
 }
+/* =========================================================
+   OUTPUT PREVIEW - COMMON STYLES
+   Applies to BOTH Quote and Tender Preview
+   ========================================================= */
 
-/* Output tabs */
 .output-section {
-  margin-bottom: 24px;
+    width: 100%;
+    margin-top: 28px;
 }
 
-.tab-bar {
-  display: inline-flex;
-  background: #F1F2F5;
-  border-radius: 11px;
-  padding: 4px;
-  gap: 2px;
-  margin-bottom: 18px;
+/* -------------------------
+   TABS
+   ------------------------- */
+
+.output-section .tab-bar {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+
+    margin-bottom: 22px;
+
+    background: #f3f4f6;
+    padding: 4px;
+    border-radius: 12px;
 }
 
-.tab-btn {
-  border: none;
-  background: transparent;
-  padding: 9px 20px;
-  border-radius: 8px;
-  font-size: 13.5px;
-  font-weight: 700;
-  color: var(--muted);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.output-section .tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+
+    height: 42px;
+    padding: 0 18px;
+
+    border: none;
+    border-radius: 9px;
+
+    background: transparent;
+    color: #6b7280;
+
+    font-size: 14px;
+    font-weight: 700;
+
+    cursor: pointer;
 }
 
-.tab-btn.active {
-  background: #fff;
-  color: var(--ink);
-  box-shadow: 0 2px 6px rgba(16, 23, 42, 0.08);
+.output-section .tab-btn.active {
+    background: #ffffff;
+    color: #111827;
+
+    box-shadow: 0 2px 6px rgba(16, 23, 42, 0.08);
 }
 
-.preview-card {
-  background: var(--bg-card);
-  border: 1px dashed #D8DAE3;
-  border-radius: 14px;
-  padding: 48px 24px;
-  text-align: center;
-  color: var(--muted-soft);
+
+/* =========================================================
+   COMMON PREVIEW CARD
+   ========================================================= */
+
+.output-section .preview-card {
+    width: 100%;
+
+    background: #ffffff;
+
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+
+    overflow-x: auto;
+
+    box-shadow:
+        0 2px 6px rgba(16, 23, 42, 0.025),
+        0 8px 22px rgba(16, 23, 42, 0.035);
 }
 
-.preview-card svg {
-  margin-bottom: 14px;
-  color: var(--muted-soft);
+
+/* =========================================================
+   COMMON TABLE
+   ========================================================= */
+
+.output-section .data-table {
+    width: 100%;
+
+    border-collapse: collapse;
+
+    table-layout: auto;
+
+    min-width: 700px;
 }
 
-.preview-card h4 {
-  margin: 0 0 6px;
-  font-size: 14.5px;
-  font-weight: 700;
-  color: var(--muted);
+
+/* -------------------------
+   TABLE HEADER
+   ------------------------- */
+
+.output-section .data-table th {
+    padding: 15px 18px;
+
+    background: #fafbfc;
+
+    border-bottom: 1px solid #e5e7eb;
+
+    color: #9299a8;
+
+    font-size: 11px;
+    font-weight: 700;
+
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+
+    text-align: left;
+
+    white-space: nowrap;
 }
 
-.preview-card p {
-  margin: 0;
-  font-size: 12.5px;
-  max-width: 340px;
-  margin-inline: auto;
-  line-height: 1.5;
+
+/* -------------------------
+   TABLE BODY
+   ------------------------- */
+
+.output-section .data-table td {
+    padding: 16px 18px;
+
+    border-bottom: 1px solid #f1f2f4;
+
+    color: #374151;
+
+    font-size: 13.5px;
+
+    vertical-align: middle;
+
+    white-space: nowrap;
 }
 
-/* Bottom actions */
-.bottom-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding-top: 6px;
+.output-section .data-table tbody tr:last-child td {
+    border-bottom: none;
 }
 
-@media (max-width: 1080px) {
-  .workspace-grid {
-    grid-template-columns: 1fr;
-  }
-  .cost-row {
-    grid-template-columns: repeat(2, 1fr);
-  }
+.output-section .data-table tbody tr:hover {
+    background: #fffcf9;
 }
 
-.preview-card table {
-  display: table !important;
-  width: 100%;
-  border-collapse: collapse;
+
+/* =========================================================
+   ALIGN NUMERIC COLUMNS
+   ========================================================= */
+
+.output-section .data-table th:not(:first-child),
+.output-section .data-table td:not(:first-child) {
+    text-align: right;
 }
 
-.preview-card thead {
-  display: table-header-group !important;
+
+/* Description stays left */
+
+.output-section .data-table th:first-child,
+.output-section .data-table td:first-child {
+    text-align: left;
 }
 
-.preview-card tbody {
-  display: table-row-group !important;
+
+/* =========================================================
+   SUMMARY
+   ========================================================= */
+
+.output-section .preview-summary {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+
+    gap: 24px;
+
+    padding: 18px 22px;
+
+    border-top: 1px solid #edf0f4;
+
+    background: #ffffff;
 }
 
-.preview-card tr {
-  display: table-row !important;
+.output-section .preview-summary p {
+    margin: 0;
+
+    font-size: 13px;
+    color: #6b7280;
+
+    white-space: nowrap;
 }
 
-.preview-card th,
-.preview-card td {
-  display: table-cell !important;
-  vertical-align: middle;
+.output-section .preview-summary strong {
+    color: #374151;
+    font-weight: 700;
 }
 
+
+/* =========================================================
+   EMPTY STATE
+   ========================================================= */
+
+.output-section .empty-row {
+    padding: 40px 20px !important;
+
+    text-align: center !important;
+
+    color: #9ca3af !important;
+}
+
+
+/* =========================================================
+   TENDER TABLE
+   ========================================================= */
+
+.output-section .preview-card:has(th:nth-child(8)) .data-table {
+    min-width: 1100px;
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 800px) {
+
+    .output-section .preview-card {
+        overflow-x: auto;
+    }
+
+    .output-section .data-table {
+        min-width: 700px;
+    }
+
+    .output-section .preview-card:has(th:nth-child(8)) .data-table {
+        min-width: 1100px;
+    }
+
+    .output-section .preview-summary {
+        justify-content: flex-start;
+
+        flex-wrap: wrap;
+
+        gap: 10px 20px;
+    }
+}
 /* .modal {
     width: 340px;
 } */
@@ -1652,3 +1787,165 @@ tbody tr:hover .opp-name {
 
 
 
+/* =========================================================
+   QUOTE PREVIEW ONLY
+   Does NOT affect Tender Preview
+   ========================================================= */
+
+.quote-preview {
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: auto;
+}
+
+
+/* =========================================================
+   QUOTE TABLE
+   ========================================================= */
+
+.quote-preview .quote-preview-table {
+    width: 100%;
+    min-width: 650px;
+
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+
+/* =========================================================
+   COLUMN WIDTHS
+   ========================================================= */
+
+/* Description */
+.quote-preview .quote-preview-table th:nth-child(1),
+.quote-preview .quote-preview-table td:nth-child(1) {
+    width: 44%;
+    text-align: left;
+}
+
+/* Quantity */
+.quote-preview .quote-preview-table th:nth-child(2),
+.quote-preview .quote-preview-table td:nth-child(2) {
+    width: 12%;
+    text-align: right;
+}
+
+/* Unit Price */
+.quote-preview .quote-preview-table th:nth-child(3),
+.quote-preview .quote-preview-table td:nth-child(3) {
+    width: 22%;
+    text-align: right;
+}
+
+/* Line Total */
+.quote-preview .quote-preview-table th:nth-child(4),
+.quote-preview .quote-preview-table td:nth-child(4) {
+    width: 22%;
+    text-align: right;
+}
+
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.quote-preview .quote-preview-table thead th {
+    padding: 14px 20px;
+
+    background: #fafbfc;
+
+    border-bottom: 1px solid #e5e7eb;
+
+    font-size: 11px;
+    font-weight: 700;
+
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+
+    color: #9299a8;
+
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   BODY
+   ========================================================= */
+
+.quote-preview .quote-preview-table tbody td {
+    padding: 15px 20px;
+
+    border-bottom: 1px solid #f1f2f4;
+
+    font-size: 14px;
+
+    color: #6b7280;
+
+    vertical-align: middle;
+}
+
+
+/* Description text */
+.quote-preview .quote-preview-table tbody td:first-child {
+    color: #6b7280;
+    font-weight: 500;
+}
+
+
+/* Numeric values */
+.quote-preview .quote-preview-table tbody td:nth-child(2),
+.quote-preview .quote-preview-table tbody td:nth-child(3),
+.quote-preview .quote-preview-table tbody td:nth-child(4) {
+    text-align: right;
+
+    font-variant-numeric: tabular-nums;
+
+    white-space: nowrap;
+}
+
+
+/* Last row */
+.quote-preview .quote-preview-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+
+/* Hover */
+.quote-preview .quote-preview-table tbody tr:hover {
+    background: #fafafa;
+}
+
+
+/* =========================================================
+   QUOTE SUMMARY
+   ========================================================= */
+
+.quote-preview .preview-summary {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+
+    gap: 4px;
+
+    margin-top: 16px;
+
+    padding: 0 20px 20px;
+}
+
+
+.quote-preview .preview-summary p {
+    margin: 0;
+
+    font-size: 14px;
+
+    line-height: 1.5;
+
+    color: #6b7280;
+}
+
+
+.quote-preview .preview-summary strong {
+    color: #374151;
+
+    font-weight: 700;
+}

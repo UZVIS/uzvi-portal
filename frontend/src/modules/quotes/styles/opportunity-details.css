@@ -1018,8 +1018,7 @@
 
 
 /* =========================================================
-   SCENARIO SEARCH - FINAL
-   Scoped only to Opportunity Details
+   SCENARIO SEARCH 
 ========================================================= */
 
 .opportunity-details .table-toolbar {
@@ -1089,3 +1088,7 @@
     background: #ffffff;
     border-color: #d1d5db;
 }
+
+
+
+
