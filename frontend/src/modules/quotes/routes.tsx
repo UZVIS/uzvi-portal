@@ -4,8 +4,10 @@ import { ProtectedRoute } from "../../shared/components/ProtectedRoute";
 import QuoteDashboard from "./pages/quoteDashboard";
 import OpportunityDetailsPage from "./pages/OpportunityDetailsPage";
 import ScenarioWorkspace from "./pages/ScenarioWorkspace";
+
 export const quoteRoutes = (
   <>
+    {/* Quotes Dashboard */}
     <Route
       path="/quotes"
       element={
@@ -15,6 +17,7 @@ export const quoteRoutes = (
       }
     />
 
+    {/* Opportunity Details */}
     <Route
       path="/quotes/opportunity/:id"
       element={
@@ -24,6 +27,7 @@ export const quoteRoutes = (
       }
     />
 
+    {/* Scenario Workspace */}
     <Route
       path="/quotes/scenario/:scenarioId"
       element={

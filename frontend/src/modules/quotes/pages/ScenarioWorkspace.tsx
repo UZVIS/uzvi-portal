@@ -1,5 +1,5 @@
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Pencil, Trash2, TrendingUp } from "lucide-react";
+import { ArrowLeft, Copy, Pencil, Trash2, TrendingUp} from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import ScenarioComparisonDialog from "../components/ScenarioComparisonDialog";
@@ -18,7 +18,9 @@ import {
      getScenarios,
     getScenarioById,
      compareScenarios,
+      duplicateScenario,
     
+
 } from "../services/quoteService";
 import type {
     QuoteScenario,
@@ -52,6 +54,8 @@ export default function ScenarioWorkspace() {
     const [selectedLineItemId, setSelectedLineItemId] =
          useState("");
     const [showDeleteDialog, setShowDeleteDialog] =
+    useState(false);
+    const [showReuseDialog, setShowReuseDialog] =
     useState(false);
 
     const [showEditDialog, setShowEditDialog] =
@@ -191,6 +195,14 @@ const [scenarios, setScenarios] =
         <TrendingUp size={15} />
         Compare Scenarios
     </button>
+
+    <button
+    className="btn-secondary"
+    onClick={() => setShowReuseDialog(true)}
+>
+    <Copy size={15} />
+    Reuse Scenario
+</button>
 
     <button
         className="btn-secondary"
@@ -350,6 +362,7 @@ const [scenarios, setScenarios] =
 
     }}
 />
+
 <ConfirmDialog
     isOpen={showDeleteLineItemDialog}
     title="Delete Line Item"
@@ -419,6 +432,48 @@ const [scenarios, setScenarios] =
     }
 
   }}
+/>
+
+<ConfirmDialog
+    isOpen={showReuseDialog}
+    title="Reuse Scenario"
+    message={`Create a new scenario based on "${scenario.name}"?`}
+    confirmLabel="Reuse"
+    cancelLabel="Cancel"
+    onCancel={() => setShowReuseDialog(false)}
+    onConfirm={async () => {
+        try {
+            const duplicatedScenario =
+                await duplicateScenario(
+                    scenario.scenario_id,
+                    {
+                        name: `${scenario.name} - Copy`,
+                    }
+                );
+
+            toast.success(
+                "Scenario reused successfully."
+            );
+
+            setShowReuseDialog(false);
+
+            navigate(
+                `/quotes/scenario/${duplicatedScenario.scenario_id}`
+            );
+
+        } catch (error) {
+            console.error(
+                "Failed to reuse scenario:",
+                error
+            );
+
+            toast.error(
+                "Failed to reuse scenario."
+            );
+
+            setShowReuseDialog(false);
+        }
+    }}
 />
 <ScenarioComparisonDialog
     isOpen={showComparison}

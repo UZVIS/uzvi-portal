@@ -216,3 +216,17 @@ export async function compareScenarios(
         scenarioIds
     );
 }
+
+export interface ScenarioDuplicateRequest {
+    name: string;
+}
+
+export async function duplicateScenario(
+    scenarioId: string,
+    data: ScenarioDuplicateRequest
+): Promise<QuoteScenario> {
+    return apiPost(
+        `${BASE_URL}/scenarios/${scenarioId}/duplicate`,
+        data
+    );
+}
