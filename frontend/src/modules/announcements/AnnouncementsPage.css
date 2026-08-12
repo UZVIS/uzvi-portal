@@ -91,6 +91,12 @@
   box-shadow: 0 6px 16px -6px rgba(226, 98, 46, 0.55);
 }
 
+.c-pill--active.c-pill--amber {
+  background: #E2622E;
+  color: #fff;
+  box-shadow: 0 6px 16px -6px rgba(226, 98, 46, 0.55);
+}
+
 /* ================= List card wrapper ================= */
 
 .announcements-card {
