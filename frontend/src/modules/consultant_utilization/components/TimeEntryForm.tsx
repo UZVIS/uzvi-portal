@@ -24,6 +24,13 @@ export function TimeEntryForm({ projects, onSubmit }: Props) {
       setErrorMsg("Pick a project and enter hours greater than 0.");
       return;
     }
+
+    const dayOfWeek = new Date(date + "T00:00:00").getDay(); // 0=Sun, 6=Sat
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      setStatus("error");
+      setErrorMsg("Weekends are not working days. Pick a weekday (Monday-Friday).");
+      return;
+    }
     setStatus("saving");
     try {
       await onSubmit({ projectId, date, hours: parsedHours, billable, notes });

@@ -220,10 +220,7 @@ def create_time_entry(
     db: Session = Depends(get_db),
     current_employee: Employee = Depends(get_current_employee),
 ):
-    # NFR-SEC-02: a time entry is attributed to whoever is actually signed
-    # in - UNLESS that signed-in account is Admin/Leadership, which has a
-    # legitimate "log hours on behalf of an employee" feature (Org
-    # Dashboard). Any other tier can never claim to be someone else.
+
     if current_employee.access_tier != "Admin/Leadership":
         data.employee_id = current_employee.employee_id
     try:
@@ -231,6 +228,9 @@ def create_time_entry(
     except service.NotFoundError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
     except service.FutureDateError as exc:
+        raise HTTPException(status_code=422, detail=str(exc))
+
+    except service.WeekendDateError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
     except service.DailyHoursExceededError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
