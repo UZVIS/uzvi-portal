@@ -1,11 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from "../../shared/auth/AuthContext";
-import { listAllAnnouncements, listFeedForEmployee, acknowledgeAnnouncement } from "./api";
+import {
+  listAllAnnouncements,
+  listFeedForEmployee,
+  acknowledgeAnnouncement,
+  getAcknowledgmentStatus,
+} from "./api";
 import type { Announcement } from "./types";
 import { AnnouncementCard } from "./components/AnnouncementCard";
 import { AcknowledgmentDrawer } from "./components/AcknowledgmentDrawer";
 import {
+  IconBell,
   IconInbox,
   IconLayers,
   IconMegaphone,
@@ -15,7 +21,7 @@ import "./AnnouncementsPage.css";
 // FR-ANN-01: only these tiers may post / manage announcements.
 const POSTER_TIERS = new Set(["Admin/Leadership", "Manager"]);
 
-type ViewMode = "feed" | "all";
+type ViewMode = "feed" | "all" | "needsAck";
 
 interface AnnouncementsPageProps {
   initialView?: ViewMode;
@@ -27,7 +33,12 @@ export function AnnouncementsPage({ initialView: initialViewProp }: Announcement
 
   const [searchParams] = useSearchParams();
   const initialView: ViewMode =
-    initialViewProp ?? (searchParams.get("view") === "all" ? "all" : "feed");
+    initialViewProp ??
+    (searchParams.get("view") === "all"
+      ? "all"
+      : searchParams.get("view") === "needsAck"
+      ? "needsAck"
+      : "feed");
   const [view, setView] = useState<ViewMode>(initialView);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,7 +55,20 @@ export function AnnouncementsPage({ initialView: initialViewProp }: Announcement
         view === "all"
           ? await listAllAnnouncements()
           : await listFeedForEmployee(employee.employee_id);
-      setAnnouncements(data);
+
+      if (view === "needsAck") {
+        const requiringAck = data.filter((a) => a.requires_ack);
+        const withStatus = await Promise.all(
+          requiringAck.map(async (a) => {
+            const rows = await getAcknowledgmentStatus(a.announcement_id);
+            const mine = rows.find((r) => r.employee_id === employee.employee_id);
+            return { announcement: a, acknowledged: mine?.acknowledged ?? false };
+          })
+        );
+        setAnnouncements(withStatus.filter((s) => !s.acknowledged).map((s) => s.announcement));
+      } else {
+        setAnnouncements(data);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not load announcements.");
     } finally {
@@ -92,6 +116,15 @@ export function AnnouncementsPage({ initialView: initialViewProp }: Announcement
           </button>
         )}
 
+        {view === "needsAck" && (
+          <button
+            className="c-pill c-pill--active c-pill--amber"
+            onClick={() => setView("needsAck")}
+          >
+            <IconBell size={15} /> Needs Acknowledgment
+          </button>
+        )}
+
         {canManage && view === "all" && (
           <button
             className="c-pill c-pill--active c-pill--violet"
@@ -131,7 +164,7 @@ export function AnnouncementsPage({ initialView: initialViewProp }: Announcement
               currentEmployeeId={employee.employee_id}
               canManage={canManage}
               isAcking={pendingAckId === a.announcement_id}
-              showAcknowledgeAction={view === "feed"}
+              showAcknowledgeAction={view === "feed" || view === "needsAck"}
               onAcknowledge={() => handleAcknowledge(a.announcement_id)}
               onViewAcknowledgments={() => setAckDrawerId(a.announcement_id)}
             />

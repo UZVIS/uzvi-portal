@@ -81,11 +81,15 @@
 }
 
 .pr-table th {
-  text-align: left;
   color: #6b7280;
   font-weight: 500;
   padding-bottom: 8px;
   border-bottom: 1px solid #eef0f2;
+}
+
+.pr-table th,
+.pr-table td {
+  text-align: center;
 }
 
 .pr-table td {

@@ -8,6 +8,7 @@ import {
   ClipboardList,
   FolderPlus,
   SearchX,
+  Search,
 } from "lucide-react";
 
 import { useNavigate } from "react-router-dom";
@@ -68,21 +69,21 @@ export default function ScenarioTable({
   return (
     <div className="table-card">
 
-      <div className="table-toolbar">
+     <div className="table-toolbar">
 
-        <div className="search-wrap">
-          <input
-            type="text"
-            placeholder="Search scenarios..."
-            className="search-input"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
+  <div className="search-wrap">
+    <Search size={17} className="search-icon" />
 
-        <div className="toolbar-spacer" />
+    <input
+      type="text"
+      placeholder="Search scenarios..."
+      className="search-input"
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+    />
+  </div>
 
-      </div>
+</div>
 
       <table className="data-table">
 

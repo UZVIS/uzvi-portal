@@ -63,6 +63,20 @@ class QuoteScenarioUpdate(BaseModel):
     output_type: OutputType
     target_margin: float = Field(..., ge=0, lt=1)
 
+class ScenarioComparisonItem(BaseModel):
+    scenario_id: str
+    scenario_name: str
+    output_type: OutputType
+    target_margin: float
+
+    total_cost: float
+    selling_price: float
+    resulting_margin: float
+
+
+class ScenarioComparison(BaseModel):
+    opportunity_id: str
+    scenarios: List[ScenarioComparisonItem]
 class QuoteScenarioRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     scenario_id: str
@@ -74,7 +88,23 @@ class QuoteScenarioRead(BaseModel):
     created_at: datetime
     line_items: List[CostLineItemRead] = []
 
+class ScenarioComparisonItem(BaseModel):
+    scenario_id: str
+    scenario_name: str
+    output_type: OutputType
+    target_margin: float
+    total_cost: float
+    selling_price: float
+    resulting_margin: float
 
+
+class ScenarioComparison(BaseModel):
+    opportunity_id: str
+    scenarios: List[ScenarioComparisonItem]
+
+
+class ScenarioDuplicateRequest(BaseModel):
+    name: str
 # ---------- Computed output views (FR-BD-02, FR-BD-03, FR-BD-04) ----------
 
 class QuoteViewLine(BaseModel):
