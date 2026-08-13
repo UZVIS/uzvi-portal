@@ -456,60 +456,106 @@ def _log_hours(db, employee_id, project_id, day, hours, billable):
 
 def test_utilization_flags_under_utilized(db, employee):
     service.create_project(
-        db, schemas.ProjectCreate(project_id="P1", name="Client A", project_type="real project",
-                                   billing_rate=100, cost_rate=50)
+        db,
+        schemas.ProjectCreate(
+            project_id="P1",
+            name="Client A",
+            project_type="real project",
+            billing_rate=100,
+            cost_rate=50,
+        ),
     )
+
     # 8 billable hours in a 1-week period against 40h capacity -> well under 60%.
     _log_hours(db, "E1", "P1", date(2026, 1, 5), 8, True)
 
-    summary = service.compute_utilization(db, "E1", date(2026, 1, 5), date(2026, 1, 11))
+    summary = service.compute_utilization(
+        db,
+        "E1",
+        date(2026, 1, 5),
+        date(2026, 1, 11),
+    )
+
     assert summary.flag == "under_utilized"
     assert summary.utilization_pct < 0.60
 
 
 def test_utilization_flags_over_allocated(db, employee):
     service.create_project(
-        db, schemas.ProjectCreate(project_id="P1", name="Client A", project_type="real project",
-                                   billing_rate=100, cost_rate=50)
+        db,
+        schemas.ProjectCreate(
+            project_id="P1",
+            name="Client A",
+            project_type="real project",
+            billing_rate=100,
+            cost_rate=50,
+        ),
     )
-   
+
+    # 48 billable hours during the week.
+    # Jan 10 is Saturday, so use 16 hours on Friday instead.
     _log_hours(db, "E1", "P1", date(2026, 1, 5), 8, True)
     _log_hours(db, "E1", "P1", date(2026, 1, 6), 8, True)
     _log_hours(db, "E1", "P1", date(2026, 1, 7), 8, True)
     _log_hours(db, "E1", "P1", date(2026, 1, 8), 8, True)
-    _log_hours(db, "E1", "P1", date(2026, 1, 9), 8, True)
-    _log_hours(db, "E1", "P1", date(2026, 1, 10), 8, True)
+    _log_hours(db, "E1", "P1", date(2026, 1, 9), 16, True)
 
-    summary = service.compute_utilization(db, "E1", date(2026, 1, 5), date(2026, 1, 11))
+    summary = service.compute_utilization(
+        db,
+        "E1",
+        date(2026, 1, 5),
+        date(2026, 1, 11),
+    )
+
     assert summary.flag == "over_allocated"
     assert summary.utilization_pct > 1.05
 
 
 def test_non_billable_hours_dont_count_toward_utilization(db, employee):
     service.create_project(
-        db, schemas.ProjectCreate(project_id="P1", name="Internal", project_type="Internal")
+        db,
+        schemas.ProjectCreate(
+            project_id="P1",
+            name="Internal",
+            project_type="Internal",
+        ),
     )
+
     _log_hours(db, "E1", "P1", date(2026, 1, 5), 6, False)
     _log_hours(db, "E1", "P1", date(2026, 1, 6), 6, False)
     _log_hours(db, "E1", "P1", date(2026, 1, 7), 6, False)
     _log_hours(db, "E1", "P1", date(2026, 1, 8), 6, False)
-    _log_hours(db, "E1", "P1", date(2026, 1, 9), 6, False)  # not billable
+    _log_hours(db, "E1", "P1", date(2026, 1, 9), 6, False)
 
-    summary = service.compute_utilization(db, "E1", date(2026, 1, 5), date(2026, 1, 11))
+    summary = service.compute_utilization(
+        db,
+        "E1",
+        date(2026, 1, 5),
+        date(2026, 1, 11),
+    )
+
     assert summary.billable_hours == 0
     assert summary.flag == "under_utilized"
 
 
 def test_project_margin_calculation(db, employee):
     service.create_project(
-        db, schemas.ProjectCreate(project_id="P1", name="Client A", project_type="real project",
-                                   billing_rate=100, cost_rate=60)
+        db,
+        schemas.ProjectCreate(
+            project_id="P1",
+            name="Client A",
+            project_type="real project",
+            billing_rate=100,
+            cost_rate=60,
+        ),
     )
+
     _log_hours(db, "E1", "P1", date(2026, 1, 5), 8, True)
     _log_hours(db, "E1", "P1", date(2026, 1, 6), 8, True)
     _log_hours(db, "E1", "P1", date(2026, 1, 7), 4, True)
 
     margin = service.compute_project_margin(db, "P1")
+
     assert margin.revenue == 2000
     assert margin.cost == 1200
     assert margin.margin == 800
@@ -518,76 +564,182 @@ def test_project_margin_calculation(db, employee):
 
 def test_time_entry_rejects_unknown_project(db, employee):
     with pytest.raises(service.NotFoundError):
-        _log_hours(db, "E1", "NO_SUCH_PROJECT", date(2026, 1, 5), 5, True)
+        _log_hours(
+            db,
+            "E1",
+            "NO_SUCH_PROJECT",
+            date(2026, 1, 5),
+            5,
+            True,
+        )
 
 
 def test_time_entry_rejects_future_date(db, employee):
     service.create_project(
-        db, schemas.ProjectCreate(project_id="P1", name="Client A", project_type="real project",
-                                   billing_rate=100, cost_rate=50)
+        db,
+        schemas.ProjectCreate(
+            project_id="P1",
+            name="Client A",
+            project_type="real project",
+            billing_rate=100,
+            cost_rate=50,
+        ),
     )
+
     tomorrow = date.today() + timedelta(days=1)
+
     with pytest.raises(service.FutureDateError):
         _log_hours(db, "E1", "P1", tomorrow, 5, True)
 
 
 def test_time_entry_allows_today(db, employee):
     service.create_project(
-        db, schemas.ProjectCreate(project_id="P1", name="Client A", project_type="real project",
-                                   billing_rate=100, cost_rate=50)
+        db,
+        schemas.ProjectCreate(
+            project_id="P1",
+            name="Client A",
+            project_type="real project",
+            billing_rate=100,
+            cost_rate=50,
+        ),
     )
-    entry = _log_hours(db, "E1", "P1", date.today(), 5, True)
+
+    entry = _log_hours(
+        db,
+        "E1",
+        "P1",
+        date.today(),
+        5,
+        True,
+    )
+
     assert entry.date == date.today()
 
 
 def test_time_entry_rejects_combined_hours_over_16_in_a_day(db, employee):
     service.create_project(
-        db, schemas.ProjectCreate(project_id="P1", name="Client A", project_type="real project",
-                                   billing_rate=100, cost_rate=50)
+        db,
+        schemas.ProjectCreate(
+            project_id="P1",
+            name="Client A",
+            project_type="real project",
+            billing_rate=100,
+            cost_rate=50,
+        ),
     )
+
     _log_hours(db, "E1", "P1", date(2026, 1, 5), 10, True)
+
     with pytest.raises(service.DailyHoursExceededError):
-        _log_hours(db, "E1", "P1", date(2026, 1, 5), 10, True)
+        _log_hours(
+            db,
+            "E1",
+            "P1",
+            date(2026, 1, 5),
+            10,
+            True,
+        )
 
 
 def test_time_entry_allows_up_to_exactly_16_hours_combined(db, employee):
     service.create_project(
-        db, schemas.ProjectCreate(project_id="P1", name="Client A", project_type="real project",
-                                   billing_rate=100, cost_rate=50)
+        db,
+        schemas.ProjectCreate(
+            project_id="P1",
+            name="Client A",
+            project_type="real project",
+            billing_rate=100,
+            cost_rate=50,
+        ),
     )
+
     _log_hours(db, "E1", "P1", date(2026, 1, 5), 10, True)
-    entry = _log_hours(db, "E1", "P1", date(2026, 1, 5), 6, False)
+
+    entry = _log_hours(
+        db,
+        "E1",
+        "P1",
+        date(2026, 1, 5),
+        6,
+        False,
+    )
+
     assert entry.hours == 6
 
 
 def test_daily_hours_cap_resets_next_day(db, employee):
     service.create_project(
-        db, schemas.ProjectCreate(project_id="P1", name="Client A", project_type="real project",
-                                   billing_rate=100, cost_rate=50)
+        db,
+        schemas.ProjectCreate(
+            project_id="P1",
+            name="Client A",
+            project_type="real project",
+            billing_rate=100,
+            cost_rate=50,
+        ),
     )
+
     _log_hours(db, "E1", "P1", date(2026, 1, 5), 16, True)
-    entry = _log_hours(db, "E1", "P1", date(2026, 1, 6), 16, True)
+
+    entry = _log_hours(
+        db,
+        "E1",
+        "P1",
+        date(2026, 1, 6),
+        16,
+        True,
+    )
+
     assert entry.date == date(2026, 1, 6)
 
 
 def test_hours_within_normal_budget_have_no_overtime(db, employee):
     service.create_project(
-        db, schemas.ProjectCreate(project_id="P1", name="Client A", project_type="real project",
-                                   billing_rate=100, cost_rate=50)
+        db,
+        schemas.ProjectCreate(
+            project_id="P1",
+            name="Client A",
+            project_type="real project",
+            billing_rate=100,
+            cost_rate=50,
+        ),
     )
-    entry = _log_hours(db, "E1", "P1", date(2026, 1, 5), 6, True)
+
+    entry = _log_hours(
+        db,
+        "E1",
+        "P1",
+        date(2026, 1, 5),
+        6,
+        True,
+    )
+
     assert entry.normal_hours == 6
     assert entry.overtime_hours == 0
     assert entry.ot_status is None
 
 
 def test_overtime_saves_immediately_as_pending(db, employee):
-    
     service.create_project(
-        db, schemas.ProjectCreate(project_id="P1", name="Client A", project_type="real project",
-                                   billing_rate=100, cost_rate=50)
+        db,
+        schemas.ProjectCreate(
+            project_id="P1",
+            name="Client A",
+            project_type="real project",
+            billing_rate=100,
+            cost_rate=50,
+        ),
     )
-    entry = _log_hours(db, "E1", "P1", date(2026, 1, 5), 10, True)
+
+    entry = _log_hours(
+        db,
+        "E1",
+        "P1",
+        date(2026, 1, 5),
+        10,
+        True,
+    )
+
     assert entry.hours == 10
     assert entry.normal_hours == 8
     assert entry.overtime_hours == 2
@@ -596,109 +748,349 @@ def test_overtime_saves_immediately_as_pending(db, employee):
 
 def test_cumulative_overtime_across_two_entries_same_day(db, employee):
     service.create_project(
-        db, schemas.ProjectCreate(project_id="P1", name="Client A", project_type="real project",
-                                   billing_rate=100, cost_rate=50)
+        db,
+        schemas.ProjectCreate(
+            project_id="P1",
+            name="Client A",
+            project_type="real project",
+            billing_rate=100,
+            cost_rate=50,
+        ),
     )
-    first = _log_hours(db, "E1", "P1", date(2026, 1, 5), 6, True)
+
+    first = _log_hours(
+        db,
+        "E1",
+        "P1",
+        date(2026, 1, 5),
+        6,
+        True,
+    )
+
     assert first.normal_hours == 6
     assert first.overtime_hours == 0
     assert first.ot_status is None
 
-    second = _log_hours(db, "E1", "P1", date(2026, 1, 5), 5, True)
+    second = _log_hours(
+        db,
+        "E1",
+        "P1",
+        date(2026, 1, 5),
+        5,
+        True,
+    )
+
     assert second.normal_hours == 2
     assert second.overtime_hours == 3
     assert second.ot_status == "Pending"
 
 
-def test_pending_overtime_excluded_from_utilization_until_approved(db, employee):
+def test_pending_overtime_excluded_from_utilization_until_approved(
+    db,
+    employee,
+):
     service.create_project(
-        db, schemas.ProjectCreate(project_id="P1", name="Client A", project_type="real project",
-                                   billing_rate=100, cost_rate=50)
+        db,
+        schemas.ProjectCreate(
+            project_id="P1",
+            name="Client A",
+            project_type="real project",
+            billing_rate=100,
+            cost_rate=50,
+        ),
     )
-    _log_hours(db, "E1", "P1", date(2026, 1, 5), 10, True)  # 8 normal + 2 pending OT
 
-    summary = service.compute_utilization(db, "E1", date(2026, 1, 5), date(2026, 1, 11))
-    assert summary.billable_hours == 8  # pending OT not counted yet
+    _log_hours(
+        db,
+        "E1",
+        "P1",
+        date(2026, 1, 5),
+        10,
+        True,
+    )
+
+    summary = service.compute_utilization(
+        db,
+        "E1",
+        date(2026, 1, 5),
+        date(2026, 1, 11),
+    )
+
+    assert summary.billable_hours == 8
 
 
-def test_approving_overtime_makes_it_count_toward_utilization(db, employee):
+def test_approving_overtime_makes_it_count_toward_utilization(
+    db,
+    employee,
+):
     service.create_project(
-        db, schemas.ProjectCreate(project_id="P1", name="Client A", project_type="real project",
-                                   billing_rate=100, cost_rate=50)
+        db,
+        schemas.ProjectCreate(
+            project_id="P1",
+            name="Client A",
+            project_type="real project",
+            billing_rate=100,
+            cost_rate=50,
+        ),
     )
-    entry = _log_hours(db, "E1", "P1", date(2026, 1, 5), 10, True)
-    service.approve_ot(db, entry.entry_id, decided_by_role="Admin/Leadership")
 
-    summary = service.compute_utilization(db, "E1", date(2026, 1, 5), date(2026, 1, 11))
-    assert summary.billable_hours == 10  # now includes the approved 2h OT
+    entry = _log_hours(
+        db,
+        "E1",
+        "P1",
+        date(2026, 1, 5),
+        10,
+        True,
+    )
+
+    service.approve_ot(
+        db,
+        entry.entry_id,
+        decided_by_role="Admin/Leadership",
+    )
+
+    summary = service.compute_utilization(
+        db,
+        "E1",
+        date(2026, 1, 5),
+        date(2026, 1, 11),
+    )
+
+    assert summary.billable_hours == 10
 
 
-def test_rejecting_overtime_caps_entry_back_to_normal_hours(db, employee):
+def test_rejecting_overtime_caps_entry_back_to_normal_hours(
+    db,
+    employee,
+):
     service.create_project(
-        db, schemas.ProjectCreate(project_id="P1", name="Client A", project_type="real project",
-                                   billing_rate=100, cost_rate=50)
+        db,
+        schemas.ProjectCreate(
+            project_id="P1",
+            name="Client A",
+            project_type="real project",
+            billing_rate=100,
+            cost_rate=50,
+        ),
     )
-    entry = _log_hours(db, "E1", "P1", date(2026, 1, 5), 10, True)
-    rejected = service.reject_ot(db, entry.entry_id, decided_by_role="HR-Restricted")
+
+    entry = _log_hours(
+        db,
+        "E1",
+        "P1",
+        date(2026, 1, 5),
+        10,
+        True,
+    )
+
+    rejected = service.reject_ot(
+        db,
+        entry.entry_id,
+        decided_by_role="HR-Restricted",
+    )
 
     assert rejected.ot_status == "Rejected"
-    assert rejected.hours == 8       # capped back down
+    assert rejected.hours == 8
     assert rejected.overtime_hours == 0
 
-    summary = service.compute_utilization(db, "E1", date(2026, 1, 5), date(2026, 1, 11))
-    assert summary.billable_hours == 8  # rejected OT never counts
+    summary = service.compute_utilization(
+        db,
+        "E1",
+        date(2026, 1, 5),
+        date(2026, 1, 11),
+    )
+
+    assert summary.billable_hours == 8
 
 
 def test_list_pending_ot_entries(db, employee):
     service.create_project(
-        db, schemas.ProjectCreate(project_id="P1", name="Client A", project_type="real project",
-                                   billing_rate=100, cost_rate=50)
+        db,
+        schemas.ProjectCreate(
+            project_id="P1",
+            name="Client A",
+            project_type="real project",
+            billing_rate=100,
+            cost_rate=50,
+        ),
     )
-    _log_hours(db, "E1", "P1", date(2026, 1, 5), 6, True)   # no OT
-    entry_with_ot = _log_hours(db, "E1", "P1", date(2026, 1, 6), 10, True)  # 2h pending OT
+
+    _log_hours(
+        db,
+        "E1",
+        "P1",
+        date(2026, 1, 5),
+        6,
+        True,
+    )
+
+    entry_with_ot = _log_hours(
+        db,
+        "E1",
+        "P1",
+        date(2026, 1, 6),
+        10,
+        True,
+    )
 
     pending = service.list_pending_ot_entries(db)
+
     assert len(pending) == 1
     assert pending[0].entry_id == entry_with_ot.entry_id
 
 
 def test_cannot_approve_ot_twice(db, employee):
     service.create_project(
-        db, schemas.ProjectCreate(project_id="P1", name="Client A", project_type="real project",
-                                   billing_rate=100, cost_rate=50)
+        db,
+        schemas.ProjectCreate(
+            project_id="P1",
+            name="Client A",
+            project_type="real project",
+            billing_rate=100,
+            cost_rate=50,
+        ),
     )
-    entry = _log_hours(db, "E1", "P1", date(2026, 1, 5), 10, True)
-    service.approve_ot(db, entry.entry_id, decided_by_role="Admin/Leadership")
+
+    entry = _log_hours(
+        db,
+        "E1",
+        "P1",
+        date(2026, 1, 5),
+        10,
+        True,
+    )
+
+    service.approve_ot(
+        db,
+        entry.entry_id,
+        decided_by_role="Admin/Leadership",
+    )
+
     with pytest.raises(service.InvalidOTTransitionError):
-        service.approve_ot(db, entry.entry_id, decided_by_role="Admin/Leadership")
+        service.approve_ot(
+            db,
+            entry.entry_id,
+            decided_by_role="Admin/Leadership",
+        )
 
 
-def test_cannot_approve_ot_on_entry_with_no_pending_ot(db, employee):
+def test_cannot_approve_ot_on_entry_with_no_pending_ot(
+    db,
+    employee,
+):
     service.create_project(
-        db, schemas.ProjectCreate(project_id="P1", name="Client A", project_type="real project",
-                                   billing_rate=100, cost_rate=50)
+        db,
+        schemas.ProjectCreate(
+            project_id="P1",
+            name="Client A",
+            project_type="real project",
+            billing_rate=100,
+            cost_rate=50,
+        ),
     )
-    entry = _log_hours(db, "E1", "P1", date(2026, 1, 5), 6, True)  # no OT at all
+
+    entry = _log_hours(
+        db,
+        "E1",
+        "P1",
+        date(2026, 1, 5),
+        6,
+        True,
+    )
+
     with pytest.raises(service.InvalidOTTransitionError):
-        service.approve_ot(db, entry.entry_id, decided_by_role="Admin/Leadership")
+        service.approve_ot(
+            db,
+            entry.entry_id,
+            decided_by_role="Admin/Leadership",
+        )
 
 
-def test_org_dashboard_groups_bench_risk_and_over_allocated(db, employee):
-    db.add(Employee(employee_id="E2", name="Consultant Two"))
+def test_org_dashboard_groups_bench_risk_and_over_allocated(
+    db,
+    employee,
+):
+    db.add(
+        Employee(
+            employee_id="E2",
+            name="Consultant Two",
+        )
+    )
     db.commit()
+
     service.create_project(
-        db, schemas.ProjectCreate(project_id="P1", name="Client A", project_type="real project",
-                                   billing_rate=100, cost_rate=50)
+        db,
+        schemas.ProjectCreate(
+            project_id="P1",
+            name="Client A",
+            project_type="real project",
+            billing_rate=100,
+            cost_rate=50,
+        ),
     )
-    _log_hours(db, "E1", "P1", date(2026, 1, 5), 5, True)    # under-utilized
 
-    _log_hours(db, "E2", "P1", date(2026, 1, 5), 8, True)
-    _log_hours(db, "E2", "P1", date(2026, 1, 6), 8, True)
-    _log_hours(db, "E2", "P1", date(2026, 1, 7), 8, True)
-    _log_hours(db, "E2", "P1", date(2026, 1, 8), 8, True)
-    _log_hours(db, "E2", "P1", date(2026, 1, 9), 8, True)
-    _log_hours(db, "E2", "P1", date(2026, 1, 10), 8, True)   # over-allocated (48h, all normal)
+    # E1 is under-utilized.
+    _log_hours(
+        db,
+        "E1",
+        "P1",
+        date(2026, 1, 5),
+        5,
+        True,
+    )
 
-    dashboard = service.compute_org_utilization(db, date(2026, 1, 5), date(2026, 1, 11))
+    # E2 has 48 billable hours during the week.
+    # Jan 10 is Saturday, so use 16 hours on Friday instead.
+    _log_hours(
+        db,
+        "E2",
+        "P1",
+        date(2026, 1, 5),
+        8,
+        True,
+    )
+
+    _log_hours(
+        db,
+        "E2",
+        "P1",
+        date(2026, 1, 6),
+        8,
+        True,
+    )
+
+    _log_hours(
+        db,
+        "E2",
+        "P1",
+        date(2026, 1, 7),
+        8,
+        True,
+    )
+
+    _log_hours(
+        db,
+        "E2",
+        "P1",
+        date(2026, 1, 8),
+        8,
+        True,
+    )
+
+    _log_hours(
+        db,
+        "E2",
+        "P1",
+        date(2026, 1, 9),
+        16,
+        True,
+    )
+
+    dashboard = service.compute_org_utilization(
+        db,
+        date(2026, 1, 5),
+        date(2026, 1, 11),
+    )
+
     assert "E1" in dashboard.bench_risk
     assert "E2" in dashboard.over_allocated
