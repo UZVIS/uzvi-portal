@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import type { OnboardingInstance, OnboardingProgress, OnboardingTask, OnboardingTemplate, TaskCompletionDetail } from "../api";
 import { ProgressBar } from "./ProgressBar";
+import { Toast } from "../../../shared/components/Toast";
 
 interface InstanceTrackerProps {
   employees: { employee_id: string; name: string }[];
@@ -17,6 +18,7 @@ interface InstanceTrackerProps {
   onEmployeeChange: (employeeId: string) => void;
   onStart: (instanceId: string, employeeId: string, templateId: string) => Promise<void>;
   onCompleteTask: (taskId: string) => Promise<void>;
+  onReset: () => void;
 }
 
 export function InstanceTracker({
@@ -34,21 +36,25 @@ export function InstanceTracker({
   onEmployeeChange,
   onStart,
   onCompleteTask,
+  onReset,
 }: InstanceTrackerProps) {
   const [instanceId, setInstanceId] = useState("");
   const [templateId, setTemplateId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   async function handleStart(e: FormEvent) {
     e.preventDefault();
     if (!instanceId.trim() || !currentEmployeeId || !templateId) return;
     setIsSubmitting(true);
     setError(null);
+    setSuccess(false);
     try {
       await onStart(instanceId.trim(), currentEmployeeId, templateId);
       setInstanceId("");
       setTemplateId("");
+      setSuccess(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not start onboarding.");
     } finally {
@@ -61,21 +67,36 @@ export function InstanceTracker({
   return (
     <div className="instance-tracker">
       <h3 className="directory-form__title">Track a new joiner</h3>
-      {error && <div className="error-banner">{error}</div>}
+      {error && <Toast message={error} kind="error" onDismiss={() => setError(null)} />}
+      {success && <Toast message="Onboarding instance created successfully." kind="success" onDismiss={() => setSuccess(false)} />}
 
       {instance ? (
         <div className="instance-tracker__viewing">
-          <span className="field__label">Viewing</span>
-          <div className="instance-tracker__viewing-name">
-            {employees.find((e) => e.employee_id === instance.employee_id)?.name ?? instance.employee_id}
-            {" "}
-            <span className="directory-row__muted">({instance.employee_id})</span>
+          <div className="instance-tracker__viewing-header">
+            <div>
+              <span className="field__label">Viewing</span>
+              <div className="instance-tracker__viewing-name">
+                {employees.find((e) => e.employee_id === instance.employee_id)?.name ?? instance.employee_id}
+                {" "}
+                <span className="directory-row__muted">({instance.employee_id})</span>
+              </div>
+            </div>
+            <button
+              className="button-secondary"
+              style={{ fontSize: 12, padding: "7px 12px", whiteSpace: "nowrap" }}
+              onClick={onReset}
+            >
+              Track another joiner
+            </button>
           </div>
         </div>
       ) : canManage ? (
         <>
+          <p className="instance-tracker__hint" style={{ marginBottom: 16 }}>
+            Select an employee below to create a new onboarding instance for them.
+          </p>
           <label className="field">
-            <span className="field__label">Employee</span>
+            <span className="field__label" style={{ color: "var(--color-ink)", fontWeight: 700 }}>Employee</span>
             <select
               className="field__input"
               value={currentEmployeeId}

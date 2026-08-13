@@ -63,3 +63,10 @@ export function getExpiredDocuments(requesterId: string): Promise<DocumentRecord
     (r) => handle(r, "Could not load expired documents.")
   );
 }
+
+/** GET /api/v1/documents/?requester_id=... - HR sees all, an employee sees only their own */
+export function getVisibleDocuments(requesterId: string): Promise<DocumentRecord[]> {
+  return fetch(`${BASE_PATH}/?requester_id=${encodeURIComponent(requesterId)}`).then(
+    (r) => handle(r, "Could not load documents.")
+  );
+}

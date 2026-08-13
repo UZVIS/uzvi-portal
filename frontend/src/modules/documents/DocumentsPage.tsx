@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { useAuth } from "../../shared/auth/AuthContext";
 import { registerDocument, viewDocument, getAccessLogs } from "./api";
 import { DocumentUploadForm } from "./components/DocumentUploadForm";
 import { DocumentLookup } from "./components/DocumentLookup";
 import { ExpiredDocumentsList } from "./components/ExpiredDocumentsList";
+import { DocumentsList } from "./components/DocumentsList";
 import "../shared-theme.css";
 import "./DocumentsPage.css";
 
@@ -11,6 +13,7 @@ const UPLOAD_TIERS = new Set(["HR-Restricted"]);
 export function DocumentsPage() {
   const { employee } = useAuth();
   const canUpload = employee ? UPLOAD_TIERS.has(employee.access_tier) : false;
+  const [docsRefreshKey, setDocsRefreshKey] = useState(0);
 
   return (
     <div className="directory-page uzvi-portal-theme">
@@ -28,7 +31,11 @@ export function DocumentsPage() {
           <DocumentUploadForm
             uploaderId={employee.employee_id}
             restrictToSelf={!canUpload}
-            onSubmit={(input) => registerDocument(input).then(() => undefined)}
+            onSubmit={(input) =>
+              registerDocument(input).then(() => {
+                setDocsRefreshKey((k) => k + 1);
+              })
+            }
           />
         )}
 
@@ -39,9 +46,18 @@ export function DocumentsPage() {
         />
       </section>
 
+      {employee && (
+        <section className="directory-page__list">
+          <h2 className="directory-form__title">
+            Your documents
+          </h2>
+          <DocumentsList requesterId={employee.employee_id} refreshKey={docsRefreshKey} />
+        </section>
+      )}
+
       {canUpload && employee && (
         <section className="directory-page__list">
-          <h2 style={{ fontSize: 16, fontFamily: "var(--font-display)", marginBottom: 12 }}>
+          <h2 className="directory-form__title">
             Expired documents
           </h2>
           <ExpiredDocumentsList requesterId={employee.employee_id} />

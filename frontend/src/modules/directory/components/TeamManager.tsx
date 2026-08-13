@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import type { Team } from "../api";
+import { Toast } from "../../../shared/components/Toast";
 
 interface TeamManagerProps {
   teams: Team[];
@@ -31,7 +32,7 @@ export function TeamManager({ teams, onCreate }: TeamManagerProps) {
   return (
     <div className="team-manager">
       <h3 className="directory-form__title">Teams</h3>
-      {error && <div className="error-banner">{error}</div>}
+      {error && <Toast message={error} kind="error" onDismiss={() => setError(null)} />}
       <ul className="team-manager__list">
         {teams.length === 0 && (
           <li className="directory-row__muted">No teams yet — add one below.</li>

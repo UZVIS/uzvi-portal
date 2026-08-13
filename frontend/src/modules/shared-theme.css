@@ -144,6 +144,44 @@
   border: 1px solid #cfe6d9;
 }
 
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  border-radius: var(--radius-sm);
+  padding: 12px 18px;
+  font-size: 13.5px;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  animation: toast-in 0.2s ease-out;
+}
+
+.toast--success {
+  background: var(--color-teal-soft);
+  color: #1e5f3f;
+  border: 1px solid #cfe6d9;
+}
+
+.toast--error {
+  background: #fbeae4;
+  color: #a5432b;
+  border: 1px solid #f0cec2;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 480px) {
+  .toast {
+    left: 16px;
+    right: 16px;
+    top: 12px;
+  }
+}
+
 /* ---------- page shell ---------- */
 
 .uzvi-portal-theme .directory-page {
@@ -362,6 +400,23 @@
 .uzvi-portal-theme .directory-row__muted {
   color: var(--color-slate);
   font-size: 13px;
+}
+
+.uzvi-portal-theme .instance-tracker__hint {
+  color: var(--color-slate);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.uzvi-portal-theme .instance-tracker__viewing {
+  margin-bottom: 16px;
+}
+
+.uzvi-portal-theme .instance-tracker__viewing-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
 }
 
 .uzvi-portal-theme .directory-table:has(.directory-row--editing) {

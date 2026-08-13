@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import type { Team } from "../api";
+import { Toast } from "../../../shared/components/Toast";
 
 interface EmployeeFormProps {
   teams: Team[];
@@ -27,12 +28,14 @@ export function EmployeeForm({ teams, employees, onSubmit }: EmployeeFormProps) 
   const [accessTier, setAccessTier] = useState("Employee");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!employeeId.trim() || !name.trim()) return;
     setIsSubmitting(true);
     setError(null);
+    setSuccess(false);
     try {
       await onSubmit({
         employee_id: employeeId.trim(),
@@ -52,6 +55,7 @@ export function EmployeeForm({ teams, employees, onSubmit }: EmployeeFormProps) 
       setManagerId("");
       setContactDetails("");
       setJoinDate("");
+      setSuccess(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not register the employee.");
     } finally {
@@ -62,7 +66,8 @@ export function EmployeeForm({ teams, employees, onSubmit }: EmployeeFormProps) 
   return (
     <form className="directory-form" onSubmit={handleSubmit}>
       <h3 className="directory-form__title">Register a new employee</h3>
-      {error && <div className="error-banner">{error}</div>}
+      {error && <Toast message={error} kind="error" onDismiss={() => setError(null)} />}
+      {success && <Toast message="Employee registered successfully." kind="success" onDismiss={() => setSuccess(false)} />}
       <div className="field-row">
         <label className="field">
           <span className="field__label">Employee ID</span>
