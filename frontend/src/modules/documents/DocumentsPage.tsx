@@ -60,7 +60,7 @@ export function DocumentsPage() {
           <h2 className="directory-form__title">
             Expired documents
           </h2>
-          <ExpiredDocumentsList requesterId={employee.employee_id} />
+          <ExpiredDocumentsList requesterId={employee.employee_id} refreshKey={docsRefreshKey} />
         </section>
       )}
     </div>

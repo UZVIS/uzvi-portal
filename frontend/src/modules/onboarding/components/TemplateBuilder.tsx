@@ -18,7 +18,7 @@ interface TemplateBuilderProps {
 }
 
 const ROLES = ["new_joiner", "hr", "it", "manager"];
-const ROLE_LABELS: Record<string, string> = {
+export const ROLE_LABELS: Record<string, string> = {
   new_joiner: "New Joiner",
   hr: "HR",
   it: "IT",
@@ -125,7 +125,7 @@ export function TemplateBuilder({
             <ol className="template-builder__tasks">
               {(tasksByTemplate[t.template_id] ?? []).map((task) => (
                 <li key={task.task_id}>
-                  {task.name} <span className="directory-row__muted">({task.responsible_role})</span>
+                  {task.name} <span className="directory-row__muted">({ROLE_LABELS[task.responsible_role] ?? task.responsible_role})</span>
                 </li>
               ))}
               {(tasksByTemplate[t.template_id] ?? []).length === 0 && (

@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import type { OnboardingInstance, OnboardingProgress, OnboardingTask, OnboardingTemplate, TaskCompletionDetail } from "../api";
 import { ProgressBar } from "./ProgressBar";
 import { Toast } from "../../../shared/components/Toast";
+import { ROLE_LABELS } from "./TemplateBuilder";
 
 interface InstanceTrackerProps {
   employees: { employee_id: string; name: string }[];
@@ -167,7 +168,7 @@ export function InstanceTracker({
                             onChange={() => onCompleteTask(task.task_id)}
                           />
                           <span className={done ? "instance-tracker__task-done" : ""}>{task.name}</span>
-                          <span className="directory-row__muted"> · {task.responsible_role}</span>
+                          <span className="directory-row__muted"> · {ROLE_LABELS[task.responsible_role] ?? task.responsible_role}</span>
                           {overdue && !done && (
                             <span className="instance-tracker__overdue-badge">Overdue</span>
                           )}
@@ -183,7 +184,7 @@ export function InstanceTracker({
                       <div className="instance-tracker__task-unknown">
                         <span>
                           {task.name}
-                          <span className="directory-row__muted"> · {task.responsible_role}</span>
+                          <span className="directory-row__muted"> · {ROLE_LABELS[task.responsible_role] ?? task.responsible_role}</span>
                         </span>
                         <button
                           className="button-secondary"

@@ -3,9 +3,10 @@ import { getExpiredDocuments, type DocumentRecord } from "../api";
 
 interface ExpiredDocumentsListProps {
   requesterId: string;
+  refreshKey: number;
 }
 
-export function ExpiredDocumentsList({ requesterId }: ExpiredDocumentsListProps) {
+export function ExpiredDocumentsList({ requesterId, refreshKey }: ExpiredDocumentsListProps) {
   const [docs, setDocs] = useState<DocumentRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +27,7 @@ export function ExpiredDocumentsList({ requesterId }: ExpiredDocumentsListProps)
     return () => {
       cancelled = true;
     };
-  }, [requesterId]);
+  }, [requesterId, refreshKey]);
 
   if (isLoading) return <p className="directory-row__muted">Loading…</p>;
   if (error) return <div className="error-banner">{error}</div>;
