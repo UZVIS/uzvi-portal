@@ -1,11 +1,4 @@
-/**
- * M1 - Consultant Utilization Tracker
- * frontend/src/modules/consultant_utilization/components/AdminLogHoursForm.tsx
- *
- * Admin-only: lets an Admin/Leadership user log hours on behalf of another
- * employee (e.g. the employee forgot to log their own hours and asked
- * the admin to add them).
- */
+
 import { useState } from "react";
 import type { Project } from "../api";
 
@@ -35,6 +28,12 @@ export function AdminLogHoursForm({ projects, onSubmit }: Props) {
     if (!employeeId.trim() || !projectId || !parsedHours || parsedHours <= 0) {
       setStatus("error");
       setErrorMsg("Enter an employee ID, pick a project, and enter hours greater than 0.");
+      return;
+    }
+    const dayOfWeek = new Date(date + "T00:00:00").getDay();
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      setStatus("error");
+      setErrorMsg("Weekends are not working days. Pick a weekday (Monday-Friday).");
       return;
     }
     setStatus("saving");

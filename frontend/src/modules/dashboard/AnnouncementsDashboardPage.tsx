@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../shared/auth/AuthContext";
-import { listFeedForEmployee } from "../announcements/api";
+import { listFeedForEmployee, getAcknowledgmentStatus } from "../announcements/api";
 import type { Announcement } from "../announcements/types";
 import { AnnouncementsPage } from "../announcements/AnnouncementsPage";
 import { AcknowledgmentsOverviewPage } from "../announcements/AcknowledgmentsOverviewPage";
@@ -18,7 +18,7 @@ import "./AnnouncementsDashboardPage.css";
 
 const POSTER_TIERS = new Set(["Admin/Leadership", "Manager"]);
 
-type ActiveView = "feed" | "all" | "ack" | "new" | null;
+type ActiveView = "feed" | "needsAck" | "all" | "ack" | "new" | null;
 
 export function AnnouncementsDashboardPage() {
   const { employee } = useAuth();
@@ -27,6 +27,7 @@ export function AnnouncementsDashboardPage() {
   const [activeView, setActiveView] = useState<ActiveView>(null);
 
   const [feed, setFeed] = useState<Announcement[]>([]);
+  const [pendingAckCount, setPendingAckCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,19 +36,36 @@ export function AnnouncementsDashboardPage() {
     let cancelled = false;
     setIsLoading(true);
     setError(null);
-    listFeedForEmployee(employee.employee_id)
-      .then((data) => {
-        if (!cancelled) setFeed(data);
-      })
-      .catch((err) => {
+
+    async function load() {
+      try {
+        const data = await listFeedForEmployee(employee!.employee_id);
+        if (cancelled) return;
+        setFeed(data);
+
+        const requiringAck = data.filter((a) => a.requires_ack);
+        const withStatus = await Promise.all(
+          requiringAck.map(async (a) => {
+            const rows = await getAcknowledgmentStatus(a.announcement_id);
+            const mine = rows.find((r) => r.employee_id === employee!.employee_id);
+            return mine?.acknowledged ?? false;
+          })
+        );
+        if (!cancelled) {
+          setPendingAckCount(withStatus.filter((acked) => !acked).length);
+        }
+      } catch (err) {
         if (!cancelled) {
           setFeed([]);
+          setPendingAckCount(0);
           setError(err instanceof Error ? err.message : "Couldn't load the notice board.");
         }
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setIsLoading(false);
-      });
+      }
+    }
+
+    void load();
     return () => {
       cancelled = true;
     };
@@ -55,10 +73,9 @@ export function AnnouncementsDashboardPage() {
 
   const stats = useMemo(() => {
     const total = feed.length;
-    const needsAck = feed.filter((a) => a.requires_ack).length;
     const companyWide = feed.filter((a) => a.target_type === "company_wide").length;
-    return { total, needsAck, companyWide };
-  }, [feed]);
+    return { total, needsAck: pendingAckCount, companyWide };
+  }, [feed, pendingAckCount]);
 
   if (!employee) return null;
 
@@ -123,8 +140,8 @@ export function AnnouncementsDashboardPage() {
 
         {!canManage && (
           <button
-            className={`ahub-card ahub-card--alert ${activeView === "feed" ? "ahub-card--active" : ""}`}
-            onClick={() => setActiveView(activeView === "feed" ? null : "feed")}
+            className={`ahub-card ahub-card--alert ${activeView === "needsAck" ? "ahub-card--active" : ""}`}
+            onClick={() => setActiveView(activeView === "needsAck" ? null : "needsAck")}
           >
             <div className="ahub-card__icon ahub-card__icon--rose">
               <IconBell size={22} />
@@ -138,7 +155,7 @@ export function AnnouncementsDashboardPage() {
                   : "You're all caught up — nothing pending right now."}
             </p>
             <span className="ahub-card__go">
-              {activeView === "feed" ? "Close" : stats.needsAck > 0 ? "Review" : "Open"}{" "}
+              {activeView === "needsAck" ? "Close" : stats.needsAck > 0 ? "Review" : "Open"}{" "}
               <IconArrowRight size={14} />
             </span>
           </button>
@@ -198,7 +215,7 @@ export function AnnouncementsDashboardPage() {
       {/* ── Inline content for the selected card, shown on this same page ── */}
       {activeView && (
         <section className="ahub-inline">
-          {(activeView === "feed" || activeView === "all") && (
+          {(activeView === "feed" || activeView === "needsAck" || activeView === "all") && (
             <AnnouncementsPage key={activeView} initialView={activeView} />
           )}
           {activeView === "ack" && <AcknowledgmentsOverviewPage key="ack" />}

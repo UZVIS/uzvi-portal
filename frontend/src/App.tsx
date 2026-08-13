@@ -8,6 +8,9 @@ import {
   Navigate,
 } from "react-router-dom";
 import { useState, useEffect } from "react";
+import QuoteDashboard from "./modules/quotes/pages/quoteDashboard";
+import OpportunityDetailsPage from "./modules/quotes/pages/OpportunityDetailsPage";
+import ScenarioWorkspace from "./modules/quotes/pages/ScenarioWorkspace";
 import {
   CalendarDays,
   LogOut,
@@ -32,12 +35,12 @@ import {
   Clock, // <-- Attendance Icon
   Award, // <-- Performance & Goals Icon
 } from "lucide-react";
- 
+
 // ─── Auth ────────────────────────────────────────────────────────────────────
 import { AuthProvider, useAuth } from "./shared/auth/AuthContext";
 import { LoginPage } from "./shared/auth/LoginPage";
 import { ProtectedRoute } from "./shared/components/ProtectedRoute";
- 
+
 // ─── Leave & Calendar ────────────────────────────────────────────────────────
 import {
   LeaveDashboard,
@@ -46,7 +49,7 @@ import {
   AdminDashboard,
 } from "./modules/leave";
 import { CalendarPage } from "./modules/calendar";
- 
+
 // ─── Other modules ───────────────────────────────────────────────────────────
 import { AnnouncementsPage } from "./modules/announcements/AnnouncementsPage";
 import { ComposeAnnouncementPage } from "./modules/announcements/ComposeAnnouncementPage";
@@ -68,16 +71,16 @@ import TicketDetailsPage from "./modules/helpdesk/TicketDetailsPage";
 import { DirectoryPage } from "./modules/directory/DirectoryPage";
 import { OnboardingPage } from "./modules/onboarding/OnboardingPage";
 import { DocumentsPage } from "./modules/documents/DocumentsPage";
- 
+
 // ─── Newly Added Modules ─────────────────────────────────────────────────────
 import AttendanceModulePage from "./modules/attendance/AttendanceModulePage";
 import PerformanceModulePage from "./modules/performance/PerformanceModulePage";
- 
+
 import Dashboard from "./modules/assets/pages/Dashboard";
 import EmployeeDashboard from "./modules/assets/pages/EmployeeDashboard";
 import { assetRoutes } from "./modules/assets/routes";
 import { quoteRoutes } from "./modules/quotes/routes";
- 
+
 // ─── NavLink ─────────────────────────────────────────────────────────────────
 const NavLink = ({
   to,
@@ -95,9 +98,9 @@ const NavLink = ({
   const location = useLocation();
   const isActive =
     location.pathname === to || location.pathname.startsWith(to + "/");
- 
+
   return (
-<Link
+    <Link
       to={to}
       title={collapsed ? label : undefined}
       className={`group flex items-center rounded-lg font-semibold transition-all duration-200
@@ -113,81 +116,81 @@ const NavLink = ({
             ? "bg-white/10 text-white"
             : "text-white hover:bg-white/10"
         }`}
->
-<div className={`flex items-center ${collapsed ? "" : "space-x-3"}`}>
-<span
+    >
+      <div className={`flex items-center ${collapsed ? "" : "space-x-3"}`}>
+        <span
           className={`transition-colors duration-200 ${isActive
             ? "text-[#F37021]"
             : "text-white"
             }`}
->
-<Icon size={16} strokeWidth={2.25} />
-</span>
- 
+        >
+          <Icon size={16} strokeWidth={2.25} />
+        </span>
+
         {!collapsed && (
-<span className="tracking-wide text-white">
+          <span className="tracking-wide text-white">
             {label}
-</span>
+          </span>
         )}
-</div>
+      </div>
       {isActive && !isSubItem && !collapsed && (
-<span className="w-1.5 h-1.5 rounded-full bg-[#F37021]" />
+        <span className="w-1.5 h-1.5 rounded-full bg-[#F37021]" />
       )}
-</Link>
+    </Link>
   );
 };
- 
+
 // ─── Sidebar section label ───────────────────────────────────────────────────
 const SectionLabel = ({ label, collapsed = false }: { label: string; collapsed?: boolean }) => {
   if (collapsed) {
     return <div className="pt-4 pb-1.5 flex justify-center"><div className="w-6 border-t border-white/10" /></div>;
   }
   return (
-<p className="px-3 pt-4 pb-1.5 text-[10px] font-bold tracking-[0.14em] text-gray-500 uppercase select-none">
+    <p className="px-3 pt-4 pb-1.5 text-[10px] font-bold tracking-[0.14em] text-gray-500 uppercase select-none">
       {label}
-</p>
+    </p>
   );
 };
- 
+
 // ─── Helper: Normalize DB Roles to our 4 standard roles ──────────────────────
 const normalizeRole = (roleStr: string | undefined | null) => {
   if (!roleStr) return "Employee";
   const upperRole = roleStr.toUpperCase();
- 
+
   if (upperRole.includes("ADMIN") || upperRole.includes("LEADERSHIP")) return "Admin";
   if (upperRole.includes("HR")) return "HR";
   if (upperRole.includes("MANAGER")) return "Manager";
- 
+
   return "Employee";
 };
- 
+
 // ─── Authenticated layout ────────────────────────────────────────────────────
 function AppLayout() {
   const location = useLocation();
   const navigate = useNavigate();
- 
+
   const [assetsOpen, setAssetsOpen] = useState(
     location.pathname.startsWith("/assets")
   );
- 
+
   // Sidebar collapse state
   const [collapsed, setCollapsed] = useState(false);
- 
+
   const { employee, logout } = useAuth();
- 
+
   //   The actual normalized database role of the logged-in user
   const actualRole = normalizeRole(employee?.access_tier);
- 
+
   // State controls which view they are currently looking at (from dropdown)
   const [activeRole, setActiveRole] = useState(actualRole);
- 
+
   // Sync activeRole if employee details load slightly late
   useEffect(() => {
     if (employee?.access_tier) {
       setActiveRole(normalizeRole(employee.access_tier));
     }
   }, [employee?.access_tier]);
- 
+
   const displayName = employee?.name ?? "Admin User";
   const initials = displayName
     .split(" ")
@@ -195,10 +198,10 @@ function AppLayout() {
     .join("")
     .slice(0, 2)
     .toUpperCase();
- 
+
   // We keep the original string for display purposes in the profile card
   const tierLabel = employee?.access_tier ?? "Administrator";
- 
+
   const getHeaderTitle = () => {
     if (location.pathname.startsWith("/attendance")) return "Attendance"; // <-- Added Header
     if (location.pathname.startsWith("/performance")) return "Performance & Goals"; // <-- Added Header
@@ -218,95 +221,95 @@ function AppLayout() {
     if (location.pathname === "/" || location.pathname === "/dashboard") return "Leave Dashboard";
     return "UZVI Workspace";
   };
- 
+
   const today = new Date().toLocaleDateString("en-GB", {
     day: "2-digit",
     month: "short",
     year: "numeric",
   });
- 
+
   return (
-<div className="flex h-screen bg-[#F4F6F8] font-sans overflow-hidden">
+    <div className="flex h-screen bg-[#F4F6F8] font-sans overflow-hidden">
       {/* ─── SIDEBAR ─────────────────────────────────────────────────── */}
-<aside
-        className={`${collapsed ? "w-[76px]" : "w-[280px]"
+      <aside
+        className={`${collapsed ? "w-[76px]" : "w-[220px]"
           } bg-[#1A1614] flex flex-col justify-between shrink-0 transition-all duration-300 border-r border-black/40`}
->
-<div
+      >
+        <div
           className={`px-4 py-3 flex items-center border-b border-white/5 ${collapsed ? "justify-center" : "justify-between"
             }`}
->
-<div className={`flex items-center ${collapsed ? "" : "space-x-3"}`}>
-<div className="w-9 h-9 bg-[#F37021] text-white rounded-full flex items-center justify-center font-black text-lg shadow-lg shadow-[#F37021]/20 shrink-0">
+        >
+          <div className={`flex items-center ${collapsed ? "" : "space-x-3"}`}>
+            <div className="w-9 h-9 bg-[#F37021] text-white rounded-full flex items-center justify-center font-black text-lg shadow-lg shadow-[#F37021]/20 shrink-0">
               U
-</div>
+            </div>
             {!collapsed && (
-<div>
-<h1 className="font-extrabold text-white text-[15px] tracking-wide leading-tight">
+              <div>
+                <h1 className="font-extrabold text-white text-[15px] tracking-wide leading-tight">
                   UZVI PORTAL
-</h1>
-<p className="text-[10.5px] text-[#F37021] font-bold tracking-[0.08em] uppercase">
+                </h1>
+                <p className="text-[10.5px] text-[#F37021] font-bold tracking-[0.08em] uppercase">
                   Employee Portal
-</p>
-</div>
+                </p>
+              </div>
             )}
-</div>
+          </div>
           {!collapsed && (
-<button
+            <button
               type="button"
               onClick={() => setCollapsed(true)}
               className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition"
->
-<ChevronLeft size={16} />
-</button>
+            >
+              <ChevronLeft size={16} />
+            </button>
           )}
-</div>
- 
+        </div>
+
         {/* Collapsed-state expand button, shown just under the header */}
         {collapsed && (
-<div className="flex justify-center py-2 border-b border-white/5">
-<button
+          <div className="flex justify-center py-2 border-b border-white/5">
+            <button
               type="button"
               onClick={() => setCollapsed(false)}
               className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition"
->
-<ChevronLeft size={16} className="rotate-180" />
-</button>
-</div>
+            >
+              <ChevronLeft size={16} className="rotate-180" />
+            </button>
+          </div>
         )}
- 
+
         <div className="flex-1 overflow-y-auto px-3 py-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-<SectionLabel label="Workspace" collapsed={collapsed} />
-<div className="space-y-0.5">
-<NavLink to="/directory" icon={BookUser} label="Directory" collapsed={collapsed} />
-<NavLink to="/attendance" icon={Clock} label="Attendance" collapsed={collapsed} /> {/* <-- Added Attendance NavLink */}
-<NavLink to="/performance" icon={Award} label="Performance & Goals" collapsed={collapsed} /> {/* <-- Added Performance NavLink */}
-<NavLink to="/onboarding" icon={ClipboardList} label="Onboarding" collapsed={collapsed} />
-<NavLink to="/calendar" icon={CalendarDays} label="Company Calendar" collapsed={collapsed} />
-<NavLink to="/documents" icon={FolderOpen} label="Documents" collapsed={collapsed} />
-</div>
- 
+          <SectionLabel label="Workspace" collapsed={collapsed} />
+          <div className="space-y-0.5">
+            <NavLink to="/directory" icon={BookUser} label="Directory" collapsed={collapsed} />
+            <NavLink to="/attendance" icon={Clock} label="Attendance" collapsed={collapsed} /> {/* <-- Added Attendance NavLink */}
+            <NavLink to="/performance" icon={Award} label="Performance & Goals" collapsed={collapsed} /> {/* <-- Added Performance NavLink */}
+            <NavLink to="/onboarding" icon={ClipboardList} label="Onboarding" collapsed={collapsed} />
+            <NavLink to="/calendar" icon={CalendarDays} label="Company Calendar" collapsed={collapsed} />
+            <NavLink to="/documents" icon={FolderOpen} label="Documents" collapsed={collapsed} />
+          </div>
+
           <SectionLabel label="People" collapsed={collapsed} />
-<div className="space-y-0.5">
-<NavLink to="/" icon={Briefcase} label="Leave Management" collapsed={collapsed} />
-<NavLink to="/dashboard" icon={Megaphone} label="Announcements" collapsed={collapsed} />
-<NavLink to="/utilization" icon={Users} label="Consultant Utilization" collapsed={collapsed} />
-<NavLink to="/recruiting" icon={UserPlus} label="Recruiting" collapsed={collapsed} />
-<NavLink to="/training" icon={GraduationCap} label="Training" collapsed={collapsed} />
-</div>
- 
+          <div className="space-y-0.5">
+            <NavLink to="/" icon={Briefcase} label="Leave Management" collapsed={collapsed} />
+            <NavLink to="/dashboard" icon={Megaphone} label="Announcements" collapsed={collapsed} />
+            <NavLink to="/utilization" icon={Users} label="Consultant Utilization" collapsed={collapsed} />
+            <NavLink to="/recruiting" icon={UserPlus} label="Recruiting" collapsed={collapsed} />
+            <NavLink to="/training" icon={GraduationCap} label="Training" collapsed={collapsed} />
+          </div>
+
           <SectionLabel label="Operations" collapsed={collapsed} />
-<div className="space-y-0.5">
-<div>
+          <div className="space-y-0.5">
+            <div>
               {/* Parent Item */}
-<div
+              <div
                 className={`flex items-center rounded-lg transition-all duration-200 ${collapsed ? "justify-center" : "justify-between"
                   } ${location.pathname.startsWith("/assets")
                     ? "bg-white/10 text-white"
                     : "text-white hover:bg-white/10"
                   }`}
->
-<Link
+              >
+                <Link
                   to="/assets"
                   title={collapsed ? "Assets" : undefined}
                   className={`flex items-center flex-1 text-[13px] font-semibold transition-colors ${collapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2"
@@ -314,8 +317,8 @@ function AppLayout() {
                       ? "text-white"
                       : "text-white hover:text-white"
                     }`}
->
-<Package
+                >
+                  <Package
                     size={16}
                     strokeWidth={2.25}
                     className={`transition-colors duration-200 ${location.pathname.startsWith("/assets")
@@ -324,36 +327,36 @@ function AppLayout() {
                       }`}
                   />
                   {!collapsed && <span className="tracking-wide">Assets</span>}
-</Link>
- 
+                </Link>
+
                 {actualRole === "Admin" && !collapsed && (
-<button
+                  <button
                     type="button"
                     onClick={() => setAssetsOpen(!assetsOpen)}
                     className="px-3 py-2 text-gray-400 hover:text-white"
->
-<ChevronDown
+                  >
+                    <ChevronDown
                       size={15}
                       className={`transition-transform duration-200 ${assetsOpen ? "rotate-0" : "-rotate-90"
                         }`}
                     />
-</button>
+                  </button>
                 )}
-</div>
- 
+              </div>
+
               {/* Sub Menu */}
               {assetsOpen && actualRole === "Admin" && !collapsed && (
-<div className="ml-5 mt-1 space-y-1 border-l border-white/10 pl-3">
- 
+                <div className="ml-5 mt-1 space-y-1 border-l border-white/10 pl-3">
+
                   <Link
                     to="/assets/pending-returns"
                     className={`flex items-center justify-between rounded-md px-3 py-2 text-[12.5px] font-medium transition-all duration-200 ${location.pathname === "/assets/pending-returns"
                       ? "bg-white/10 text-white"
                       : "text-white hover:bg-white/10"
                       }`}
->
-<div className="flex items-center gap-2">
-<RotateCcw
+                  >
+                    <div className="flex items-center gap-2">
+                      <RotateCcw
                         size={14}
                         className={
                           location.pathname === "/assets/pending-returns"
@@ -361,370 +364,396 @@ function AppLayout() {
                             : "text-white"
                         }
                       />
-<span className="text-white">Pending Returns</span>
-</div>
- 
+                      <span className="text-white">Pending Returns</span>
+                    </div>
+
                     {location.pathname === "/assets/pending-returns" && (
-<span className="w-1.5 h-1.5 rounded-full bg-[#F37021]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#F37021]" />
                     )}
-</Link>
- 
+                  </Link>
+
                 </div>
               )}
- 
+
             </div>
-<NavLink to="/expenses" icon={CreditCard} label="Expense Claims" collapsed={collapsed} />
-<NavLink to="/helpdesk" icon={Headphones} label="Helpdesk" collapsed={collapsed} />
-<NavLink to="/quotes" icon={ReceiptText} label="Quotes" collapsed={collapsed} />
-</div>
-</div>
-</aside>
- 
+            <NavLink to="/expenses" icon={CreditCard} label="Expense Claims" collapsed={collapsed} />
+            <NavLink to="/quotes" icon={ReceiptText} label="Quotes" collapsed={collapsed} />
+            <NavLink to="/helpdesk" icon={Headphones} label="Helpdesk" collapsed={collapsed} />
+
+          </div>
+        </div>
+      </aside>
+
       {/* ─── MAIN CONTENT ────────────────────────────────────────────────── */}
-<main className="flex-1 flex flex-col h-screen overflow-hidden">
-<header className="h-[72px] bg-[#1A1614] border-b border-white/5 flex items-center justify-between px-6 shrink-0">
-<div className="flex items-center space-x-4">
-<button className="text-gray-400 hover:text-white transition">
-<Menu size={22} />
-</button>
-<h2 className="text-lg font-bold text-white tracking-wide">
-              {getHeaderTitle()}
-</h2>
-</div>
- 
+      <main className="flex-1 flex flex-col h-screen overflow-hidden">
+        <header className="h-[72px] bg-[#1A1614] border-b border-white/5 flex items-center justify-between px-6 shrink-0">
           <div className="flex items-center space-x-4">
- 
+            <button className="text-gray-400 hover:text-white transition">
+              <Menu size={22} />
+            </button>
+            <h2 className="text-lg font-bold text-white tracking-wide">
+              {getHeaderTitle()}
+            </h2>
+          </div>
+
+          <div className="flex items-center space-x-4">
+
             {/* Role switcher - only shows permitted options based on normalized actualRole */}
-<div className="relative flex items-center space-x-2 bg-[#221D1A] border border-white/10 rounded-xl pl-3 pr-8 py-1.5 hover:border-white/20 hover:bg-white/[0.04] transition-colors duration-150 shadow-inner shadow-black/20">
-<UserCog size={15} className="text-[#F37021] shrink-0" />
-<select
+            <div className="relative flex items-center space-x-2 bg-[#221D1A] border border-white/10 rounded-xl pl-3 pr-8 py-1.5 hover:border-white/20 hover:bg-white/[0.04] transition-colors duration-150 shadow-inner shadow-black/20">
+              <UserCog size={15} className="text-[#F37021] shrink-0" />
+              <select
                 value={activeRole}
                 onChange={(e) => setActiveRole(e.target.value)}
                 className="bg-transparent text-gray-200 text-[13px] font-semibold outline-none cursor-pointer appearance-none pr-1 tracking-wide"
->
+              >
                 {/* Rule: Employee only sees Employee Option */}
                 {actualRole === "Employee" && (
-<option value="Employee" className="bg-[#1A1614] text-white">Employee</option>
+                  <option value="Employee" className="bg-[#1A1614] text-white">Employee</option>
                 )}
- 
+
                 {/* Rule: Manager sees Manager & Employee Options */}
                 {actualRole === "Manager" && (
-<>
-<option value="Manager" className="bg-[#1A1614] text-white">Manager</option>
-<option value="Employee" className="bg-[#1A1614] text-white">Employee</option>
-</>
+                  <>
+                    <option value="Manager" className="bg-[#1A1614] text-white">Manager</option>
+                    <option value="Employee" className="bg-[#1A1614] text-white">Employee</option>
+                  </>
                 )}
- 
+
                 {/* Rule: HR sees HR & Employee Options */}
                 {actualRole === "HR" && (
-<>
-<option value="HR" className="bg-[#1A1614] text-white">HR</option>
-<option value="Employee" className="bg-[#1A1614] text-white">Employee</option>
-</>
+                  <>
+                    <option value="HR" className="bg-[#1A1614] text-white">HR</option>
+                    <option value="Employee" className="bg-[#1A1614] text-white">Employee</option>
+                  </>
                 )}
- 
+
                 {/* Rule: Admin sees only Admin Option */}
                 {actualRole === "Admin" && (
-<option value="Admin" className="bg-[#1A1614] text-white">Admin</option>
+                  <option value="Admin" className="bg-[#1A1614] text-white">Admin</option>
                 )}
- 
+
               </select>
-<ChevronDown
+              <ChevronDown
                 size={13}
                 className="text-gray-500 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
               />
-</div>
- 
+            </div>
+
             {/* Date */}
-<div className="hidden md:flex items-center space-x-2 border border-white/10 bg-[#221D1A] rounded-xl px-4 py-1.5 text-sm font-semibold text-gray-300 cursor-pointer hover:bg-white/[0.04] hover:border-white/20 transition-colors duration-150">
-<CalendarIcon size={16} className="text-[#F37021]" />
-<span>{today}</span>
-</div>
- 
+            <div className="hidden md:flex items-center space-x-2 border border-white/10 bg-[#221D1A] rounded-xl px-4 py-1.5 text-sm font-semibold text-gray-300 cursor-pointer hover:bg-white/[0.04] hover:border-white/20 transition-colors duration-150">
+              <CalendarIcon size={16} className="text-[#F37021]" />
+              <span>{today}</span>
+            </div>
+
             {/* Profile + Sign out */}
-<div className="flex items-center space-x-4 border-l border-white/10 pl-4">
-<div className="flex items-center space-x-3">
-<div className="w-9 h-9 bg-[#F37021] text-white rounded-full flex items-center justify-center font-bold text-sm shadow-md">
+            <div className="flex items-center space-x-4 border-l border-white/10 pl-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-9 h-9 bg-[#F37021] text-white rounded-full flex items-center justify-center font-bold text-sm shadow-md">
                   {initials}
-</div>
-<div className="hidden lg:block text-right">
-<p className="text-sm font-bold text-white leading-tight">
+                </div>
+                <div className="hidden lg:block text-right">
+                  <p className="text-sm font-bold text-white leading-tight">
                     {displayName}
-</p>
-<p className="text-[10px] text-gray-400 font-medium tracking-wide">
+                  </p>
+                  <p className="text-[10px] text-gray-400 font-medium tracking-wide">
                     {tierLabel}
-</p>
-</div>
-</div>
- 
+                  </p>
+                </div>
+              </div>
+
               <button
                 onClick={() => {
                   logout();
                   navigate("/login", { replace: true });
                 }}
                 className="border border-white/10 text-gray-300 hover:text-white rounded-xl px-3 py-1.5 flex items-center space-x-2 text-sm font-semibold hover:bg-white/5 transition"
->
-<LogOut size={16} />
-<span className="hidden sm:inline">Sign out</span>
-</button>
-</div>
-</div>
-</header>
- 
+              >
+                <LogOut size={16} />
+                <span className="hidden sm:inline">Sign out</span>
+              </button>
+            </div>
+          </div>
+        </header>
+
         {/* Page content */}
-<div className="flex-1 overflow-y-auto p-6 md:p-8">
-<Routes>
-<Route
+        <div className="flex-1 overflow-y-auto p-6 md:p-8">
+          <Routes>
+            <Route
               path="/"
               element={
                 activeRole === "Manager" ? (
-<div className="space-y-8">
-<ManagerDashboard />
-</div>
+                  <div className="space-y-8">
+                    <ManagerDashboard />
+                  </div>
                 ) : activeRole === "HR" ? (
-<div className="space-y-8">
-<HRDashboard />
-</div>
+                  <div className="space-y-8">
+                    <HRDashboard />
+                  </div>
                 ) : activeRole === "Admin" ? (
-<AdminDashboard />
+                  <AdminDashboard />
                 ) : (
-<LeaveDashboard />
+                  <LeaveDashboard />
                 )
               }
             />
- 
+
             {/* <-- Added Attendance & Performance Routes --> */}
-<Route
+            <Route
               path="/attendance"
               element={
-<ProtectedRoute>
-<AttendanceModulePage role={activeRole as "Admin" | "Manager" | "Employee"} />
-</ProtectedRoute>
+                <ProtectedRoute>
+                  <AttendanceModulePage role={activeRole as "Admin" | "Manager" | "Employee"} />
+                </ProtectedRoute>
               }
             />
-<Route
+            <Route
               path="/performance"
               element={
-<ProtectedRoute>
-<PerformanceModulePage role={activeRole as "Admin" | "Manager" | "Employee"} />
-</ProtectedRoute>
+                <ProtectedRoute>
+                  <PerformanceModulePage role={activeRole as "Admin" | "Manager" | "Employee"} />
+                </ProtectedRoute>
               }
             />
- 
+
             <Route
               path="/calendar"
               element={<CalendarPage role={activeRole} />}
             />
- 
+
             <Route
               path="/announcements"
               element={
-<ProtectedRoute>
-<AnnouncementsPage />
-</ProtectedRoute>
+                <ProtectedRoute>
+                  <AnnouncementsPage />
+                </ProtectedRoute>
               }
             />
-<Route
+            <Route
               path="/announcements/new"
               element={
-<ProtectedRoute>
-<ComposeAnnouncementPage />
-</ProtectedRoute>
+                <ProtectedRoute>
+                  <ComposeAnnouncementPage />
+                </ProtectedRoute>
               }
             />
-<Route
+            <Route
               path="/announcements/acknowledgments"
               element={
-<ProtectedRoute>
-<AcknowledgmentsOverviewPage />
-</ProtectedRoute>
+                <ProtectedRoute>
+                  <AcknowledgmentsOverviewPage />
+                </ProtectedRoute>
               }
             />
-<Route
+            <Route
               path="/dashboard"
               element={
-<ProtectedRoute>
-<AnnouncementsDashboardPage />
-</ProtectedRoute>
+                <ProtectedRoute>
+                  <AnnouncementsDashboardPage />
+                </ProtectedRoute>
               }
             />
- 
+
             <Route
               path="/utilization"
               element={
-<ProtectedRoute>
-<UtilizationModulePage />
-</ProtectedRoute>
+                <ProtectedRoute>
+                  <UtilizationModulePage />
+                </ProtectedRoute>
               }
             />
- 
+
             <Route
               path="/expenses"
               element={
-<ProtectedRoute>
-<ExpenseClaimsModulePage />
-</ProtectedRoute>
+                <ProtectedRoute>
+                  <ExpenseClaimsModulePage />
+                </ProtectedRoute>
               }
             />
- 
+
             <Route
               path="/recruiting"
               element={
-<ProtectedRoute>
-<RecruitingModulePage />
-</ProtectedRoute>
+                <ProtectedRoute>
+                  <RecruitingModulePage />
+                </ProtectedRoute>
               }
->
-<Route index element={<RecruitingHomePage />} />
-<Route path="funnel" element={<PipelineFunnelPage />} />
-<Route path="sourcing" element={<SourcingPage />} />
-<Route path="pipeline" element={<CandidatePipelinePage />} />
-<Route path="duplicates" element={<DuplicatesPage />} />
-<Route
+            >
+              <Route index element={<RecruitingHomePage />} />
+              <Route path="funnel" element={<PipelineFunnelPage />} />
+              <Route path="sourcing" element={<SourcingPage />} />
+              <Route path="pipeline" element={<CandidatePipelinePage />} />
+              <Route path="duplicates" element={<DuplicatesPage />} />
+              <Route
                 path="candidates/:candidateId"
                 element={<CandidateDetailPage />}
               />
-</Route>
- 
+            </Route>
+
             <Route
               path="/helpdesk"
               element={
-<ProtectedRoute>
-<HelpdeskModulePage />
-</ProtectedRoute>
+                <ProtectedRoute>
+                  <HelpdeskModulePage />
+                </ProtectedRoute>
               }
             />
-<Route
+            <Route
               path="/helpdesk/tickets/:ticketId"
               element={
-<ProtectedRoute>
-<TicketDetailsPage />
-</ProtectedRoute>
+                <ProtectedRoute>
+                  <TicketDetailsPage />
+                </ProtectedRoute>
               }
             />
- 
+
             <Route
               path="/directory"
               element={
-<ProtectedRoute>
-<DirectoryPage />
-</ProtectedRoute>
+                <ProtectedRoute>
+                  <DirectoryPage />
+                </ProtectedRoute>
               }
             />
- 
+
             <Route
               path="candidates/:candidateId"
               element={<CandidateDetailPage />}
             />
- 
+
             <Route
               path="/documents"
               element={
-<ProtectedRoute>
-<DocumentsPage />
-</ProtectedRoute>
+                <ProtectedRoute>
+                  <DocumentsPage />
+                </ProtectedRoute>
               }
             />
-<Route
+            <Route
               path="/onboarding"
               element={
-<ProtectedRoute>
-<OnboardingPage />
-</ProtectedRoute>
+                <ProtectedRoute>
+                  <OnboardingPage />
+                </ProtectedRoute>
               }
             />
- 
+
             <Route
               path="/training"
               element={
-<ProtectedRoute>
-<TrainingModulePage />
-</ProtectedRoute>
+                <ProtectedRoute>
+                  <TrainingModulePage />
+                </ProtectedRoute>
               }
             />
- 
+
             <Route
               path="/training/programs/:programId"
               element={
-<ProtectedRoute>
-<ProgramDetailsPage />
-</ProtectedRoute>
+                <ProtectedRoute>
+                  <ProgramDetailsPage />
+                </ProtectedRoute>
               }
             />
- 
+
             <Route
               path="/assets"
               element={
-<ProtectedRoute>
+                <ProtectedRoute>
                   {activeRole === "Employee" ? (
-<EmployeeDashboard />
+                    <EmployeeDashboard />
                   ) : (
-<Dashboard />
+                    <Dashboard />
                   )}
-</ProtectedRoute>
+                </ProtectedRoute>
               }
             />
- 
-            {quoteRoutes}
+
+            <Route
+              path="/quotes"
+              element={
+                <ProtectedRoute>
+                  <QuoteDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/quotes/opportunity/:id"
+              element={
+                <ProtectedRoute>
+                  <OpportunityDetailsPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/quotes/scenario/:scenarioId"
+              element={
+                <ProtectedRoute>
+                  <ScenarioWorkspace />
+                </ProtectedRoute>
+              }
+            />
             {assetRoutes}
- 
+
             <Route
               path="*"
               element={
-<div className="flex flex-col items-center justify-center h-64 bg-white rounded-2xl border border-gray-200 shadow-sm p-8 text-center">
-<span className="text-4xl mb-4">🚧</span>
-<h3 className="text-lg font-bold text-gray-800">
+                <div className="flex flex-col items-center justify-center h-64 bg-white rounded-2xl border border-gray-200 shadow-sm p-8 text-center">
+                  <span className="text-4xl mb-4">🚧</span>
+                  <h3 className="text-lg font-bold text-gray-800">
                     Module Under Construction
-</h3>
-<p className="text-sm text-gray-500 mt-2">
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-2">
                     This section is outside the scope of our current focus.
-</p>
-</div>
+                  </p>
+                </div>
               }
             />
-</Routes>
-</div>
-</main>
-</div>
+          </Routes>
+        </div>
+      </main>
+    </div>
   );
 }
- 
+
 // ─── Gate: show login or app ─────────────────────────────────────────────────
 function AuthGate() {
   const { employee, isLoading } = useAuth();
   const location = useLocation();
- 
+
   if (isLoading) {
     return (
-<div className="min-h-screen bg-[#1A1614] flex items-center justify-center">
-<div className="w-10 h-10 border-2 border-[#F37021] border-t-transparent rounded-full animate-spin" />
-</div>
+      <div className="min-h-screen bg-[#1A1614] flex items-center justify-center">
+        <div className="w-10 h-10 border-2 border-[#F37021] border-t-transparent rounded-full animate-spin" />
+      </div>
     );
   }
- 
+
   // Public route
   if (location.pathname === "/login") {
     return <LoginPage />;
   }
- 
+
   // Not logged in → force login
   if (!employee) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
- 
+
   return <AppLayout />;
 }
- 
+
 // ─── Root ────────────────────────────────────────────────────────────────────
 export default function App() {
   return (
-<AuthProvider>
-<Router>
-<Routes>
-<Route path="/login" element={<LoginPage />} />
-<Route path="/*" element={<AuthGate />} />
-</Routes>
-</Router>
-</AuthProvider>
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/*" element={<AuthGate />} />
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 }
