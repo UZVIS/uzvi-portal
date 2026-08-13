@@ -7,6 +7,8 @@ import type {
   AttendanceStatus,
 } from "../types";
 
+import type { Employee } from "../../directory/api";
+
 interface AttendanceModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -16,15 +18,8 @@ interface AttendanceModalProps {
   employeeId?: string;
   employeeName?: string;
   attendanceDate?: string;
+  employees: Employee[];
 }
-
-const employeeList = [
-  { id: "EMP001", name: "Arjun Kumar" },
-  { id: "EMP002", name: "Rahul Sharma" },
-  { id: "EMP003", name: "Sneha Reddy" },
-  { id: "EMP004", name: "Priya Nair" },
-  { id: "EMP005", name: "Kiran Verma" },
-];
 
 const AttendanceModal: React.FC<AttendanceModalProps> = ({
   isOpen,
@@ -33,13 +28,12 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
   record,
   loading = false,
   employeeId = "EMP001",
+  employeeName: defaultEmployeeName = "",
   attendanceDate = new Date().toISOString().split("T")[0],
+  employees,
 }) => {
   const [selectedEmployee, setSelectedEmployee] =
     useState(employeeId);
-
-  const [employeeName, setEmployeeName] =
-    useState("Arjun Kumar");
 
   const [status, setStatus] =
     useState<AttendanceStatus>("in-office");
@@ -56,15 +50,33 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
   const [source, setSource] =
     useState("manual");
 
+  /*
+   * ======================================
+   * Selected Employee Details
+   * ======================================
+   */
+
+  const selectedEmployeeData = employees.find(
+    (employee) =>
+      String(employee.employee_id) ===
+      String(selectedEmployee)
+  );
+
+  const employeeName =
+    selectedEmployeeData?.name ??
+    defaultEmployeeName ??
+    "";
+
+  /*
+   * ======================================
+   * Load / Reset Employee Details
+   * ======================================
+   */
+
   useEffect(() => {
     if (record) {
+      // Editing existing attendance
       setSelectedEmployee(record.employee_id);
-
-      const emp = employeeList.find(
-        (e) => e.id === record.employee_id
-      );
-
-      setEmployeeName(emp?.name ?? "");
 
       setDate(record.attendance_date);
 
@@ -75,43 +87,72 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
       setCheckOut(record.check_out ?? "");
 
       setSource(record.source ?? "manual");
-    } else {
-      setSelectedEmployee(employeeId);
 
-      const emp = employeeList.find(
-        (e) => e.id === employeeId
-      );
-
-      setEmployeeName(emp?.name ?? "");
-
-      setDate(attendanceDate);
-
-      setStatus("in-office");
-
-      setCheckIn("");
-
-      setCheckOut("");
-
-      setSource("manual");
+      return;
     }
-  }, [record, employeeId, attendanceDate]);
+
+    // Adding new attendance
+    setDate(attendanceDate);
+
+    setStatus("in-office");
+
+    setCheckIn("");
+
+    setCheckOut("");
+
+    setSource("manual");
+
+    // If default employee exists in Directory,
+    // use it. Otherwise use the first employee
+    // received from Directory.
+    const defaultEmployeeExists = employees.some(
+      (employee) =>
+        String(employee.employee_id) ===
+        String(employeeId)
+    );
+
+    if (defaultEmployeeExists) {
+      setSelectedEmployee(employeeId);
+    } else if (employees.length > 0) {
+      setSelectedEmployee(
+        employees[0].employee_id
+      );
+    } else {
+      setSelectedEmployee("");
+    }
+  }, [
+    record,
+    employeeId,
+    attendanceDate,
+    employees,
+  ]);
+
+  /*
+   * ======================================
+   * Employee Change
+   * ======================================
+   */
 
   const handleEmployeeChange = (
     value: string
   ) => {
     setSelectedEmployee(value);
-
-    const emp = employeeList.find(
-      (e) => e.id === value
-    );
-
-    setEmployeeName(emp?.name ?? "");
   };
+
+  /*
+   * ======================================
+   * Submit
+   * ======================================
+   */
 
   const handleSubmit = (
     e: React.FormEvent
   ) => {
     e.preventDefault();
+
+    if (!selectedEmployee) {
+      return;
+    }
 
     const formData: AttendanceFormData = {
       employee_id: selectedEmployee,
@@ -125,7 +166,21 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
     onSave(formData);
   };
 
-  if (!isOpen) return null;
+  /*
+   * ======================================
+   * Modal Closed
+   * ======================================
+   */
+
+  if (!isOpen) {
+    return null;
+  }
+
+  /*
+   * ======================================
+   * UI
+   * ======================================
+   */
 
   return (
     <div
@@ -134,9 +189,17 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
     >
       <div
         className="modal-content"
-        onClick={(e) => e.stopPropagation()}
+        onClick={(e) =>
+          e.stopPropagation()
+        }
       >
+
+        {/* ================================
+            Header
+        ================================= */}
+
         <div className="modal-header">
+
           <h2>
             {record
               ? "Edit Attendance"
@@ -144,25 +207,38 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
           </h2>
 
           <button
+            type="button"
             className="modal-close"
             onClick={onClose}
           >
             ✕
           </button>
+
         </div>
 
+        {/* ================================
+            Form
+        ================================= */}
+
         <form onSubmit={handleSubmit}>
+
           <div className="modal-body">
 
-            {/* Employee */}
+            {/* ==============================
+                Employee
+            =============================== */}
 
             <div className="form-row">
+
+              {/* Employee ID */}
 
               <div className="form-group">
 
                 <label>
                   Employee ID
-                  <span className="required">*</span>
+                  <span className="required">
+                    *
+                  </span>
                 </label>
 
                 <select
@@ -172,62 +248,99 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
                       e.target.value
                     )
                   }
+                  required
                 >
-                  {employeeList.map((emp) => (
-                    <option
-                      key={emp.id}
-                      value={emp.id}
-                    >
-                      {emp.id}
+
+                  {employees.length === 0 ? (
+
+                    <option value="">
+                      No employees available
                     </option>
-                  ))}
+
+                  ) : (
+
+                    employees.map((emp) => (
+
+                      <option
+                        key={emp.employee_id}
+                        value={emp.employee_id}
+                      >
+                        {emp.employee_id}
+                      </option>
+
+                    ))
+
+                  )}
+
                 </select>
 
               </div>
+
+              {/* Employee Name */}
 
               <div className="form-group">
 
                 <label>
                   Employee Name
-                  <span className="required">*</span>
+                  <span className="required">
+                    *
+                  </span>
                 </label>
 
                 <input
                   type="text"
                   value={employeeName}
                   readOnly
+                  placeholder={
+                    employees.length === 0
+                      ? "No employee available"
+                      : "Employee name"
+                  }
                 />
 
               </div>
 
             </div>
 
-                        {/* Date & Status */}
+            {/* ==============================
+                Date & Status
+            =============================== */}
 
             <div className="form-row">
+
+              {/* Date */}
 
               <div className="form-group">
 
                 <label>
                   Date
-                  <span className="required">*</span>
+                  <span className="required">
+                    *
+                  </span>
                 </label>
 
                 <input
                   type="date"
                   value={date}
                   onChange={(e) =>
-                    setDate(e.target.value)
+                    setDate(
+                      e.target.value
+                    )
                   }
+                  required
                 />
 
               </div>
+
+              {/* Status */}
 
               <div className="form-group">
 
                 <label>
                   Status
-                  <span className="required">*</span>
+                  <span className="required">
+                    *
+                  </span>
                 </label>
 
                 <select
@@ -237,6 +350,7 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
                       e.target.value as AttendanceStatus
                     )
                   }
+                  required
                 >
 
                   <option value="in-office">
@@ -261,9 +375,13 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
 
             </div>
 
-            {/* Check In & Check Out */}
+            {/* ==============================
+                Check In & Check Out
+            =============================== */}
 
             <div className="form-row">
+
+              {/* Check In */}
 
               <div className="form-group">
 
@@ -282,6 +400,8 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
                 />
 
               </div>
+
+              {/* Check Out */}
 
               <div className="form-group">
 
@@ -303,7 +423,9 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
 
             </div>
 
-            {/* Source */}
+            {/* ==============================
+                Source
+            =============================== */}
 
             <div className="form-group">
 
@@ -338,7 +460,9 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
 
           </div>
 
-                    {/* Footer */}
+          {/* ================================
+              Footer
+          ================================= */}
 
           <div className="modal-footer">
 
@@ -353,9 +477,14 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
             <button
               type="submit"
               className="save-btn"
-              disabled={loading}
+              disabled={
+                loading ||
+                !selectedEmployee
+              }
             >
-              {loading ? "Saving..." : "Save"}
+              {loading
+                ? "Saving..."
+                : "Save"}
             </button>
 
           </div>
@@ -363,11 +492,8 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
         </form>
 
       </div>
-
     </div>
-
   );
-
 };
 
 export default AttendanceModal;

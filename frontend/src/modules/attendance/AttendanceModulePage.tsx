@@ -30,25 +30,18 @@ import AttendanceModal from "./components/AttendanceModal";
 import TeamAttendance from "./components/TeamAttendance";
 import UnexplainedAbsences from "./components/UnexplainedAbsences";
 import EmployeeAttendance from "./components/EmployeeAttendance";
-import { exportAttendance } from "./api";
+import { listActiveEmployees } from "../directory/api";
+
 
 import type {
   Attendance,
   AttendanceFormData,
-  AttendanceStatus,
 } from "./types";
 
 interface AttendanceModulePageProps {
   role: string;
 }
 
-const employeeNames: Record<string, string> = {
-  EMP001: "Arjun Kumar",
-  EMP002: "Rahul Sharma",
-  EMP003: "Sneha Reddy",
-  EMP004: "Priya Nair",
-  EMP005: "Kiran Verma",
-};
 
 const AttendanceModulePage: React.FC<
   AttendanceModulePageProps
@@ -57,6 +50,9 @@ const AttendanceModulePage: React.FC<
   const employeeId = "EMP001";
 
   const teamId = "TEAM001";
+
+  const [directoryEmployees, setDirectoryEmployees] =
+  useState<Awaited<ReturnType<typeof listActiveEmployees>>>([]);
 
     /* ======================================
      Attendance Hook
@@ -116,20 +112,46 @@ const [adminTab, setAdminTab] = useState<
   /* ======================================
      Initial Load
   ====================================== */
+useEffect(() => {
+  fetchAttendance();
 
-  useEffect(() => {
-    fetchAttendance();
+  fetchSummary(
+    employeeId,
+    new Date().getFullYear(),
+    new Date().getMonth() + 1
+  );
 
-    fetchSummary(
-      employeeId,
-      new Date().getFullYear(),
-      new Date().getMonth() + 1
-    );
+  fetchTeamAttendance(teamId);
 
-    fetchTeamAttendance(teamId);
+  fetchUnexplainedAbsences();
 
-    fetchUnexplainedAbsences();
-  }, []);
+  listActiveEmployees()
+    .then((employees) => {
+      setDirectoryEmployees(employees);
+    })
+    .catch((err) => {
+      console.error("Could not load directory employees:", err);
+    });
+}, []);
+
+const employeeNames = useMemo(() => {
+  return directoryEmployees.reduce<Record<string, string>>(
+    (acc, employee) => {
+      acc[employee.employee_id] = employee.name;
+      return acc;
+    },
+    {}
+  );
+}, [directoryEmployees]);
+
+
+const attendanceEmployees = useMemo(() => {
+  return directoryEmployees.filter(
+    (employee) =>
+      employee.access_tier === "Employee" ||
+      employee.access_tier === "Manager"
+  );
+}, [directoryEmployees]);
 
   /* ======================================
      Search Filter
@@ -159,7 +181,7 @@ const [adminTab, setAdminTab] = useState<
         )
       );
     });
-  }, [records, search]);
+ }, [records, search, employeeNames]);
 
   /* ======================================
      Add Attendance
@@ -740,8 +762,8 @@ adminTab === "records" && (
                       <td className="employee-name">
 
                         {employeeNames[
-                          record.employee_id
-                        ] ?? "Arjun Kumar"}
+                        record.employee_id
+                      ] ?? "Unknown Employee"}
 
                       </td>
 
@@ -977,12 +999,9 @@ adminTab === "records" && (
 
           employeeId={employeeId}
 
-          employeeName={
-            employeeNames[
-              employeeId
-            ]
-          }
+          employees={attendanceEmployees}
 
+          
         />
 
       )}
