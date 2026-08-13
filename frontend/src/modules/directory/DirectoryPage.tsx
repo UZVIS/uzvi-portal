@@ -14,6 +14,7 @@ import { EmployeeRow, teamNameFor } from "./components/EmployeeRow";
 import { EmployeeForm } from "./components/EmployeeForm";
 import { TeamManager } from "./components/TeamManager";
 import { ExitedEmployeesList } from "./components/ExitedEmployeesList";
+import { Toast } from "../../shared/components/Toast";
 import "../shared-theme.css";
 import "./DirectoryPage.css";
 
@@ -118,7 +119,7 @@ export function DirectoryPage() {
         </div>
       </header>
 
-      {error && <div className="error-banner">{error}</div>}
+      {error && <Toast message={error} kind="error" onDismiss={() => setError(null)} />}
 
       {canManage && (
         <section className="directory-page__manage">
@@ -186,7 +187,7 @@ export function DirectoryPage() {
 
       {canManage && employee && (
         <section className="directory-page__list">
-          <h2 style={{ fontSize: 16, fontFamily: "var(--font-display)", marginBottom: 12 }}>
+          <h2 className="directory-form__title">
             Exited employees
           </h2>
           <ExitedEmployeesList requesterId={employee.employee_id} refreshKey={exitedRefreshKey} />

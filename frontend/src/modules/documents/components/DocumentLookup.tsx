@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { DocumentAccessLog, DocumentRecord } from "../api";
+import { Toast } from "../../../shared/components/Toast";
 
 // Backend stores timestamps as UTC, but SQLite drops the timezone marker
 // on the way out, so the API returns a bare "2026-07-21T06:53:48" with no
@@ -45,7 +46,7 @@ export function DocumentLookup({ requesterId, onLookup, onGetLogs }: DocumentLoo
   return (
     <div className="team-manager">
       <h3 className="directory-form__title">View a document</h3>
-      {error && <div className="error-banner">{error}</div>}
+      {error && <Toast message={error} kind="error" onDismiss={() => setError(null)} />}
       <div className="team-manager__form">
         <input
           className="field__input"

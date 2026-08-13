@@ -108,6 +108,31 @@ def test_view_missing_document_raises(db):
         service.view_document(db, "NOPE", requester_id="E001")
 
 
+def test_list_visible_documents_shows_only_own_even_for_hr(db):
+   
+    service.create_document(
+        db, DocumentCreate(document_id="D1", employee_id="E001", uploaded_by="E001", doc_type="id_proof")
+    )
+    service.create_document(
+        db, DocumentCreate(document_id="D2", employee_id="HR1", uploaded_by="HR1", doc_type="payslip")
+    )
+    visible = service.list_visible_documents(db, "HR1")
+    ids = [d.document_id for d in visible]
+    assert ids == ["D2"]
+
+
+def test_list_visible_documents_employee_sees_only_own(db):
+    service.create_document(
+        db, DocumentCreate(document_id="D1", employee_id="E001", uploaded_by="E001", doc_type="id_proof")
+    )
+    service.create_document(
+        db, DocumentCreate(document_id="D2", employee_id="E002", uploaded_by="HR1", doc_type="payslip")
+    )
+    visible = service.list_visible_documents(db, "E001")
+    ids = [d.document_id for d in visible]
+    assert ids == ["D1"]
+
+
 def test_expired_document_is_flagged(db):
     service.create_document(
         db,

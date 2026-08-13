@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { Toast } from "../../../shared/components/Toast";
 
 interface DocumentUploadFormProps {
   uploaderId: string;
@@ -54,8 +55,8 @@ export function DocumentUploadForm({ uploaderId, restrictToSelf, onSubmit }: Doc
       <h3 className="directory-form__title">
         {restrictToSelf ? "Upload your document" : "Register a document"}
       </h3>
-      {error && <div className="error-banner">{error}</div>}
-      {success && <div className="success-banner">Document registered.</div>}
+      {error && <Toast message={error} kind="error" onDismiss={() => setError(null)} />}
+      {success && <Toast message="Document registered successfully." kind="success" onDismiss={() => setSuccess(false)} />}
       <div className="field-row">
         <label className="field">
           <span className="field__label">Document ID</span>

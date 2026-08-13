@@ -23,6 +23,7 @@ import {
 import { TemplateBuilder } from "./components/TemplateBuilder";
 import { InstanceTracker } from "./components/InstanceTracker";
 import { CohortView } from "./components/CohortView";
+import { Toast } from "../../shared/components/Toast";
 import "../shared-theme.css";
 import "./OnboardingPage.css";
 
@@ -111,6 +112,17 @@ export function OnboardingPage() {
     setError(null);
   }
 
+  function handleReset() {
+    setSelectedEmployeeId("");
+    setInstance(null);
+    setProgress(null);
+    setCompletedTaskIds(new Set());
+    setOverdueTaskIds(new Set());
+    setCompletionDetails({});
+    setIsTaskStateKnown(true);
+    setError(null);
+  }
+
   async function handleStart(instanceId: string, employeeId: string, templateId: string) {
     if (!employee) return;
     const created = await startOnboarding(instanceId, employeeId, templateId, employee.employee_id);
@@ -179,7 +191,7 @@ export function OnboardingPage() {
         </div>
       </header>
 
-      {error && <div className="error-banner">{error}</div>}
+      {error && <Toast message={error} kind="error" onDismiss={() => setError(null)} />}
 
       <section className="directory-page__manage">
         {canManageTemplates && (
@@ -204,12 +216,13 @@ export function OnboardingPage() {
           onEmployeeChange={handleEmployeeChange}
           onStart={handleStart}
           onCompleteTask={handleCompleteTask}
+          onReset={handleReset}
           canManage={canStartInstances}
         />
       </section>
 
       <section className="directory-page__list">
-        <h2 style={{ fontSize: 16, fontFamily: "var(--font-display)", marginBottom: 12 }}>
+        <h2 className="directory-form__title">
           Look up an existing instance
         </h2>
         <LookupForm onLookup={handleLookupExisting} />
@@ -218,7 +231,7 @@ export function OnboardingPage() {
 
       {canViewCohort && employee && (
         <section className="directory-page__list">
-          <h2 style={{ fontSize: 16, fontFamily: "var(--font-display)", marginBottom: 12 }}>
+          <h2 className="directory-form__title">
             Cohort view — all current joiners
           </h2>
           <CohortView requesterId={employee.employee_id} refreshKey={cohortRefreshKey} />
@@ -235,7 +248,10 @@ function LookupForm({ onLookup }: { onLookup: (instanceId: string) => void }) {
       className="template-builder__row"
       onSubmit={(e) => {
         e.preventDefault();
-        if (value.trim()) onLookup(value.trim());
+        if (value.trim()) {
+          onLookup(value.trim());
+          setValue("");
+        }
       }}
     >
       <input

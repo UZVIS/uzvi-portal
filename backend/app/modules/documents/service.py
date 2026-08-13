@@ -94,3 +94,16 @@ def list_expired_documents(db: Session, requester_id: str) -> list[EmployeeDocum
         .all()
     )
     return [doc for doc in all_docs if is_document_expired(doc)]
+
+
+def list_visible_documents(db: Session, requester_id: str) -> list[EmployeeDocument]:
+   
+    requester = _get_requester(db, requester_id)
+    if requester is None:
+        raise NotAuthorized("Unknown requester.")
+
+    return (
+        db.query(EmployeeDocument)
+        .filter(EmployeeDocument.employee_id == requester_id)
+        .all()
+    )
