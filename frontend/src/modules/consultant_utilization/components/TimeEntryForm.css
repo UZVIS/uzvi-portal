@@ -1,3 +1,101 @@
+/* .entry-form {
+  background: #ffffff;
+  border: 1px solid #e3e6ea;
+  border-radius: 10px;
+  padding: 20px 24px;
+  max-width: 520px;
+  margin-top: 20px;
+}
+
+.entry-form__title {
+  margin: 0 0 14px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2430;
+}
+
+.entry-form__row {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.entry-form__row label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: #6b7280;
+  flex: 1;
+  min-width: 120px;
+}
+
+.entry-form__row input,
+.entry-form__row select {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #d7dbe0;
+  font-size: 14px;
+  color: #1f2430;
+}
+
+.entry-form__checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #1f2430;
+  margin-bottom: 14px;
+}
+
+.entry-form__notes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 14px;
+}
+
+.entry-form__notes textarea {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #d7dbe0;
+  font-size: 14px;
+  color: #1f2430;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 48px;
+}
+
+.entry-form button {
+  background: #F37021;
+  color: white;
+  border: none;
+  padding: 9px 18px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.entry-form button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.entry-form__error {
+  color: #b8433a;
+  font-size: 13px;
+  margin-top: 10px;
+}
+
+.entry-form__success {
+  color: #3a7d5c;
+  font-size: 13px;
+  margin-top: 10px;
+} */
+
 .entry-form {
   background: #ffffff;
   border: 1px solid #e3e6ea;
@@ -94,4 +192,92 @@
   color: #3a7d5c;
   font-size: 13px;
   margin-top: 10px;
+}
+
+/* Date field with calendar icon */
+.entry-form__date-wrapper {
+  position: relative;
+  display: flex;
+}
+
+.entry-form__date-wrapper input.entry-form__date-input {
+  padding: 8px 32px 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #d7dbe0;
+  font-size: 14px;
+  color: #1f2430;
+  font-family: inherit;
+  background: #ffffff;
+  cursor: pointer;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.entry-form__date-wrapper input.entry-form__date-input:focus {
+  outline: none;
+  border-color: #F37021;
+  box-shadow: 0 0 0 2px rgba(243, 112, 33, 0.15);
+}
+
+.entry-form__date-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6b7280;
+  display: flex;
+  pointer-events: none;
+}
+
+/* Flatpickr calendar popup */
+.flatpickr-calendar {
+  font-family: inherit;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  border-radius: 10px;
+  border: 1px solid #e3e6ea;
+}
+
+.flatpickr-months {
+  padding-top: 8px;
+}
+
+.flatpickr-current-month {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2430;
+}
+
+.flatpickr-weekday {
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: none;
+  font-size: 13px;
+}
+
+.flatpickr-day {
+  border-radius: 6px;
+  font-size: 14px;
+  color: #1f2430;
+}
+
+.flatpickr-day.today {
+  border-color: #F37021;
+}
+
+.flatpickr-day.selected,
+.flatpickr-day.selected:hover,
+.flatpickr-day.selected:focus {
+  background: #F37021;
+  border-color: #F37021;
+  color: #ffffff;
+}
+
+.flatpickr-day.flatpickr-disabled,
+.flatpickr-day.flatpickr-disabled:hover {
+  color: #d7dbe0;
+  cursor: not-allowed;
+}
+
+.flatpickr-day:hover:not(.flatpickr-disabled):not(.selected) {
+  background: #f5f6f8;
 }
