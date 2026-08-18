@@ -79,7 +79,7 @@ import PerformanceModulePage from "./modules/performance/PerformanceModulePage";
 import Dashboard from "./modules/assets/pages/Dashboard";
 import EmployeeDashboard from "./modules/assets/pages/EmployeeDashboard";
 import { assetRoutes } from "./modules/assets/routes";
-import { quoteRoutes } from "./modules/quotes/routes";
+
 
 // ─── NavLink ─────────────────────────────────────────────────────────────────
 const NavLink = ({

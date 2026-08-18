@@ -202,6 +202,9 @@ export function CandidateDetailPage() {
             {candidate.resume_details && (
               <p className="detail__resume">{candidate.resume_details}</p>
             )}
+            {candidate.aadhar_number && (
+              <p className="detail__resume">Aadhar: {candidate.aadhar_number}</p>
+            )}
 
             <div className="detail__stepper">
               {PIPELINE_STAGES.filter((s) => s !== "Rejected").map((stage, i, arr) => {

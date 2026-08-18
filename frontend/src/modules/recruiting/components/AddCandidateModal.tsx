@@ -12,6 +12,7 @@ export function AddCandidateModal({ onClose, onCreate }: Props) {
   const [appliedRole, setAppliedRole] = useState("");
   const [source, setSource] = useState("");
   const [resumeDetails, setResumeDetails] = useState("");
+  const [aadharNumber, setAadharNumber] = useState("");
   const [status, setStatus] = useState<"idle" | "saving" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -30,6 +31,7 @@ export function AddCandidateModal({ onClose, onCreate }: Props) {
         applied_role: appliedRole.trim(),
         source: source.trim() || undefined,
         resume_details: resumeDetails.trim() || undefined,
+        aadhar_number: aadharNumber.trim() || undefined,
       });
       onClose();
     } catch (err) {
@@ -94,7 +96,18 @@ export function AddCandidateModal({ onClose, onCreate }: Props) {
               rows={3}
               value={resumeDetails}
               onChange={(e) => setResumeDetails(e.target.value)}
-              placeholder="Short summary used for interview prep and duplicate detection"
+              placeholder="Short summary used for interview prep"
+            />
+          </label>
+
+          <label className="field">
+            <span className="field__label">Aadhar number</span>
+            <input
+              className="field__input"
+              value={aadharNumber}
+              onChange={(e) => setAadharNumber(e.target.value)}
+              placeholder="e.g. 1234 5678 9012 (used for duplicate detection)"
+              inputMode="numeric"
             />
           </label>
 

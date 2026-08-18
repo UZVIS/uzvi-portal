@@ -52,7 +52,10 @@ class InterviewStageResponse(InterviewStageBase):
 class CandidateBase(BaseModel):
     name: str = Field(..., description="Candidate full name")
     resume_details: Optional[str] = Field(
-        None, description="Resume details/summary used for FR-REC-03/04"
+        None, description="Resume details/summary used for FR-REC-03"
+    )
+    aadhar_number: Optional[str] = Field(
+        None, description="Candidate's Aadhar card number, used for FR-REC-04 duplicate detection"
     )
     applied_role: str = Field(..., description="Role applied for")
     source: Optional[str] = Field(None, description="Sourcing channel")
@@ -71,7 +74,10 @@ class CandidateStageUpdate(BaseModel):
 class CandidateUpdate(BaseModel):
     name: Optional[str] = Field(None, description="Candidate full name")
     resume_details: Optional[str] = Field(
-        None, description="Resume details/summary used for FR-REC-03/04"
+        None, description="Resume details/summary used for FR-REC-03"
+    )
+    aadhar_number: Optional[str] = Field(
+        None, description="Candidate's Aadhar card number, used for FR-REC-04 duplicate detection"
     )
     applied_role: Optional[str] = Field(None, description="Role applied for")
     source: Optional[str] = Field(None, description="Sourcing channel")
@@ -100,7 +106,7 @@ class CandidateDetailResponse(CandidateResponse):
 class DuplicateFlag(BaseModel):
     candidate_id: str
     other_candidate_id: str
-    similarity: float
+    aadhar_number: str
 
 
 # ---------- FR-REC-06: funnel stats ----------

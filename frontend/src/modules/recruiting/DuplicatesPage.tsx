@@ -12,16 +12,15 @@ export function DuplicatesPage() {
   }
   const [flags, setFlags] = useState<DuplicateFlag[]>([]);
   const [candidates, setCandidates] = useState<Record<string, Candidate>>({});
-  const [threshold, setThreshold] = useState(0.8);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  async function load(t: number) {
+  async function load() {
     setIsLoading(true);
     setError(null);
     try {
       const [dups, all] = await Promise.all([
-        recruitingApi.getDuplicates(t),
+        recruitingApi.getDuplicates(),
         recruitingApi.listCandidates(),
       ]);
       setFlags(dups);
@@ -36,8 +35,7 @@ export function DuplicatesPage() {
   }
 
   useEffect(() => {
-    void load(threshold);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    void load();
   }, []);
 
   const rows = useMemo(
@@ -59,25 +57,9 @@ export function DuplicatesPage() {
         <div>
           <h1>Duplicate Watch</h1>
           <p>
-            Candidates whose resume details closely match another applicant — review before
-            scheduling duplicate interviews.
+            Candidates who share the same Aadhar card number as another applicant — review
+            before scheduling duplicate interviews.
           </p>
-        </div>
-        <div className="dup-hero__threshold">
-          <label>
-            Similarity threshold
-            <input
-              type="range"
-              min={0.5}
-              max={0.99}
-              step={0.01}
-              value={threshold}
-              onChange={(e) => setThreshold(parseFloat(e.target.value))}
-              onMouseUp={() => load(threshold)}
-              onTouchEnd={() => load(threshold)}
-            />
-          </label>
-          <span>{Math.round(threshold * 100)}%</span>
         </div>
       </div>
 
@@ -87,7 +69,7 @@ export function DuplicatesPage() {
       {!isLoading && rows.length === 0 && !error && (
         <div className="dup-empty">
           <IconCopyWarn size={30} />
-          <p>No likely duplicates found at this threshold. Nice and clean.</p>
+          <p>No matching Aadhar numbers found. Nice and clean.</p>
         </div>
       )}
 
@@ -96,7 +78,7 @@ export function DuplicatesPage() {
           <table className="dup-table">
             <thead>
               <tr>
-                <th>Match</th>
+                <th>Aadhar Number</th>
                 <th>Candidate</th>
                 <th>Role</th>
                 <th aria-hidden="true"></th>
@@ -108,7 +90,7 @@ export function DuplicatesPage() {
               {rows.map((r, i) => (
                 <tr key={i}>
                   <td>
-                    <span className="dup-table__pct">{Math.round(r.similarity * 100)}%</span>
+                    <span className="dup-table__pct">{r.aadhar_number}</span>
                   </td>
                   <td>
                     <button
