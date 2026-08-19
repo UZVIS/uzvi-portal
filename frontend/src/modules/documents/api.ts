@@ -30,7 +30,6 @@ export interface DocumentAccessLog {
 
 /** POST /api/v1/documents/ — HR-Restricted uploads on an employee's behalf */
 export function registerDocument(input: {
-  document_id: string;
   employee_id: string;
   uploaded_by: string;
   doc_type: string;

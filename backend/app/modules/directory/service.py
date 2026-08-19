@@ -4,9 +4,6 @@ from sqlalchemy.orm import Session
 from app.modules.directory.models import Employee, Team
 from app.modules.directory.schemas import EmployeeCreate, EmployeeUpdate, TeamCreate
 
-# FR-DIR-05: "Admin shall be able to add, edit, and mark an employee as
-# exited." Section 3 states HR-Restricted has "everything Admin has, plus"
-# the elevated fields — so HR-Restricted is included here too.
 MANAGE_TIERS = {"Admin", "Admin/Leadership", "HR-Restricted"}
 
 
@@ -28,18 +25,29 @@ class NotAuthorized(Exception):
 
 def _check_can_manage(db: Session, requester_id: str) -> None:
     requester = get_employee(db, requester_id)
-    if requester is None or requester.access_tier not in MANAGE_TIERS:
+    if (
+        requester is None
+        or requester.employment_status != "active"
+        or requester.access_tier not in MANAGE_TIERS
+    ):
         raise NotAuthorized(
-            "Only Admin/Leadership or HR-Restricted may add, edit, or exit an employee."
+            "Only an active Admin/Leadership or HR-Restricted account may add, edit, or exit an employee."
         )
 
 
-def create_team(db: Session, team_in: TeamCreate) -> Team:
-    existing = db.query(Team).filter(Team.team_id == team_in.team_id).first()
-    if existing:
-        raise TeamAlreadyExists(team_in.team_id)
+def _generate_next_team_id(db: Session) -> str:
+    all_ids = [row[0] for row in db.query(Team.team_id).all()]
+    max_num = 0
+    for tid in all_ids:
+        if tid.startswith("TM") and tid[2:].isdigit():
+            max_num = max(max_num, int(tid[2:]))
+    return f"TM{max_num + 1:03d}"
 
-    new_team = Team(**team_in.model_dump())
+
+def create_team(db: Session, team_in: TeamCreate) -> Team:
+    new_team_id = _generate_next_team_id(db)
+    data = team_in.model_dump(exclude={"team_id"}, exclude_unset=True)
+    new_team = Team(team_id=new_team_id, **data)
     db.add(new_team)
     db.commit()
     db.refresh(new_team)
@@ -50,19 +58,34 @@ def list_teams(db: Session) -> list[Team]:
     return db.query(Team).all()
 
 
+def _generate_next_employee_id(db: Session) -> str:
+    # Unified sequence for every tier - Admin, HR, Manager, and Employee
+    # all share one EMP### series. Access tier is a permission level, not
+    # a separate identity category, per team decision.
+    all_ids = [row[0] for row in db.query(Employee.employee_id).all()]
+    max_num = 0
+    for eid in all_ids:
+        if eid.startswith("EMP") and eid[3:].isdigit():
+            max_num = max(max_num, int(eid[3:]))
+    return f"EMP{max_num + 1:03d}"
+
+
 def create_employee(
     db: Session, employee_in: EmployeeCreate, requester_id: str
 ) -> Employee:
     is_empty = db.query(Employee).count() == 0
-    is_self_bootstrap = is_empty and requester_id == employee_in.employee_id
-    if not is_self_bootstrap:
+
+    data = employee_in.model_dump(exclude={"employee_id"}, exclude_unset=True)
+
+    if is_empty:
+        
+        data["access_tier"] = "Admin/Leadership"
+    else:
         _check_can_manage(db, requester_id)
 
-    existing = get_employee(db, employee_in.employee_id)
-    if existing:
-        raise EmployeeAlreadyExists(employee_in.employee_id)
+    new_employee_id = _generate_next_employee_id(db)
 
-    new_emp = Employee(**employee_in.model_dump())
+    new_emp = Employee(employee_id=new_employee_id, **data)
     db.add(new_emp)
     db.commit()
     db.refresh(new_emp)

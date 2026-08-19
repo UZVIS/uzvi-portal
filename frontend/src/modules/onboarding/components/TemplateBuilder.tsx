@@ -5,9 +5,8 @@ import { Toast } from "../../../shared/components/Toast";
 interface TemplateBuilderProps {
   templates: OnboardingTemplate[];
   tasksByTemplate: Record<string, OnboardingTask[]>;
-  onCreateTemplate: (templateId: string, name: string) => Promise<void>;
+  onCreateTemplate: (name: string) => Promise<void>;
   onAddTask: (input: {
-    task_id: string;
     template_id: string;
     name: string;
     seq: number;
@@ -31,10 +30,8 @@ export function TemplateBuilder({
   onCreateTemplate,
   onAddTask,
 }: TemplateBuilderProps) {
-  const [templateId, setTemplateId] = useState("");
   const [templateName, setTemplateName] = useState("");
   const [taskTemplateId, setTaskTemplateId] = useState("");
-  const [taskId, setTaskId] = useState("");
   const [taskName, setTaskName] = useState("");
   const [role, setRole] = useState(ROLES[0]);
   const [expectedDays, setExpectedDays] = useState("");
@@ -46,13 +43,12 @@ export function TemplateBuilder({
 
   async function handleCreateTemplate(e: FormEvent) {
     e.preventDefault();
-    if (!templateId.trim() || !templateName.trim()) return;
+    if (!templateName.trim()) return;
     setIsSubmitting(true);
     setError(null);
     setTemplateSuccess(false);
     try {
-      await onCreateTemplate(templateId.trim(), templateName.trim());
-      setTemplateId("");
+      await onCreateTemplate(templateName.trim());
       setTemplateName("");
       setTemplateSuccess(true);
     } catch (err) {
@@ -64,14 +60,13 @@ export function TemplateBuilder({
 
   async function handleAddTask(e: FormEvent) {
     e.preventDefault();
-    if (!taskTemplateId || !taskId.trim() || !taskName.trim()) return;
+    if (!taskTemplateId || !taskName.trim()) return;
     const existing = tasksByTemplate[taskTemplateId] ?? [];
     setIsSubmitting(true);
     setError(null);
     setTaskSuccess(false);
     try {
       await onAddTask({
-        task_id: taskId.trim(),
         template_id: taskTemplateId,
         name: taskName.trim(),
         seq: existing.length + 1,
@@ -79,7 +74,6 @@ export function TemplateBuilder({
         expected_days: expectedDays.trim() ? Number(expectedDays.trim()) : undefined,
         required_doc_type: requiredDocType || undefined,
       });
-      setTaskId("");
       setTaskName("");
       setExpectedDays("");
       setRequiredDocType("");
@@ -98,12 +92,6 @@ export function TemplateBuilder({
       {templateSuccess && <Toast message="Template created successfully." kind="success" onDismiss={() => setTemplateSuccess(false)} />}
 
       <form className="template-builder__row" onSubmit={handleCreateTemplate}>
-        <input
-          className="field__input"
-          value={templateId}
-          onChange={(e) => setTemplateId(e.target.value)}
-          placeholder="Template ID (TPL2)"
-        />
         <input
           className="field__input"
           value={templateName}
@@ -150,12 +138,6 @@ export function TemplateBuilder({
             </option>
           ))}
         </select>
-        <input
-          className="field__input"
-          value={taskId}
-          onChange={(e) => setTaskId(e.target.value)}
-          placeholder="Task ID"
-        />
         <input
           className="field__input"
           value={taskName}

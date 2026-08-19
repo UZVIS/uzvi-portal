@@ -33,7 +33,7 @@ export interface Team {
 }
 
 export interface CreateEmployeeInput {
-  employee_id: string;
+  employee_id?: string;
   name: string;
   designation?: string;
   team_id?: string;
@@ -122,10 +122,10 @@ export function listTeams(): Promise<Team[]> {
 }
 
 /** POST /api/v1/teams/ */
-export function createTeam(teamId: string, name: string): Promise<Team> {
+export function createTeam(name: string): Promise<Team> {
   return fetch(`${TEAMS_PATH}/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ team_id: teamId, name }),
+    body: JSON.stringify({ name }),
   }).then((r) => handle(r, "Could not create the team."));
 }
