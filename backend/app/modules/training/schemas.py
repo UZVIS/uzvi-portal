@@ -54,6 +54,7 @@ class EnrollmentCreate(BaseModel):
 class EnrollmentResponse(BaseModel):
     enrollment_id: int
     employee_id: str
+    employee_name: Optional[str] = None
     program_id: int
     enrolled_at: datetime
 
@@ -69,7 +70,6 @@ class EnrollmentResponse(BaseModel):
 class UnitCompletionCreate(BaseModel):
     enrollment_id: int = Field(..., gt=0)
     unit_id: int = Field(..., gt=0)
-    score: Optional[float] = Field(default=None, ge=0, le=100)
 
 
 class UnitCompletionResponse(BaseModel):
@@ -77,7 +77,6 @@ class UnitCompletionResponse(BaseModel):
     enrollment_id: int
     unit_id: int
     completed_at: datetime
-    score: Optional[float]
 
     # Allows conversion from the UnitCompletion SQLAlchemy model.
     model_config = ConfigDict(from_attributes=True)
@@ -90,6 +89,7 @@ class UnitCompletionResponse(BaseModel):
 
 class ProgressResponse(BaseModel):
     employee_id: str
+    employee_name: Optional[str] = None
     completed_units: int
     total_units: int
     completion_percentage: float
@@ -100,6 +100,7 @@ class ProgressResponse(BaseModel):
 
 class LaggingEnrollee(BaseModel):
     employee_id: str
+    employee_name: Optional[str] = None
     completion_percentage: float
     points_behind_average: float
 

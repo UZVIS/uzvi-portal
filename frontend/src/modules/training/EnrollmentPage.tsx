@@ -7,6 +7,7 @@ import type {
 import "./EnrollmentPage.css";
 import { useAuth } from "../../shared/auth/AuthContext";
 import { isTrainingCohortViewer } from "./roles";
+import { listActiveEmployees, type Employee } from "../directory/api";
 
 export default function EnrollmentPage() {
   const { employee } = useAuth();
@@ -16,6 +17,7 @@ export default function EnrollmentPage() {
 
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [programs, setPrograms] = useState<TrainingProgram[]>([])
+  const [directoryEmployees, setDirectoryEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showCreateForm, setShowCreateForm] =useState(false);
@@ -94,6 +96,21 @@ export default function EnrollmentPage() {
     loadData();
   }, []);
 
+  useEffect(() => {
+    // Only Manager/Admin-Leadership/HR-Restricted enroll other employees,
+    // so only they need the directory loaded for the name picker.
+    if (!cohortViewer) {
+      return;
+    }
+
+    listActiveEmployees()
+      .then(setDirectoryEmployees)
+      .catch(() => {
+        // Non-fatal: the enroll form still works, just without a
+        // name-based picker if the directory fails to load.
+      });
+  }, [cohortViewer]);
+
   const visibleEnrollments = useMemo(() => {
     if (cohortViewer) {
       return enrollments;
@@ -149,18 +166,39 @@ export default function EnrollmentPage() {
           <div className="create-program-form">
 
             {cohortViewer && (
-              <input
-                type="text"
-                placeholder="Employee ID"
-                value={employeeId}
-                onChange={(e) => {
-                  setEmployeeId(e.target.value);
+              directoryEmployees.length > 0 ? (
+                <select
+                  value={employeeId}
+                  onChange={(e) => {
+                    setEmployeeId(e.target.value);
 
-                  if (createError) {
-                    setCreateError("");
-                  }
-                }}
-              />
+                    if (createError) {
+                      setCreateError("");
+                    }
+                  }}
+                >
+                  <option value="">Select an employee</option>
+
+                  {directoryEmployees.map((emp) => (
+                    <option key={emp.employee_id} value={emp.employee_id}>
+                      {emp.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  placeholder="Employee ID"
+                  value={employeeId}
+                  onChange={(e) => {
+                    setEmployeeId(e.target.value);
+
+                    if (createError) {
+                      setCreateError("");
+                    }
+                  }}
+                />
+              )
             )}
 
             <select
@@ -202,7 +240,7 @@ export default function EnrollmentPage() {
           </div>
         )}
         <div className="enrollment-table-header">
-          {cohortViewer && <span>Employee ID</span>}
+          {cohortViewer && <span>Employee</span>}
           <span>Program</span>
           <span>Enrolled At</span>
         </div>
@@ -222,7 +260,7 @@ export default function EnrollmentPage() {
             >
               {cohortViewer && (
                 <div>
-                  {enrollment.employee_id}
+                  {enrollment.employee_name ?? enrollment.employee_id}
                 </div>
               )}
 

@@ -13,6 +13,11 @@ export default function TrainingModulePage() {
   const admin = isTrainingAdmin(employee?.access_tier);
   const cohortViewer = isTrainingCohortViewer(employee?.access_tier);
 
+  // A plain Employee gets unit completion automated as they go through a
+  // program's units (see ProgramDetailsPage), so the standalone tab is only
+  // useful to Admin/Leadership/Manager/HR-Restricted for oversight.
+  const showCompletionTab = admin || cohortViewer;
+
   const [activeTab, setActiveTab] = useState<
     "programs" | "enrollments" | "completion" | "progress"
   >("programs");
@@ -63,19 +68,21 @@ export default function TrainingModulePage() {
           Progress
         </button>
 
-        <button
-          className={activeTab === "completion" ? "active" : ""}
-          onClick={() => setActiveTab("completion")}
-        >
-          Unit Completion
-        </button>
+        {showCompletionTab && (
+          <button
+            className={activeTab === "completion" ? "active" : ""}
+            onClick={() => setActiveTab("completion")}
+          >
+            Unit Completion
+          </button>
+        )}
       </div>
 
       <div className="training-content">
         {activeTab === "programs" && (<TrainingProgramsPage />)}
         {activeTab === "enrollments" && (<EnrollmentPage />)}
         {activeTab === "progress" && (<ProgressPage />)}
-        {activeTab === "completion" && (<UnitCompletionPage />)}
+        {activeTab === "completion" && showCompletionTab && (<UnitCompletionPage />)}
         
       </div>
     </div>

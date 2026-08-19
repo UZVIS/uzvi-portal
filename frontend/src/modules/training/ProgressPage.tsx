@@ -8,6 +8,7 @@ import type {
 import "./ProgressPage.css";
 import { useAuth } from "../../shared/auth/AuthContext";
 import { isTrainingCohortViewer } from "./roles";
+import { listActiveEmployees, type Employee } from "../directory/api";
 
 export default function ProgressPage() {
   const { employee } = useAuth();
@@ -17,6 +18,7 @@ export default function ProgressPage() {
   const cohortViewer = isTrainingCohortViewer(employee?.access_tier);
 
   const [programs, setPrograms] = useState<TrainingProgram[]>([]);
+  const [directoryEmployees, setDirectoryEmployees] = useState<Employee[]>([]);
   const [employeeId, setEmployeeId] = useState("");
   const [selectedProgram, setSelectedProgram] = useState("");
   const [employeeProgress, setEmployeeProgress] = useState<Progress | null>(null);
@@ -101,6 +103,15 @@ export default function ProgressPage() {
 
     loadPrograms();
 
+    if (cohortViewer) {
+      listActiveEmployees()
+        .then(setDirectoryEmployees)
+        .catch(() => {
+          // Non-fatal: the search field still works with typed IDs if
+          // the directory fails to load.
+        });
+    }
+
     // Employees get their own progress loaded automatically —
     // there's no reason to make them type in their own ID.
     if (!cohortViewer && employee?.employee_id) {
@@ -136,14 +147,29 @@ export default function ProgressPage() {
             <h3>{cohortViewer ? "Employee Progress" : "My Progress"}</h3>
 
             {cohortViewer && (
-              <input
-                type="text"
-                placeholder="Employee ID"
-                value={employeeId}
-                onChange={(e) =>
-                  setEmployeeId(e.target.value)
-                }
-              />
+              directoryEmployees.length > 0 ? (
+                <select
+                  value={employeeId}
+                  onChange={(e) => setEmployeeId(e.target.value)}
+                >
+                  <option value="">Select an employee</option>
+
+                  {directoryEmployees.map((emp) => (
+                    <option key={emp.employee_id} value={emp.employee_id}>
+                      {emp.name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  placeholder="Employee ID"
+                  value={employeeId}
+                  onChange={(e) =>
+                    setEmployeeId(e.target.value)
+                  }
+                />
+              )
             )}
 
             <button
@@ -208,10 +234,11 @@ export default function ProgressPage() {
             <h3>{cohortViewer ? "Employee Progress" : "My Progress"}</h3>
 
             <p className="summary-title">
-              Employee ID:
+              Employee:
               <strong>
                 {" "}
-                {employeeProgress.employee_id}
+                {employeeProgress.employee_name ??
+                  employeeProgress.employee_id}
               </strong>
             </p>
 
@@ -286,7 +313,7 @@ export default function ProgressPage() {
                 <ul>
                   {cohortProgress.lagging_employees.map((entry) => (
                     <li key={entry.employee_id}>
-                      <strong>{entry.employee_id}</strong>
+                      <strong>{entry.employee_name ?? entry.employee_id}</strong>
                       {" — "}
                       {entry.completion_percentage}% complete
                       {" "}
