@@ -475,7 +475,6 @@ def test_complete_training_unit():
         json={
             "enrollment_id": enrollment_id,
             "unit_id": unit_id,
-            "score": 95,
         },
     )
 
@@ -485,7 +484,6 @@ def test_complete_training_unit():
 
     assert data["enrollment_id"] == enrollment_id
     assert data["unit_id"] == unit_id
-    assert data["score"] == 95
 
 
 def test_list_completed_units():
@@ -496,7 +494,6 @@ def test_list_completed_units():
         json={
             "enrollment_id": enrollment_id,
             "unit_id": unit_id,
-            "score": 90,
         },
     )
 
@@ -516,7 +513,6 @@ def test_completion_missing_enrollment():
         json={
             "enrollment_id": 99999,
             "unit_id": 1,
-            "score": 80,
         },
     )
 
@@ -532,7 +528,6 @@ def test_completion_missing_unit():
         json={
             "enrollment_id": enrollment_id,
             "unit_id": 99999,
-            "score": 80,
         },
     )
 
@@ -546,7 +541,6 @@ def test_duplicate_completion():
     request_body = {
         "enrollment_id": enrollment_id,
         "unit_id": unit_id,
-        "score": 90,
     }
 
     first_response = client.post(
@@ -564,6 +558,97 @@ def test_duplicate_completion():
     assert second_response.status_code == 400
     assert second_response.json()["detail"] == (
         "Unit already completed."
+    )
+
+
+def test_undo_completion():
+    enrollment_id, unit_id = create_test_program_unit_and_enrollment()
+
+    complete_response = client.post(
+        "/api/training/completions",
+        json={
+            "enrollment_id": enrollment_id,
+            "unit_id": unit_id,
+        },
+    )
+
+    completion_id = complete_response.json()["completion_id"]
+
+    delete_response = client.delete(
+        f"/api/training/completions/{completion_id}"
+    )
+
+    assert delete_response.status_code == 204
+
+    list_response = client.get("/api/training/completions")
+
+    assert list_response.json() == []
+
+
+def test_undo_completion_allows_recompleting():
+    enrollment_id, unit_id = create_test_program_unit_and_enrollment()
+
+    complete_response = client.post(
+        "/api/training/completions",
+        json={
+            "enrollment_id": enrollment_id,
+            "unit_id": unit_id,
+        },
+    )
+
+    completion_id = complete_response.json()["completion_id"]
+
+    client.delete(f"/api/training/completions/{completion_id}")
+
+    second_response = client.post(
+        "/api/training/completions",
+        json={
+            "enrollment_id": enrollment_id,
+            "unit_id": unit_id,
+        },
+    )
+
+    assert second_response.status_code == 201
+
+
+def test_undo_completion_missing():
+    response = client.delete("/api/training/completions/99999")
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Completion not found."
+
+
+def test_undo_completion_forbidden_for_other_employee():
+    enrollment_id, unit_id = create_test_program_unit_and_enrollment()
+
+    complete_response = client.post(
+        "/api/training/completions",
+        json={
+            "enrollment_id": enrollment_id,
+            "unit_id": unit_id,
+        },
+    )
+
+    completion_id = complete_response.json()["completion_id"]
+
+    seed_employee("EMP-OTHER", access_tier="Employee")
+    app.dependency_overrides[get_current_employee] = lambda: Employee(
+        employee_id="EMP-OTHER",
+        name="Other Employee",
+        access_tier="Employee",
+        employment_status="active",
+    )
+
+    try:
+        response = client.delete(
+            f"/api/training/completions/{completion_id}"
+        )
+    finally:
+        app.dependency_overrides[get_current_employee] = _default_test_employee
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == (
+        "You can only undo your own training completions."
     )
 
 
@@ -605,7 +690,6 @@ def test_completion_wrong_program():
         json={
             "enrollment_id": enrollment["enrollment_id"],
             "unit_id": unit["unit_id"],
-            "score": 80,
         },
     )
 
@@ -667,7 +751,6 @@ def create_completed_training():
             json={
                 "enrollment_id": enrollment["enrollment_id"],
                 "unit_id": unit["unit_id"],
-                "score": 95,
             },
         )
     finally:
@@ -779,7 +862,7 @@ def enroll(employee_id, program_id):
     ).json()
 
 
-def complete_unit(enrollment_id, unit_id, score=None):
+def complete_unit(enrollment_id, unit_id):
     """
     Complete a unit as whichever employee actually owns the enrollment,
     not as the default TEST-ADMIN identity — completion is strictly
@@ -815,7 +898,6 @@ def complete_unit(enrollment_id, unit_id, score=None):
             json={
                 "enrollment_id": enrollment_id,
                 "unit_id": unit_id,
-                "score": score,
             },
         )
     finally:
@@ -1173,7 +1255,6 @@ def test_employee_can_complete_own_unit():
         json={
             "enrollment_id": enrollment["enrollment_id"],
             "unit_id": unit["unit_id"],
-            "score": 90,
         },
         headers=auth_headers("EMP001"),
     )
@@ -1209,7 +1290,6 @@ def test_employee_cannot_complete_someone_elses_unit():
         json={
             "enrollment_id": enrollment["enrollment_id"],
             "unit_id": unit["unit_id"],
-            "score": 90,
         },
         headers=auth_headers("EMP001"),
     )
@@ -1247,7 +1327,6 @@ def test_admin_cannot_complete_unit_on_behalf_of_employee():
         json={
             "enrollment_id": enrollment["enrollment_id"],
             "unit_id": unit["unit_id"],
-            "score": 90,
         },
         headers=auth_headers("ADMIN1"),
     )

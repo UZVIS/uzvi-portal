@@ -46,6 +46,10 @@ async function request<T>(
     throw new Error(message);
   }
 
+  if (response.status === 204) {
+    return undefined as T;
+  }
+
   return response.json() as Promise<T>;
 }
 
@@ -98,6 +102,13 @@ export const trainingApi = {
     request<UnitCompletion>("/completions", {
       method: "POST",
       body: JSON.stringify(data),
+    }),
+
+  // Undo a unit completion (mark it incomplete again), e.g. after an
+  // accidental click.
+  deleteCompletion: (completionId: number) =>
+    request<void>(`/completions/${completionId}`, {
+      method: "DELETE",
     }),
 
   // Progress
