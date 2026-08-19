@@ -77,19 +77,12 @@ def list_tasks_for_template(db: Session, template_id: str) -> list[OnboardingTas
 def create_template(db: Session, template_in: OnboardingTemplateCreate) -> OnboardingTemplate:
     # Admin shall define an onboarding checklist template.
     requester = _get_employee(db, template_in.requester_id)
-    if requester is None or requester.access_tier != "Admin/Leadership":
+    if requester is None or requester.employment_status != "active" or requester.access_tier != "Admin/Leadership":
         raise NotAuthorized("Only Admin/Leadership may define onboarding templates.")
 
-    existing = (
-        db.query(OnboardingTemplate)
-        .filter(OnboardingTemplate.template_id == template_in.template_id)
-        .first()
-    )
-    if existing:
-        raise TemplateAlreadyExists(template_in.template_id)
-
+    new_template_id = _generate_next_template_id(db)
     new_template = OnboardingTemplate(
-        template_id=template_in.template_id, name=template_in.name
+        template_id=new_template_id, name=template_in.name
     )
     db.add(new_template)
     db.commit()
@@ -97,10 +90,28 @@ def create_template(db: Session, template_in: OnboardingTemplateCreate) -> Onboa
     return new_template
 
 
+def _generate_next_template_id(db: Session) -> str:
+    all_ids = [row[0] for row in db.query(OnboardingTemplate.template_id).all()]
+    max_num = 0
+    for tid in all_ids:
+        if tid.startswith("TPL") and tid[3:].isdigit():
+            max_num = max(max_num, int(tid[3:]))
+    return f"TPL{max_num + 1:03d}"
+
+
+def _generate_next_task_id(db: Session) -> str:
+    all_ids = [row[0] for row in db.query(OnboardingTask.task_id).all()]
+    max_num = 0
+    for tid in all_ids:
+        if tid.startswith("TSK") and tid[3:].isdigit():
+            max_num = max(max_num, int(tid[3:]))
+    return f"TSK{max_num + 1:03d}"
+
+
 def add_task_to_template(db: Session, task_in: OnboardingTaskCreate) -> OnboardingTask:
     # task composition is part of defining the template - Admin only.
     requester = _get_employee(db, task_in.requester_id)
-    if requester is None or requester.access_tier != "Admin/Leadership":
+    if requester is None or requester.employment_status != "active" or requester.access_tier != "Admin/Leadership":
         raise NotAuthorized("Only Admin/Leadership may add tasks to a template.")
 
     template = (
@@ -111,16 +122,10 @@ def add_task_to_template(db: Session, task_in: OnboardingTaskCreate) -> Onboardi
     if not template:
         raise TemplateNotFound(task_in.template_id)
 
-    existing_task = (
-        db.query(OnboardingTask)
-        .filter(OnboardingTask.task_id == task_in.task_id)
-        .first()
-    )
-    if existing_task:
-        raise TaskAlreadyExists(task_in.task_id)
+    new_task_id = _generate_next_task_id(db)
 
     new_task = OnboardingTask(
-        task_id=task_in.task_id,
+        task_id=new_task_id,
         template_id=task_in.template_id,
         name=task_in.name,
         seq=task_in.seq,
@@ -137,12 +142,8 @@ def add_task_to_template(db: Session, task_in: OnboardingTaskCreate) -> Onboardi
 def create_instance(db: Session, instance_in: OnboardingInstanceCreate) -> OnboardingInstance:
    
     requester = _get_employee(db, instance_in.requester_id)
-    if requester is None or requester.access_tier != "Admin/Leadership":
+    if requester is None or requester.employment_status != "active" or requester.access_tier != "Admin/Leadership":
         raise NotAuthorized("Only Admin/Leadership may start an onboarding instance.")
-
-    existing = get_instance(db, instance_in.instance_id)
-    if existing:
-        raise InstanceAlreadyExists(instance_in.instance_id)
 
     template = (
         db.query(OnboardingTemplate)
@@ -164,9 +165,10 @@ def create_instance(db: Session, instance_in: OnboardingInstanceCreate) -> Onboa
     # the employee's real Directory join_date, falling back to today only
     # if it was never set (join_date is optional in Directory).
     start_date = employee.join_date or datetime.date.today()
+    new_instance_id = _generate_next_instance_id(db)
 
     new_instance = OnboardingInstance(
-        instance_id=instance_in.instance_id,
+        instance_id=new_instance_id,
         employee_id=instance_in.employee_id,
         template_id=instance_in.template_id,
         start_date=start_date,
@@ -175,6 +177,15 @@ def create_instance(db: Session, instance_in: OnboardingInstanceCreate) -> Onboa
     db.commit()
     db.refresh(new_instance)
     return new_instance
+
+
+def _generate_next_instance_id(db: Session) -> str:
+    all_ids = [row[0] for row in db.query(OnboardingInstance.instance_id).all()]
+    max_num = 0
+    for iid in all_ids:
+        if iid.startswith("OI") and iid[2:].isdigit():
+            max_num = max(max_num, int(iid[2:]))
+    return f"OI{max_num + 1:03d}"
 
 
 def get_instance(db: Session, instance_id: str) -> OnboardingInstance | None:
@@ -192,7 +203,7 @@ def _authorize_completion(
     # depending on task type)". IT has no dedicated tier in Section 3's
     # role model - confirmed with Dhruva: IT tasks are Admin/Leadership only.
     completer = _get_employee(db, completed_by)
-    if completer is None:
+    if completer is None or completer.employment_status != "active":
         raise NotAuthorized("Unknown completer.")
 
     role = task.responsible_role
@@ -337,7 +348,7 @@ def list_instances_for_cohort(db: Session, requester_id: str) -> list[dict]:
     # "Admin/HR shall have a cohort view showing all current
     # joiners' onboarding progress side by side."
     requester = _get_employee(db, requester_id)
-    if requester is None or requester.access_tier not in ("Admin/Leadership", "HR-Restricted"):
+    if requester is None or requester.employment_status != "active" or requester.access_tier not in ("Admin/Leadership", "HR-Restricted"):
         raise NotAuthorized("Only Admin/Leadership or HR-Restricted may view the cohort.")
 
     instances = db.query(OnboardingInstance).all()

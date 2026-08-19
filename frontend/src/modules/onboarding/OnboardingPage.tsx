@@ -78,14 +78,13 @@ export function OnboardingPage() {
     void loadAll();
   }, [loadAll]);
 
-  async function handleCreateTemplate(templateId: string, name: string) {
+  async function handleCreateTemplate(name: string) {
     if (!employee) return;
-    const t = await createTemplate(templateId, name, employee.employee_id);
+    const t = await createTemplate(name, employee.employee_id);
     setTemplates((prev) => [...prev, t]);
   }
 
   async function handleAddTask(input: {
-    task_id: string;
     template_id: string;
     name: string;
     seq: number;
@@ -123,9 +122,9 @@ export function OnboardingPage() {
     setError(null);
   }
 
-  async function handleStart(instanceId: string, employeeId: string, templateId: string) {
+  async function handleStart(employeeId: string, templateId: string) {
     if (!employee) return;
-    const created = await startOnboarding(instanceId, employeeId, templateId, employee.employee_id);
+    const created = await startOnboarding(employeeId, templateId, employee.employee_id);
     setInstance(created);
     setIsTaskStateKnown(true);
     const [prog, overdueIds, details] = await Promise.all([

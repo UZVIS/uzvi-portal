@@ -15,7 +15,7 @@ class DocumentBase(BaseModel):
 
 
 class DocumentCreate(DocumentBase):
-    document_id: str = Field(..., description="Unique alphanumeric tracking signature")
+    document_id: Optional[str] = Field(None, description="Ignored - the server always auto-generates a DOC### ID")
 
 
 class DocumentResponse(DocumentBase):
