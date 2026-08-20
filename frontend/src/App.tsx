@@ -294,7 +294,9 @@ function AppLayout() {
             <NavLink to="/" icon={Briefcase} label="Leave Management" collapsed={collapsed} />
             <NavLink to="/dashboard" icon={Megaphone} label="Announcements" collapsed={collapsed} />
             <NavLink to="/utilization" icon={Users} label="Consultant Utilization" collapsed={collapsed} />
-            <NavLink to="/recruiting" icon={UserPlus} label="Recruiting" collapsed={collapsed} />
+            {(actualRole === "Admin" || actualRole === "HR") && (
+              <NavLink to="/recruiting" icon={UserPlus} label="Recruiting" collapsed={collapsed} />
+            )}
             <NavLink to="/training" icon={GraduationCap} label="Training" collapsed={collapsed} />
           </div>
 
@@ -575,7 +577,11 @@ function AppLayout() {
               path="/recruiting"
               element={
                 <ProtectedRoute>
-                  <RecruitingModulePage />
+                  {actualRole === "Admin" || actualRole === "HR" ? (
+                    <RecruitingModulePage />
+                  ) : (
+                    <Navigate to="/directory" replace />
+                  )}
                 </ProtectedRoute>
               }
             >
