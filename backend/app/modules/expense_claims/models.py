@@ -38,3 +38,7 @@ class ExpenseClaim(Base):
     employee = relationship("Employee")
     category = relationship("ExpenseCategory", back_populates="claims")
     project = relationship("Project")
+
+    @property
+    def employee_name(self) -> str | None:
+        return self.employee.name if self.employee is not None else None
