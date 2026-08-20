@@ -187,16 +187,22 @@ export default function ManagerDashboard() {
                                     const leaveName = getLeaveTypeName(req.leave_type_id);
                                     const totalDays = getDurationDays(req.start_date, req.end_date);
 
+                                    // PHASE 1: Using the joined employee data from backend
+                                    const empName = req.employee?.name || (req.employee?.first_name ? `${req.employee.first_name} ${req.employee.last_name || ''}`.trim() : null) || req.employee_id;
+                                    const teamId = req.employee?.team_id || "Unassigned";
+
                                     return (
                                         <tr key={req.application_id} className="hover:bg-gray-50 transition">
                                             <td className="py-4 px-6">
                                                 <div className="flex items-center space-x-3">
-                                                    <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-700 text-xs">
-                                                        {req.employee_id.charAt(0)}
+                                                    <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center font-bold text-blue-700 text-xs uppercase">
+                                                        {empName.charAt(0)}
                                                     </div>
                                                     <div>
-                                                        <p className="font-bold text-gray-900">{req.employee_id}</p>
-                                                        <p className="text-xs text-gray-500">Team Member</p>
+                                                        <p className="font-bold text-gray-900">{empName}</p>
+                                                        <p className="text-xs text-gray-500">
+                                                            ID: <span className="font-semibold text-gray-600">{req.employee_id}</span> • Team: {teamId}
+                                                        </p>
                                                     </div>
                                                 </div>
                                             </td>
@@ -270,4 +276,5 @@ export default function ManagerDashboard() {
             )}
         </div>
     );
+
 }

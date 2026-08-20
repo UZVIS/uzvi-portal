@@ -24,19 +24,31 @@ export default function LeaveDashboard() {
             if (!employeeId) return;
 
             try {
+                // 1. Fetch Balances First
+                const balancesData = await apiGet(`/v1/leave/leave-balances/${employeeId}`);
+                const balances = Array.isArray(balancesData) ? balancesData : [balancesData];
+                setLeaveBalances(balances);
+
+                // 2. Fetch Leave Types
                 const typesData = await apiGet('/v1/leave/leave-types');
                 const validTypes = Array.isArray(typesData) ? typesData : [];
                 setLeaveTypes(validTypes);
-                if (validTypes.length > 0) {
-                    setLeaveTypeId(validTypes[0].leave_type_id);
+
+                // 3. Set Default Dropdown Value (Only from eligible leaves!)
+                if (validTypes.length > 0 && balances.length > 0) {
+                    const filteredTypes = validTypes.filter(type =>
+                        balances.some(b => b.leave_type_id === type.leave_type_id)
+                    );
+                    if (filteredTypes.length > 0) {
+                        setLeaveTypeId(filteredTypes[0].leave_type_id);
+                    }
                 }
 
-                const balancesData = await apiGet(`/v1/leave/leave-balances/${employeeId}`);
-                setLeaveBalances(Array.isArray(balancesData) ? balancesData : [balancesData]);
-
+                // 4. Fetch Leave History
                 const myApplications = await apiGet(`/v1/leave/applications?employee_id=${employeeId}&role=Employee`);
                 setLeaveHistory(Array.isArray(myApplications) ? myApplications : []);
 
+                // 5. Fetch Holidays
                 try {
                     const holidaysData = await apiGet('/v1/calendar/holidays');
                     if (Array.isArray(holidaysData)) {
@@ -55,6 +67,12 @@ export default function LeaveDashboard() {
         }
         fetchDashboardData();
     }, [employeeId]);
+
+    // --- PURE BACKEND DRIVEN LOGIC ---
+    // బ్యాకెండ్ ఏ లీవ్స్ కి బ్యాలెన్స్ ఇస్తే అవే ఫ్రంటెండ్ లో కనిపిస్తాయి. జెండర్ తో సంబంధం లేదు!
+    const eligibleLeaveTypes = leaveTypes.filter(type =>
+        leaveBalances.some(balance => balance.leave_type_id === type.leave_type_id)
+    );
 
     const getBalanceFor = (leaveName: string) => {
         if (!leaveTypes.length || !leaveBalances.length) return "0";
@@ -398,12 +416,12 @@ export default function LeaveDashboard() {
                             <div>
                                 <label className="block text-xs font-semibold text-gray-700 mb-1">Leave type</label>
                                 <select className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 bg-white" value={leaveTypeId} onChange={(e) => setLeaveTypeId(e.target.value)}>
-                                    {(leaveTypes || []).map((type) => (
+                                    {eligibleLeaveTypes.map((type) => (
                                         <option key={type?.leave_type_id} value={type?.leave_type_id}>
                                             {type?.name} {type?.doc_required_threshold > 0 ? `(Doc > ${type.doc_required_threshold}d)` : ''}
                                         </option>
                                     ))}
-                                    {(!leaveTypes || leaveTypes.length === 0) && <option value="">Loading types...</option>}
+                                    {eligibleLeaveTypes.length === 0 && <option value="">No eligible leaves available</option>}
                                 </select>
                             </div>
 
@@ -418,7 +436,6 @@ export default function LeaveDashboard() {
                                 </div>
                             </div>
 
-                            {/* --- DYNAMIC LEAVE BREAKDOWN BOX --- */}
                             {breakdown && breakdown.totalDays > 0 && (
                                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 animate-in fade-in duration-200">
                                     <h4 className="text-xs font-bold text-slate-700 mb-3 flex items-center space-x-1.5">

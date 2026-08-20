@@ -26,9 +26,6 @@ class LeaveStatusEnum(str, Enum):
 # ==========================================
 
 class LeaveTypeCreate(BaseModel):
-    """
-    Schema for creating a new leave type configuration.
-    """
     name: str = Field(..., description="Name of the leave type (e.g., Casual Leave, Sick Leave)")
     accrual_method: str
     carry_forward_limit: int
@@ -36,11 +33,7 @@ class LeaveTypeCreate(BaseModel):
     requires_hr_approval: bool = False
 
 class LeaveTypeResponse(LeaveTypeCreate):
-    """
-    Schema for returning leave type details including its unique identifier.
-    """
     leave_type_id: str
-
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -48,36 +41,44 @@ class LeaveTypeResponse(LeaveTypeCreate):
 # Leave Application Schemas
 # ==========================================
 
+class EmployeeBasicInfo(BaseModel):
+    """
+    Schema for fetching basic employee details from M0 without data duplication.
+    Ensure these fields match your M0 Employee model attributes.
+    """
+    employee_id: str
+    name: Optional[str] = None 
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    team_id: Optional[str] = None
+    gender: Optional[str] = "Male"
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class LeaveApplicationCreate(BaseModel):
-    """
-    Schema for processing a new leave application request from an employee.
-    """
     employee_id: str
     leave_type_id: str
     start_date: date
     end_date: date
 
+
 class LeaveApplicationResponse(LeaveApplicationCreate):
-    """
-    Schema for returning leave application details, tracking its current status and approver.
-    """
     application_id: str
     status: LeaveStatusEnum
     approver_id: Optional[str] = None
     
+    # Appended Employee Details from M0 via joinedload
+    employee: Optional[EmployeeBasicInfo] = None
+    
     model_config = ConfigDict(from_attributes=True)
 
+
 class LeaveStatusUpdate(BaseModel):
-    """
-    Schema for actors (Managers or HR) to approve or reject a leave application.
-    """
     status: LeaveStatusEnum = Field(..., description="Target leave status action")
     approver_id: str = Field(..., description="Employee ID of the actor executing the change")
 
 class LeaveApprovalResponse(BaseModel):
-    """
-    Schema for returning the result of an approval action, including target status and warnings.
-    """
     approved: bool
     status: LeaveStatusEnum
     warning: bool = False
@@ -90,20 +91,13 @@ class LeaveApprovalResponse(BaseModel):
 # ==========================================
 
 class LeaveBalanceCreate(BaseModel):
-    """
-    Schema for initializing or allocating a digital leave balance wallet for an employee.
-    """
     employee_id: str
     leave_type_id: str
     year: int
     balance: int
 
 class LeaveBalanceResponse(LeaveBalanceCreate):
-    """
-    Schema for returning an employee's leave balance details with a unique identifier.
-    """
     id: str
-
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -112,13 +106,9 @@ class LeaveBalanceResponse(LeaveBalanceCreate):
 # ==========================================
 
 class LeaveAuditLogResponse(BaseModel):
-    """
-    Schema for returning audit log entries tracking the complete history of leave actions.
-    """
     log_id: str
     application_id: str
     actor_id: str
     action: str
     timestamp: datetime
-
     model_config = ConfigDict(from_attributes=True)

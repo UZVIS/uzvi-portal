@@ -227,16 +227,22 @@ export default function HRDashboard() {
                                     const totalDays = getDurationDays(req.start_date, req.end_date);
                                     const attachedDoc = getStoredDocument(req.application_id);
 
+                                    // PHASE 1: Using the joined employee data from backend
+                                    const empName = req.employee?.name || (req.employee?.first_name ? `${req.employee.first_name} ${req.employee.last_name || ''}`.trim() : null) || req.employee_id;
+                                    const teamId = req.employee?.team_id || "Unassigned";
+
                                     return (
                                         <tr key={req.application_id} className="hover:bg-gray-50 transition">
                                             <td className="py-4 px-4 align-top">
                                                 <div className="flex items-center space-x-3 mt-1">
-                                                    <div className="w-9 h-9 rounded-full bg-purple-100 flex items-center justify-center font-bold text-purple-700 text-xs shrink-0">
-                                                        {req.employee_id.charAt(0)}
+                                                    <div className="w-9 h-9 rounded-full bg-purple-100 flex items-center justify-center font-bold text-purple-700 text-xs shrink-0 uppercase">
+                                                        {empName.charAt(0)}
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <p className="font-bold text-gray-900 truncate">{req.employee_id}</p>
-                                                        <p className="text-xs text-gray-500">Employee</p>
+                                                        <p className="font-bold text-gray-900 truncate">{empName}</p>
+                                                        <p className="text-xs text-gray-500">
+                                                            ID: <span className="font-semibold text-gray-600">{req.employee_id}</span> • Team: {teamId}
+                                                        </p>
                                                     </div>
                                                 </div>
                                             </td>

@@ -7,9 +7,12 @@ any necessary business logic or validation before interacting with the database.
 """
 
 import holidays
+import pandas as pd
+import io
 from datetime import date
 from sqlalchemy.orm import Session
 from typing import Optional
+from fastapi import UploadFile, HTTPException
 
 from . import crud, schemas
 
@@ -23,6 +26,59 @@ def create_holiday(db: Session, holiday: schemas.HolidayCreate):
     Passes the validated schema data to the CRUD layer.
     """
     return crud.create_holiday(db=db, holiday=holiday)
+
+# --- NEW: EXCEL/CSV IMPORT LOGIC FOR HOLIDAYS ---
+def import_holidays_from_file(db: Session, file: UploadFile):
+    """
+    Reads an uploaded CSV or Excel file and inserts the holidays into the database.
+    """
+    if not file.filename.endswith(('.csv', '.xlsx', '.xls')):
+        raise HTTPException(status_code=400, detail="Invalid file format. Please upload a .csv or .xlsx file.")
+        
+    try:
+        contents = file.file.read()
+        
+        # 1. Read file into a Pandas DataFrame
+        if file.filename.endswith('.csv'):
+            df = pd.read_csv(io.BytesIO(contents))
+        else:
+            df = pd.read_excel(io.BytesIO(contents))
+            
+        # 2. Validate columns
+        required_columns = ["Name", "Date", "State"]
+        if not all(col in df.columns for col in required_columns):
+            raise HTTPException(status_code=400, detail="Missing required columns. File must have 'Name', 'Date', and 'State'.")
+            
+        # 3. Iterate over the rows and save to DB
+        imported_count = 0
+        for index, row in df.iterrows():
+            # Skip empty rows
+            if pd.isna(row["Name"]) or pd.isna(row["Date"]):
+                continue
+                
+            try:
+                # Convert string date from Excel to Python Date object
+                h_date = pd.to_datetime(row["Date"]).date()
+            except Exception:
+                continue # Skip rows with invalid date formats
+                
+            h_state = str(row["State"]).strip() if not pd.isna(row["State"]) else "All"
+            
+            # Map to Schema and save via existing CRUD operation
+            holiday_data = schemas.HolidayCreate(
+                name=str(row["Name"]).strip(),
+                date=h_date,
+                state=h_state
+            )
+            crud.create_holiday(db=db, holiday=holiday_data)
+            imported_count += 1
+            
+        return {"message": f"Successfully imported {imported_count} holidays!"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to process file: {str(e)}")
+    finally:
+        file.file.close()
 
 def get_holidays(db: Session, year: Optional[int] = None, month: Optional[int] = None):
     """
@@ -97,6 +153,56 @@ def create_company_event(db: Session, event: schemas.CompanyEventCreate):
     Processes the creation of a new internal company event.
     """
     return crud.create_company_event(db=db, event=event)
+
+# --- NEW: EXCEL/CSV IMPORT LOGIC FOR EVENTS ---
+def import_events_from_file(db: Session, file: UploadFile):
+    """
+    Reads an uploaded CSV or Excel file and inserts the events into the database.
+    """
+    if not file.filename.endswith(('.csv', '.xlsx', '.xls')):
+        raise HTTPException(status_code=400, detail="Invalid file format. Please upload a .csv or .xlsx file.")
+        
+    try:
+        contents = file.file.read()
+        
+        # 1. Read file into a Pandas DataFrame
+        if file.filename.endswith('.csv'):
+            df = pd.read_csv(io.BytesIO(contents))
+        else:
+            df = pd.read_excel(io.BytesIO(contents))
+            
+        # 2. Validate columns
+        required_columns = ["Title", "Date", "Location"]
+        if not all(col in df.columns for col in required_columns):
+            raise HTTPException(status_code=400, detail="Missing columns. File must have 'Title', 'Date', and 'Location'.")
+            
+        # 3. Iterate over the rows and save to DB
+        imported_count = 0
+        for index, row in df.iterrows():
+            if pd.isna(row["Title"]) or pd.isna(row["Date"]):
+                continue
+                
+            try:
+                e_date = pd.to_datetime(row["Date"]).date()
+            except Exception:
+                continue # Skip rows with invalid date formats
+                
+            e_location = str(row["Location"]).strip() if not pd.isna(row["Location"]) else "Office"
+            
+            event_data = schemas.CompanyEventCreate(
+                title=str(row["Title"]).strip(),
+                date=e_date,
+                location=e_location
+            )
+            crud.create_company_event(db=db, event=event_data)
+            imported_count += 1
+            
+        return {"message": f"Successfully imported {imported_count} events!"}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to process file: {str(e)}")
+    finally:
+        file.file.close()
 
 def get_company_events(db: Session, year: Optional[int] = None, month: Optional[int] = None):
     """
