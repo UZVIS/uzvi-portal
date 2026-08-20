@@ -74,30 +74,29 @@ const [returnAssetId, setReturnAssetId] = useState("");
 const [returnEmployeeName, setReturnEmployeeName] = useState("");
     async function handleSave(data: AssetFormData) {
 
-        const payload: AssetCreate = {
-            asset_id: data.id,
-            tag: data.tag,
-            asset_type: data.type as string,
-            purchase_date: data.purchaseDate,
-            status: data.status as AssetStatus,
-        };
+    const payload: AssetCreate = {
+    tag: data.tag,
+    asset_type: data.type as string,
+    purchase_date: data.purchaseDate,
+    status: data.status as AssetStatus,
+};
 
         try {
 
-            if (formMode === "add") {
+         if (formMode === "add") {
 
-                await createAsset(payload);
+    const createdAsset = await createAsset(payload);
+
+    toast.success(
+        `Asset ${createdAsset.asset_id} added successfully.`
+    );
+
+} else {
+
+                await updateAsset(data.asset_id, payload);
 
                 toast.success(
-                    `Asset ${data.id} added successfully.`
-                );
-
-            } else {
-
-                await updateAsset(data.id, payload);
-
-                toast.success(
-                    `Asset ${data.id} updated successfully.`
+                    `Asset ${data.asset_id} updated successfully.`
                 );
 
             }
@@ -167,7 +166,7 @@ const [returnEmployeeName, setReturnEmployeeName] = useState("");
 
                    onView={(asset) => {
 
-    setHistoryAssetId(asset.id);
+    setHistoryAssetId(asset.asset_id);
 
     setShowHistoryDialog(true);
 

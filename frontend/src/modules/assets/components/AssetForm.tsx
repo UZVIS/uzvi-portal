@@ -13,7 +13,7 @@ export type AssetType =
     | "Keyboard";
 
 export interface AssetFormData {
-    id: string;
+    asset_id: string;
     tag: string;
     type: AssetType | "";
     status: AssetStatus | "";
@@ -23,7 +23,7 @@ export interface AssetFormData {
 type AssetFormErrors = Partial<Record<keyof AssetFormData, string>>;
 
 export const emptyAssetForm: AssetFormData = {
-    id: "",
+    asset_id: "",
     tag: "",
     type: "",
     status: "",
@@ -89,8 +89,6 @@ export default function AssetForm({
 
         const next: AssetFormErrors = {};
 
-        if (!form.id.trim())
-            next.id = "Asset ID is required";
 
         if (!form.tag.trim())
             next.tag = "Tag is required";
@@ -189,26 +187,23 @@ export default function AssetForm({
 
                         {/* Asset ID */}
 
-                        <div className="asset-form-field">
+                        {/* Asset ID - Show only when editing or viewing */}
 
-                            <label className="asset-form-label">
-                                Asset ID
-                                <span className="required">*</span>
-                            </label>
+{(isEdit || readOnly) && (
+    <div className="asset-form-field">
 
-                            <input
-                                className={`asset-form-input ${errors.id ? "input-error" : ""}`}
-                                placeholder="AST001"
-                                value={form.id}
-                                onChange={handleChange("id")}
-                                disabled={readOnly || isEdit}
-                            />
+        <label className="asset-form-label">
+            Asset ID
+        </label>
 
-                            {errors.id &&
-                                <p className="asset-form-error">
-                                    {errors.id}
-                                </p>}
-                        </div>
+        <input
+            className="asset-form-input"
+            value={form.asset_id}
+            readOnly
+        />
+
+    </div>
+)}
 
                         {/* Tag */}
 
