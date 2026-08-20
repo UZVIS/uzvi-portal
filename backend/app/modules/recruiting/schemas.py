@@ -132,7 +132,10 @@ class FunnelStats(BaseModel):
 # ---------- FR-REC-05: hire conversion ----------
 
 class HireConversionRequest(BaseModel):
-    employee_id: str = Field(..., description="New Employee Directory (M0) ID to create")
+    employee_id: Optional[str] = Field(
+        None,
+        description="Ignored - the server always auto-increments the next EMP### ID (see directory_service._generate_next_employee_id).",
+    )
     requester_id: str = Field(..., description="Employee ID of whoever is performing the hire")
     designation: Optional[str] = Field(
         None, description="Defaults to the candidate's applied_role if omitted"
