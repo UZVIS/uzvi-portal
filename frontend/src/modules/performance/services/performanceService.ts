@@ -1,6 +1,5 @@
 // src/modules/performance/services/performanceService.ts
- 
- 
+
 import axios from "axios";
  
 import type {
@@ -13,55 +12,35 @@ import type {
   ReviewCycle,
   ReviewStatus,
 } from "../types";
- 
- 
- 
+
 const API_BASE_URL =
   import.meta.env.VITE_API_URL ||
   "http://localhost:8000/api/v1/performance";
- 
-// Same convention as every other module (training, expense_claims,
-// recruiting, helpdesk, AuthContext): the signed-in employee's id is kept
-// in localStorage and sent as X-Employee-Id so the backend can identify
-// the caller. This service was missing that header entirely, so the
-// backend had no way to know who was actually signed in.
-const EMPLOYEE_ID_STORAGE_KEY = "uzvi_portal_employee_id";
- 
+
 const api = axios.create({
- 
   baseURL: API_BASE_URL,
  
   headers: {
     "Content-Type": "application/json",
   },
- 
 });
- 
-api.interceptors.request.use((config) => {
-  const employeeId = localStorage.getItem(EMPLOYEE_ID_STORAGE_KEY);
-  if (employeeId) {
-    config.headers = config.headers ?? {};
-    config.headers["X-Employee-Id"] = employeeId;
-  }
-  return config;
-});
- 
- 
- 
- 
+
+// ================= CURRENT EMPLOYEE =================
+
+const getCurrentEmployeeId = (): string => {
+  const employeeId = localStorage.getItem("employee_id");
+
+  return employeeId && employeeId.trim()
+    ? employeeId.trim()
+    : "EMP001";
+};
+
 // ================= REVIEW CYCLES =================
- 
- 
-export const getCycles = async():
-Promise<ReviewCycle[]> => {
- 
- 
-  const response =
-    await api.get("/cycles");
- 
- 
+
+export const getCycles = async (): Promise<ReviewCycle[]> => {
+  const response = await api.get("/cycles");
+
   return response.data;
- 
 };
  
 // ================= CREATE REVIEW CYCLE =================
@@ -73,229 +52,160 @@ export const createReviewCycle = async (
     period_end: string;
   }
 ): Promise<ReviewCycle> => {
- 
-  const response =
-    await api.post(
-      "/cycles",
-      data
-    );
- 
+  const response = await api.post(
+    "/cycles",
+    data
+  );
+
   return response.data;
- 
 };
- 
- 
+
 // ================= CREATE GOAL =================
- 
- 
-export const createGoal = async(
+
+export const createGoal = async (
   data: CreateGoalData
 ): Promise<Goal> => {
- 
- 
-  const response =
-    await api.post(
-      "/goals",
-      data
-    );
- 
- 
+  const employeeId = getCurrentEmployeeId();
+
+  const response = await api.post(
+    `/goals?employee_id=${encodeURIComponent(
+      employeeId
+    )}`,
+    data
+  );
+
   return response.data;
- 
 };
- 
- 
- 
- 
+
 // ================= GET MY GOALS =================
- 
- 
-export const getMyGoals = async():
-Promise<Goal[]> => {
- 
- 
-  const response =
-    await api.get(
-      "/goals/me"
-    );
- 
- 
+
+export const getMyGoals = async (): Promise<Goal[]> => {
+  const employeeId = getCurrentEmployeeId();
+
+  const response = await api.get(
+    `/goals/me?employee_id=${encodeURIComponent(
+      employeeId
+    )}`
+  );
+
   return response.data;
- 
 };
- 
- 
- 
- 
+
 // ================= GET GOAL BY ID =================
- 
- 
-export const getGoalById = async(
-  goalId:number
+
+export const getGoalById = async (
+  goalId: number
 ): Promise<Goal> => {
- 
- 
-  const response =
-    await api.get(
-      `/goals/${goalId}`
-    );
- 
- 
+  const response = await api.get(
+    `/goals/${goalId}`
+  );
+
   return response.data;
- 
 };
- 
- 
- 
- 
+
 // ================= GOAL WITH ASSESSMENTS =================
- 
- 
-export const getGoalWithAssessments =
-async(
- goalId:number
-):Promise<GoalWithAssessments>=>{
- 
- 
- const response =
- await api.get(
-   `/goals/${goalId}`
- );
- 
- 
- return response.data;
- 
- 
+
+export const getGoalWithAssessments = async (
+  goalId: number
+): Promise<GoalWithAssessments> => {
+  const response = await api.get(
+    `/goals/${goalId}`
+  );
+
+  return response.data;
 };
- 
- 
- 
- 
+
 // ================= SELF ASSESSMENT =================
- 
- 
-export const submitSelfAssessment =
-async(
- 
- goalId:number,
- 
- data:{
-   assessment_text:string;
- }
- 
-):Promise<SelfAssessment>=>{
- 
- 
- const response =
- await api.post(
- 
-   `/goals/${goalId}/self-assessment`,
- 
-   data
- 
- );
- 
- 
- return response.data;
- 
- 
+
+export const submitSelfAssessment = async (
+  goalId: number,
+  data: {
+    assessment_text: string;
+  }
+): Promise<SelfAssessment> => {
+  const employeeId = getCurrentEmployeeId();
+
+  const response = await api.post(
+    `/goals/${goalId}/self-assessment?employee_id=${encodeURIComponent(
+      employeeId
+    )}`,
+    data
+  );
+
+  return response.data;
 };
- 
- 
- 
- 
+
 // ================= MANAGER REVIEW =================
- 
- 
-export const submitManagerReview =
-async(
- 
- goalId:number,
- 
- data:{
-   rating:number;
-   review_text?:string;
- }
- 
-):Promise<ManagerReview>=>{
- 
- 
- const response =
- await api.post(
- 
-   `/goals/${goalId}/manager-review`,
- 
-   data
- 
- );
- 
- 
- return response.data;
- 
- 
+
+export const submitManagerReview = async (
+  goalId: number,
+  data: {
+    rating: number;
+    review_text?: string;
+  }
+): Promise<ManagerReview> => {
+  // V1 local testing: Manager = MGR001
+  const managerId = "MGR001";
+
+  const response = await api.post(
+    `/goals/${goalId}/manager-review?employee_id=${managerId}`,
+    data
+  );
+
+  return response.data;
 };
- 
- 
- 
- 
+
 // ================= REVIEW STATUS =================
- 
- 
-export const getReviewStatus =
-async(
- 
- cycleId:number
- 
-):Promise<ReviewStatus>=>{
- 
- 
- const response =
- await api.get(
- 
-   `/status/me?cycle_id=${cycleId}`
- 
- );
- 
- 
- return response.data;
- 
- 
+
+export const getReviewStatus = async (
+  cycleId: number,
+  employeeId?: string
+): Promise<ReviewStatus> => {
+  const currentEmployeeId =
+    employeeId || getCurrentEmployeeId();
+
+  const response = await api.get(
+    `/status/employee/${encodeURIComponent(
+      currentEmployeeId
+    )}?cycle_id=${cycleId}`
+  );
+
+  return response.data;
 };
- 
- 
- 
- 
+
 // ================= ACTIVE REVIEW CYCLE =================
- 
- 
-export const getActiveCycle =
-async():
-Promise<ReviewCycle | null> => {
- 
- 
-  const response =
-    await api.get(
-      "/cycles/active"
-    );
- 
- 
+
+export const getActiveCycle = async (
+  employeeId: string = getCurrentEmployeeId()
+): Promise<ReviewCycle | null> => {
+  const response = await api.get(
+    `/cycles/active?employee_id=${encodeURIComponent(
+      employeeId
+    )}`
+  );
+
   return response.data;
  
 };
- 
- 
+
 // ================= TEAM GOALS =================
  
 export const getTeamGoals = async (): Promise<TeamGoal[]> => {
- 
-  const response =
-    await api.get(
-      "/team?cycle_id=1&employee_id=EMP001"
-    );
- 
+  // V1 local testing: Manager = MGR001
+  const managerId = "MGR001";
+
+  const activeCycle =
+    await getActiveCycle(managerId);
+
+  if (!activeCycle) {
+    return [];
+  }
+
+  const response = await api.get(
+    `/team?cycle_id=${activeCycle.id}&employee_id=${managerId}`
+  );
+
   return response.data;
- 
 };
- 
- 
+
 export default api;
