@@ -236,7 +236,7 @@ export default function AssetTable({
                                                 className="action-btn view"
                                                 onClick={() =>
                                                     onView({
-                                                        id: asset.asset_id,
+                                                        asset_id: asset.asset_id,
                                                         tag: asset.tag,
                                                         type: asset.asset_type as AssetFormData["type"],
                                                         status: asset.status as AssetFormData["status"],
@@ -251,7 +251,7 @@ export default function AssetTable({
                                                 className="action-btn edit"
                                                 onClick={() =>
                                                     onEdit({
-                                                        id: asset.asset_id,
+                                                        asset_id: asset.asset_id,
                                                         tag: asset.tag,
                                                         type: asset.asset_type as AssetFormData["type"],
                                                         status: asset.status as AssetFormData["status"],
