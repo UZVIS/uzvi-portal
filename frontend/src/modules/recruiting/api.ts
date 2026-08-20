@@ -115,7 +115,9 @@ export interface ScorecardInput {
 }
 
 export interface HireConversionInput {
-  employee_id: string;
+  // employee_id is intentionally not sent — the backend always
+  // auto-increments the next EMP### id (see
+  // backend/app/modules/directory/service.py::_generate_next_employee_id).
   requester_id: string;
   designation?: string;
   team_id?: string;
