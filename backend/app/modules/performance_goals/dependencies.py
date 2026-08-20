@@ -1,6 +1,6 @@
 from fastapi import Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
-
+ 
 from app.database import get_db
 from app.modules.directory.models import Employee
 
@@ -95,8 +95,8 @@ def require_hr(
         )
 
     return current_user
-
-
+ 
+ 
 def require_self_or_manager(
     employee_id: str,
     current_user: Employee = Depends(get_current_user)

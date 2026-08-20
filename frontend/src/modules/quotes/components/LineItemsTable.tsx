@@ -56,7 +56,7 @@ export default function LineItemsTable({
 
                         <th>Quantity</th>
 
-                        <th>Cohort</th>
+                        {/* <th>Cohort</th> */}
 
                         <th>Actions</th>
 
@@ -126,9 +126,9 @@ export default function LineItemsTable({
                                     {item.quantity}
                                 </td>
 
-                                <td>
+                                {/* <td>
                                     {item.cohort || "-"}
-                                </td>
+                                </td> */}
 
                                 <td className="action-buttons">
 

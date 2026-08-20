@@ -22,6 +22,7 @@ export interface TrainingUnitCreate {
 export interface Enrollment {
   enrollment_id: number;
   employee_id: string;
+  employee_name?: string | null;
   program_id: number;
   enrolled_at: string;
 }
@@ -36,17 +37,16 @@ export interface UnitCompletion {
   enrollment_id: number;
   unit_id: number;
   completed_at: string;
-  score: number | null;
 }
 
 export interface UnitCompletionCreate {
   enrollment_id: number;
   unit_id: number;
-  score?: number | null;
 }
 
 export interface Progress {
   employee_id: string;
+  employee_name?: string | null;
   completed_units: number;
   total_units: number;
   completion_percentage: number;
@@ -54,6 +54,7 @@ export interface Progress {
 
 export interface LaggingEnrollee {
   employee_id: string;
+  employee_name?: string | null;
   completion_percentage: number;
   points_behind_average: number;
 }

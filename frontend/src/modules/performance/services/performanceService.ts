@@ -1,7 +1,7 @@
 // src/modules/performance/services/performanceService.ts
 
 import axios from "axios";
-
+ 
 import type {
   Goal,
   TeamGoal,
@@ -19,7 +19,7 @@ const API_BASE_URL =
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-
+ 
   headers: {
     "Content-Type": "application/json",
   },
@@ -42,9 +42,9 @@ export const getCycles = async (): Promise<ReviewCycle[]> => {
 
   return response.data;
 };
-
+ 
 // ================= CREATE REVIEW CYCLE =================
-
+ 
 export const createReviewCycle = async (
   data: {
     name: string;
@@ -185,10 +185,11 @@ export const getActiveCycle = async (
   );
 
   return response.data;
+ 
 };
 
 // ================= TEAM GOALS =================
-
+ 
 export const getTeamGoals = async (): Promise<TeamGoal[]> => {
   // V1 local testing: Manager = MGR001
   const managerId = "MGR001";

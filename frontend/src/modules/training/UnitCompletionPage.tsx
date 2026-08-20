@@ -32,7 +32,6 @@ export default function UnitCompletionPage() {
 
   const [selectedEnrollment, setSelectedEnrollment] = useState("");
   const [selectedUnit, setSelectedUnit] = useState("");
-  const [score, setScore] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -51,6 +50,55 @@ export default function UnitCompletionPage() {
       ownEnrollmentIds.has(completion.enrollment_id)
     );
   }, [completions, ownEnrollments]);
+
+  // Org-wide audit table: one row per employee with a count of units
+  // completed, instead of one row per completion (FR-LMS-05 oversight view
+  // shouldn't repeat the same employee's name for every unit they finish).
+  const completionSummaryByEmployee = useMemo(() => {
+    const byEmployee = new Map<
+      string,
+      {
+        employeeId: string;
+        employeeName: string;
+        unitsCompleted: number;
+        lastCompletedAt: string;
+      }
+    >();
+
+    for (const completion of completions) {
+      const enrollment = enrollments.find(
+        (item) => item.enrollment_id === completion.enrollment_id
+      );
+
+      const employeeId =
+        enrollment?.employee_id ?? String(completion.enrollment_id);
+      const employeeName =
+        enrollment?.employee_name ?? employeeId;
+
+      const existing = byEmployee.get(employeeId);
+
+      if (existing) {
+        existing.unitsCompleted += 1;
+        if (
+          new Date(completion.completed_at) >
+          new Date(existing.lastCompletedAt)
+        ) {
+          existing.lastCompletedAt = completion.completed_at;
+        }
+      } else {
+        byEmployee.set(employeeId, {
+          employeeId,
+          employeeName,
+          unitsCompleted: 1,
+          lastCompletedAt: completion.completed_at,
+        });
+      }
+    }
+
+    return Array.from(byEmployee.values()).sort((a, b) =>
+      a.employeeName.localeCompare(b.employeeName)
+    );
+  }, [completions, enrollments]);
 
   useEffect(() => {
     loadInitialData();
@@ -139,17 +187,6 @@ export default function UnitCompletionPage() {
       return;
     }
 
-    if (
-      score &&
-      (Number(score) < 0 ||
-        Number(score) > 100)
-    ) {
-      setError(
-        "Score must be between 0 and 100."
-      );
-      return;
-    }
-
     try {
       setLoading(true);
 
@@ -158,9 +195,6 @@ export default function UnitCompletionPage() {
           selectedEnrollment
         ),
         unit_id: Number(selectedUnit),
-        score: score
-          ? Number(score)
-          : null,
       });
 
       const completionData =
@@ -169,7 +203,6 @@ export default function UnitCompletionPage() {
       setCompletions(completionData);
 
       setSelectedUnit("");
-      setScore("");
     } catch (err) {
       setError(
         err instanceof Error
@@ -253,21 +286,6 @@ export default function UnitCompletionPage() {
               </select>
             </div>
 
-            <div className="form-group">
-              <label>Score</label>
-
-              <input
-                type="number"
-                min="0"
-                max="100"
-                placeholder="Optional"
-                value={score}
-                onChange={(e) =>
-                  setScore(e.target.value)
-                }
-              />
-            </div>
-
             <button
               className="complete-button"
               onClick={handleCompleteUnit}
@@ -289,7 +307,6 @@ export default function UnitCompletionPage() {
                 <thead>
                   <tr>
                     <th>Unit</th>
-                    <th>Score</th>
                     <th>Completed At</th>
                   </tr>
                 </thead>
@@ -316,11 +333,6 @@ export default function UnitCompletionPage() {
                           </td>
 
                           <td>
-                            {completion.score ??
-                              "-"}
-                          </td>
-
-                          <td>
                             {new Date(
                               completion.completed_at
                             ).toLocaleDateString()}
@@ -341,53 +353,36 @@ export default function UnitCompletionPage() {
           <h3>All Completions (org-wide)</h3>
           <p className="completion-audit-note">
             Read-only. Manager/Admin-Leadership/HR-Restricted can see every
-            employee's completions here for oversight. Completion is always
-            self-attested — this view has no "Mark Complete" action.
+            employee's completion counts here for oversight. Completion is
+            always self-attested — this view has no "Mark Complete" action.
           </p>
 
-          {completions.length === 0 ? (
+          {completionSummaryByEmployee.length === 0 ? (
             <p>No completed units found.</p>
           ) : (
             <table className="completion-table">
               <thead>
                 <tr>
                   <th>Employee</th>
-                  <th>Unit</th>
-                  <th>Score</th>
-                  <th>Completed At</th>
+                  <th>Units Completed</th>
+                  <th>Last Completed At</th>
                 </tr>
               </thead>
 
               <tbody>
-                {completions.map((completion) => {
-                  const enrollment = enrollments.find(
-                    (item) =>
-                      item.enrollment_id === completion.enrollment_id
-                  );
+                {completionSummaryByEmployee.map((summary) => (
+                  <tr key={summary.employeeId}>
+                    <td>{summary.employeeName}</td>
 
-                  const unit = allUnits.find(
-                    (item) => item.unit_id === completion.unit_id
-                  );
+                    <td>{summary.unitsCompleted}</td>
 
-                  return (
-                    <tr key={completion.completion_id}>
-                      <td>
-                        {enrollment?.employee_id ??
-                          completion.enrollment_id}
-                      </td>
-
-                      <td>{unit?.name ?? completion.unit_id}</td>
-
-                      <td>{completion.score ?? "-"}</td>
-
-                      <td>
-                        {new Date(
-                          completion.completed_at
-                        ).toLocaleDateString()}
-                      </td>
-                    </tr>
-                  );
-                })}
+                    <td>
+                      {new Date(
+                        summary.lastCompletedAt
+                      ).toLocaleDateString()}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           )}

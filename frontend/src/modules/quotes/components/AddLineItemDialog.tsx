@@ -33,7 +33,7 @@ export default function AddLineItemDialog({
     const [vendorCost, setVendorCost] = useState(0);
     const [internalCost, setInternalCost] = useState(0);
     const [quantity, setQuantity] = useState(1);
-    const [cohort, setCohort] = useState("");
+    // const [cohort, setCohort] = useState("");
     const [libraryItems, setLibraryItems] = useState<LibraryItem[]>([]);
     const [libraryItemId, setLibraryItemId] = useState("");
 
@@ -45,14 +45,14 @@ export default function AddLineItemDialog({
             setVendorCost(initialData.vendor_cost);
             setInternalCost(initialData.internal_cost);
             setQuantity(initialData.quantity);
-            setCohort(initialData.cohort ?? "");
+            // setCohort(initialData.cohort ?? "");
             setLibraryItemId(initialData.library_item_id ?? "");
         } else {
             setDescription("");
             setVendorCost(0);
             setInternalCost(0);
             setQuantity(1);
-            setCohort("");
+            // setCohort("");
             setLibraryItemId("");
         }
     }, [isOpen, initialData]);
@@ -160,14 +160,7 @@ export default function AddLineItemDialog({
                         />
                     </div>
 
-                    <div className="dialog-form-group">
-                        <label>Cohort</label>
-                        <input
-                            className="dialog-input"
-                            value={cohort}
-                            onChange={(e) => setCohort(e.target.value)}
-                        />
-                    </div>
+                   
                 </div>
 
                 <div className="dialog-actions">
@@ -183,7 +176,7 @@ export default function AddLineItemDialog({
                                 vendor_cost: vendorCost,
                                 internal_cost: internalCost,
                                 quantity,
-                                cohort,
+                                // cohort,
                                 library_item_id: libraryItemId || undefined,
                             })
                         }

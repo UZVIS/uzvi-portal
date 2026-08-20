@@ -115,7 +115,7 @@ def test_detect_duplicate_candidates(db):
             candidate_id="C001",
             name="Priya Sharma",
             applied_role="Backend Engineer",
-            resume_details="Built a FastAPI microservice for order processing with Postgres and Docker.",
+            aadhar_number="1234 5678 9012",
         ),
     )
     service.create_candidate(
@@ -124,7 +124,8 @@ def test_detect_duplicate_candidates(db):
             candidate_id="C002",
             name="Rahul Verma",
             applied_role="Backend Engineer",
-            resume_details="Built a FastAPI microservice for order processing with Postgres and Docker.",
+            # Same Aadhar number as C001, just formatted differently.
+            aadhar_number="1234-5678-9012",
         ),
     )
     service.create_candidate(
@@ -133,14 +134,23 @@ def test_detect_duplicate_candidates(db):
             candidate_id="C003",
             name="Meera Iyer",
             applied_role="Frontend Engineer",
-            resume_details="Designed React dashboards with D3 visualizations for a fintech client.",
+            aadhar_number="9999 8888 7777",
+        ),
+    )
+    service.create_candidate(
+        db,
+        CandidateCreate(
+            candidate_id="C004",
+            name="Arjun Nair",
+            applied_role="Frontend Engineer",
         ),
     )
 
-    flags = service.detect_duplicate_candidates(db, threshold=0.8)
+    flags = service.detect_duplicate_candidates(db)
     flagged_pairs = {(f["candidate_id"], f["other_candidate_id"]) for f in flags}
     assert ("C001", "C002") in flagged_pairs
     assert not any("C003" in pair for pair in flagged_pairs)
+    assert not any("C004" in pair for pair in flagged_pairs)
 
 
 def _seed_admin(db, employee_id="ADMIN1"):

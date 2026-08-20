@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 import datetime
 
@@ -87,8 +87,20 @@ class Enrollment(Base):
         cascade="all, delete-orphan",
     )
 
+    @property
+    def employee_name(self) -> str | None:
+        """
+        Convenience accessor so API responses can surface the employee's
+        display name (training is shown by name in the UI, not by raw
+        employee_id) without every caller having to join Employee itself.
+        """
 
-# M6 Training Module: Records completed units and optional assessment scores.
+        return self.employee.name if self.employee else None
+
+
+# M6 Training Module: Records completed units. Training is purely
+# learning-tracking (no assessment/score) — completion is a simple
+# self-attested boolean event.
 class UnitCompletion(Base):
     __tablename__ = "training_unit_completions"
 
@@ -108,7 +120,6 @@ class UnitCompletion(Base):
         default=datetime.datetime.utcnow,
         nullable=False,
     )
-    score = Column(Float, nullable=True)
 
     enrollment = relationship(
         "Enrollment",

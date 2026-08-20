@@ -1,11 +1,11 @@
 import { useState, type FormEvent } from "react";
 import type { Team } from "../api";
+import { Toast } from "../../../shared/components/Toast";
 
 interface EmployeeFormProps {
   teams: Team[];
   employees: { employee_id: string; name: string; access_tier: string }[];
   onSubmit: (input: {
-    employee_id: string;
     name: string;
     designation?: string;
     team_id?: string;
@@ -17,7 +17,6 @@ interface EmployeeFormProps {
 }
 
 export function EmployeeForm({ teams, employees, onSubmit }: EmployeeFormProps) {
-  const [employeeId, setEmployeeId] = useState("");
   const [name, setName] = useState("");
   const [designation, setDesignation] = useState("");
   const [teamId, setTeamId] = useState("");
@@ -27,15 +26,17 @@ export function EmployeeForm({ teams, employees, onSubmit }: EmployeeFormProps) 
   const [accessTier, setAccessTier] = useState("Employee");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!employeeId.trim() || !name.trim()) return;
+    if (!name.trim()) return;
     setIsSubmitting(true);
     setError(null);
+    setSuccess(false);
     try {
       await onSubmit({
-        employee_id: employeeId.trim(),
+
         name: name.trim(),
         designation: designation.trim() || undefined,
         team_id: teamId || undefined,
@@ -44,7 +45,7 @@ export function EmployeeForm({ teams, employees, onSubmit }: EmployeeFormProps) 
         join_date: joinDate || undefined,
         access_tier: accessTier,
       });
-      setEmployeeId("");
+
       setName("");
       setAccessTier("Employee");
       setDesignation("");
@@ -52,6 +53,7 @@ export function EmployeeForm({ teams, employees, onSubmit }: EmployeeFormProps) 
       setManagerId("");
       setContactDetails("");
       setJoinDate("");
+      setSuccess(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not register the employee.");
     } finally {
@@ -62,18 +64,9 @@ export function EmployeeForm({ teams, employees, onSubmit }: EmployeeFormProps) 
   return (
     <form className="directory-form" onSubmit={handleSubmit}>
       <h3 className="directory-form__title">Register a new employee</h3>
-      {error && <div className="error-banner">{error}</div>}
+      {error && <Toast message={error} kind="error" onDismiss={() => setError(null)} />}
+      {success && <Toast message="Employee registered successfully." kind="success" onDismiss={() => setSuccess(false)} />}
       <div className="field-row">
-        <label className="field">
-          <span className="field__label">Employee ID</span>
-          <input
-            className="field__input"
-            value={employeeId}
-            onChange={(e) => setEmployeeId(e.target.value)}
-            placeholder="E010"
-            required
-          />
-        </label>
         <label className="field">
           <span className="field__label">Full name</span>
           <input

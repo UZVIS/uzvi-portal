@@ -30,6 +30,14 @@ def get_expired_documents(requester_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=403, detail=str(e))
 
 
+@router.get("/", response_model=List[DocumentResponse])
+def list_visible_documents(requester_id: str, db: Session = Depends(get_db)):
+    try:
+        return service.list_visible_documents(db, requester_id)
+    except service.NotAuthorized as e:
+        raise HTTPException(status_code=403, detail=str(e))
+
+
 @router.get("/{document_id}", response_model=DocumentResponse)
 def view_document_record(
     document_id: str, requester_id: str, db: Session = Depends(get_db)

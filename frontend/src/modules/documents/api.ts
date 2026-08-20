@@ -30,7 +30,6 @@ export interface DocumentAccessLog {
 
 /** POST /api/v1/documents/ — HR-Restricted uploads on an employee's behalf */
 export function registerDocument(input: {
-  document_id: string;
   employee_id: string;
   uploaded_by: string;
   doc_type: string;
@@ -61,5 +60,12 @@ export function getAccessLogs(documentId: string): Promise<DocumentAccessLog[]> 
 export function getExpiredDocuments(requesterId: string): Promise<DocumentRecord[]> {
   return fetch(`${BASE_PATH}/expired/list?requester_id=${encodeURIComponent(requesterId)}`).then(
     (r) => handle(r, "Could not load expired documents.")
+  );
+}
+
+/** GET /api/v1/documents/?requester_id=... - HR sees all, an employee sees only their own */
+export function getVisibleDocuments(requesterId: string): Promise<DocumentRecord[]> {
+  return fetch(`${BASE_PATH}/?requester_id=${encodeURIComponent(requesterId)}`).then(
+    (r) => handle(r, "Could not load documents.")
   );
 }

@@ -1,0 +1,544 @@
+/* =========================================================
+   MANAGER DASHBOARD
+========================================================= */
+
+.manager-dashboard {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 20px 40px;
+  box-sizing: border-box;
+
+  color: #1f2430;
+
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.manager-dashboard__header {
+  margin-bottom: 18px;
+}
+
+.manager-dashboard__header h1 {
+  margin: 0 0 6px;
+
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: 600;
+
+  color: #242936;
+}
+
+.manager-dashboard__header p {
+  margin: 0;
+
+  font-size: 13.5px;
+  line-height: 1.5;
+
+  color: #737d8e;
+}
+
+
+/* =========================================================
+   MAIN CARD
+========================================================= */
+
+.manager-card {
+  width: 100%;
+
+  background: #ffffff;
+
+  border: 1px solid #dfe3e8;
+  border-radius: 12px;
+
+  padding: 18px 20px;
+
+  margin-bottom: 18px;
+
+  box-sizing: border-box;
+
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.manager-card h2 {
+  margin: 0 0 14px;
+
+  font-size: 17px;
+  line-height: 1.3;
+  font-weight: 600;
+
+  color: #242936;
+}
+
+
+/* =========================================================
+   SEARCH BAR
+   Keep search ABOVE date filters
+========================================================= */
+
+.manager-search {
+  width: 100%;
+  margin-bottom: 14px;
+}
+
+.manager-search input {
+  width: 100%;
+  max-width: 420px;
+  height: 38px;
+
+  padding: 0 12px;
+
+  box-sizing: border-box;
+
+  border: 1px solid #d4d9e0;
+  border-radius: 8px;
+
+  background: #ffffff;
+
+  color: #252b38;
+
+  font-size: 13.5px;
+  font-family: inherit;
+
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.manager-search input::placeholder {
+  color: #8a93a3;
+}
+
+.manager-search input:hover {
+  border-color: #b9c0ca;
+}
+
+.manager-search input:focus {
+  outline: none;
+
+  border-color: #f37021;
+
+  box-shadow:
+    0 0 0 3px rgba(243, 112, 33, 0.12);
+}
+
+
+/* =========================================================
+   DATE FILTER
+========================================================= */
+
+.manager-filters {
+  display: flex;
+  align-items: flex-end;
+
+  gap: 14px;
+
+  margin-bottom: 18px;
+}
+
+.manager-filters label {
+  display: flex;
+  flex-direction: column;
+
+  gap: 5px;
+}
+
+.manager-filters label span {
+  font-size: 12.5px;
+  font-weight: 500;
+
+  color: #687285;
+}
+
+.manager-filters input {
+  width: 190px;
+  height: 36px;
+
+  padding: 0 10px;
+
+  box-sizing: border-box;
+
+  border: 1px solid #d4d9e0;
+  border-radius: 8px;
+
+  background: #ffffff;
+
+  color: #252b38;
+
+  font-size: 13.5px;
+
+  font-family: inherit;
+
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.manager-filters input:hover {
+  border-color: #b9c0ca;
+}
+
+.manager-filters input:focus {
+  outline: none;
+
+  border-color: #f37021;
+
+  box-shadow:
+    0 0 0 3px rgba(243, 112, 33, 0.12);
+}
+
+
+/* =========================================================
+   APPLY BUTTON
+========================================================= */
+
+.manager-filters button {
+  height: 36px;
+
+  min-width: 84px;
+
+  padding: 0 16px;
+
+  border: none;
+  border-radius: 8px;
+
+  background: #f37021;
+
+  color: #ffffff;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    transform 0.1s ease,
+    opacity 0.15s ease;
+}
+
+.manager-filters button:hover:not(:disabled) {
+  background: #e46116;
+}
+
+.manager-filters button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.manager-filters button:disabled {
+  opacity: 0.55;
+
+  cursor: not-allowed;
+}
+
+
+/* =========================================================
+   TABLE WRAPPER
+========================================================= */
+
+.manager-table-wrapper {
+  width: 100%;
+
+  overflow-x: auto;
+
+  border-radius: 8px;
+}
+
+
+/* =========================================================
+   UTILIZATION TABLE
+========================================================= */
+
+.manager-table {
+  width: 100%;
+
+  border-collapse: collapse;
+
+  background: #ffffff;
+
+  font-size: 13.5px;
+}
+
+
+/* =========================================================
+   TABLE HEADER
+========================================================= */
+
+.manager-table thead {
+  background: #f7f8fa;
+}
+
+.manager-table th {
+  padding: 11px 14px;
+
+  text-align: left;
+
+  font-size: 11.5px;
+
+  font-weight: 600;
+
+  text-transform: uppercase;
+
+  letter-spacing: 0.02em;
+
+  color: #687285;
+
+  border-bottom: 1px solid #dfe3e8;
+
+  white-space: nowrap;
+}
+
+
+/* Numeric columns (Billable Hours, Available Hours, Utilization)
+   are centered under their headers - ID/Name/Flag stay left-aligned. */
+
+.manager-table th:nth-child(3),
+.manager-table th:nth-child(4),
+.manager-table th:nth-child(5),
+.manager-table td:nth-child(3),
+.manager-table td:nth-child(4),
+.manager-table td:nth-child(5) {
+  text-align: center;
+}
+
+
+/* Separate ID and NAME columns */
+
+.manager-table th:first-child {
+  width: 80px;
+}
+
+.manager-table th:nth-child(2) {
+  width: 180px;
+}
+
+
+/* =========================================================
+   TABLE BODY
+========================================================= */
+
+.manager-table td {
+  padding: 12px 14px;
+
+  color: #303643;
+
+  border-bottom: 1px solid #e9ebef;
+
+  white-space: nowrap;
+}
+
+.manager-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.manager-table tbody tr {
+  transition: background 0.12s ease;
+}
+
+.manager-table tbody tr:hover {
+  background: #fafafa;
+}
+
+
+/* =========================================================
+   EMPLOYEE ID
+========================================================= */
+
+.employee-id {
+  font-weight: 500;
+
+  color: #687285;
+}
+
+
+/* =========================================================
+   EMPLOYEE NAME
+========================================================= */
+
+.employee-name {
+  font-weight: 500;
+
+  color: #242936;
+}
+
+
+/* =========================================================
+   UTILIZATION
+========================================================= */
+
+.utilization-value {
+  font-weight: 500;
+
+  color: #242936;
+}
+
+
+/* =========================================================
+   FLAGS
+========================================================= */
+
+.manager-flag {
+  display: inline-flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  min-width: 72px;
+
+  padding: 4px 9px;
+
+  border-radius: 6px;
+
+  font-size: 11.5px;
+
+  font-weight: 600;
+
+  white-space: nowrap;
+}
+
+
+/* ON TRACK */
+
+.manager-flag--ok {
+  background: #eaf6ef;
+
+  color: #2f6b46;
+}
+
+
+/* UNDER UTILIZED */
+
+.manager-flag--warning {
+  background: #fff4df;
+
+  color: #a76600;
+}
+
+
+/* OVER ALLOCATED */
+
+.manager-flag--danger {
+  background: #fdecec;
+
+  color: #b8433a;
+}
+
+
+/* =========================================================
+   ERROR
+========================================================= */
+
+.manager-error {
+  margin-bottom: 16px;
+
+  padding: 11px 14px;
+
+  border: 1px solid #f0b5b0;
+
+  border-radius: 8px;
+
+  background: #fff5f4;
+
+  color: #b8433a;
+
+  font-size: 13px;
+
+  line-height: 1.5;
+}
+
+
+/* =========================================================
+   EMPTY STATE
+========================================================= */
+
+.manager-empty {
+  margin: 16px 0 4px;
+
+  color: #7b8494;
+
+  font-size: 13.5px;
+
+  line-height: 1.5;
+}
+
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+.manager-status {
+  padding: 34px 16px;
+
+  text-align: center;
+
+  color: #737d8e;
+
+  font-size: 13.5px;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 800px) {
+  .manager-dashboard {
+    padding: 16px 14px 32px;
+  }
+
+  .manager-dashboard__header h1 {
+    font-size: 19px;
+  }
+
+  .manager-dashboard__header p {
+    font-size: 13px;
+  }
+
+  .manager-card {
+    padding: 16px 14px;
+  }
+
+  .manager-card h2 {
+    font-size: 15.5px;
+  }
+
+  /* Search becomes full width */
+
+  .manager-search input {
+    max-width: 100%;
+  }
+
+  /* Date filters */
+
+  .manager-filters {
+    flex-direction: column;
+
+    align-items: stretch;
+
+    gap: 12px;
+  }
+
+  .manager-filters input {
+    width: 100%;
+  }
+
+  .manager-filters button {
+    width: fit-content;
+  }
+
+  /* Table scroll */
+
+  .manager-table {
+    min-width: 700px;
+  }
+}

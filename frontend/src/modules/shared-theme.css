@@ -144,6 +144,44 @@
   border: 1px solid #cfe6d9;
 }
 
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1000;
+  border-radius: var(--radius-sm);
+  padding: 12px 18px;
+  font-size: 13.5px;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  animation: toast-in 0.2s ease-out;
+}
+
+.toast--success {
+  background: var(--color-teal-soft);
+  color: #1e5f3f;
+  border: 1px solid #cfe6d9;
+}
+
+.toast--error {
+  background: #fbeae4;
+  color: #a5432b;
+  border: 1px solid #f0cec2;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 480px) {
+  .toast {
+    left: 16px;
+    right: 16px;
+    top: 12px;
+  }
+}
+
 /* ---------- page shell ---------- */
 
 .uzvi-portal-theme .directory-page {
@@ -364,6 +402,73 @@
   font-size: 13px;
 }
 
+.uzvi-portal-theme .org-chart,
+.uzvi-portal-theme .org-chart ul {
+  list-style: none;
+  margin: 0;
+  padding-left: 28px;
+}
+
+.uzvi-portal-theme .org-chart {
+  padding-left: 0;
+}
+
+.uzvi-portal-theme .org-chart__node {
+  position: relative;
+  padding: 8px 0 8px 20px;
+  border-left: 1px solid var(--color-hairline);
+}
+
+.uzvi-portal-theme .org-chart > .org-chart__node {
+  border-left: none;
+  padding-left: 0;
+}
+
+.uzvi-portal-theme .org-chart__node::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  top: 20px;
+  width: 20px;
+  height: 1px;
+  background: var(--color-hairline);
+}
+
+.uzvi-portal-theme .org-chart > .org-chart__node::before {
+  display: none;
+}
+
+.uzvi-portal-theme .org-chart__card {
+  display: inline-block;
+  background: var(--color-surface);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-sm);
+  padding: 8px 14px;
+  font-size: 13px;
+}
+
+.uzvi-portal-theme .org-chart__name {
+  font-weight: 700;
+  color: var(--color-navy);
+}
+
+.uzvi-portal-theme .instance-tracker__hint {
+  color: var(--color-slate);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.uzvi-portal-theme .instance-tracker__viewing {
+  margin-bottom: 16px;
+}
+
+.uzvi-portal-theme .instance-tracker__viewing-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
 .uzvi-portal-theme .directory-table:has(.directory-row--editing) {
   table-layout: auto;
 }
@@ -382,7 +487,7 @@
 
 .uzvi-portal-theme .tier-badge {
   display: inline-block;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   padding: 4px 11px;
   border-radius: 999px;
