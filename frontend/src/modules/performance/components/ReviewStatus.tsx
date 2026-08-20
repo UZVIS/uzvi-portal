@@ -1,18 +1,30 @@
 // src/modules/performance/components/ReviewStatus.tsx
 
 import React, { useEffect, useState } from "react";
-import { getReviewStatus } from "../services/performanceService";
-//import type { ReviewStatus } from "../types";
-import type { ReviewStatus as ReviewStatusType } from "../types";
+
+import {
+  getActiveCycle,
+  getReviewStatus,
+} from "../services/performanceService";
+
+import type {
+  ReviewCycle,
+  ReviewStatus as ReviewStatusType,
+} from "../types";
+
 
 interface ReviewStatusProps {
   employeeId: string;
   cycleId: number;
 }
 
+
 const ReviewStatus: React.FC<ReviewStatusProps> = ({
-  cycleId,
+  employeeId,
 }) => {
+
+  const [activeCycle, setActiveCycle] =
+    useState<ReviewCycle | null>(null);
 
   const [status, setStatus] =
     useState<ReviewStatusType | null>(null);
@@ -23,6 +35,7 @@ const ReviewStatus: React.FC<ReviewStatusProps> = ({
   const [error, setError] =
     useState("");
 
+
   const loadStatus = async () => {
 
     try {
@@ -31,14 +44,43 @@ const ReviewStatus: React.FC<ReviewStatusProps> = ({
 
       setError("");
 
+
+      // ================= ACTIVE REVIEW CYCLE =================
+
+      const cycle =
+        await getActiveCycle(employeeId);
+
+
+      setActiveCycle(cycle);
+
+
+      if (!cycle) {
+
+        setStatus(null);
+
+        setError(
+          "No active review cycle found"
+        );
+
+        return;
+
+      }
+
+
+      // ================= REVIEW STATUS =================
+
       const data =
-        await getReviewStatus(cycleId);
+        await getReviewStatus(cycle.id);
+
 
       setStatus(data);
 
     } catch (err) {
 
-      console.error(err);
+      console.error(
+        "Unable to load review status:",
+        err
+      );
 
       setError(
         "Unable to load review status"
@@ -52,11 +94,13 @@ const ReviewStatus: React.FC<ReviewStatusProps> = ({
 
   };
 
+
   useEffect(() => {
 
     loadStatus();
 
-  }, [cycleId]);
+  }, [employeeId]);
+
 
   if (loading) {
 
@@ -74,6 +118,7 @@ const ReviewStatus: React.FC<ReviewStatusProps> = ({
 
   }
 
+
   if (error) {
 
     return (
@@ -90,6 +135,7 @@ const ReviewStatus: React.FC<ReviewStatusProps> = ({
 
   }
 
+
   if (!status) {
 
     return (
@@ -105,6 +151,7 @@ const ReviewStatus: React.FC<ReviewStatusProps> = ({
     );
 
   }
+
 
   return (
 
@@ -124,6 +171,30 @@ const ReviewStatus: React.FC<ReviewStatusProps> = ({
 
       </div>
 
+
+      {/* Active Review Cycle */}
+
+      {activeCycle && (
+
+        <div className="mb-8 bg-orange-50 border border-orange-200 rounded-xl p-6">
+
+          <p className="text-sm text-gray-500">
+            Active Review Cycle
+          </p>
+
+          <h3 className="text-xl font-bold text-gray-800 mt-2">
+            {activeCycle.name}
+          </h3>
+
+          <p className="text-sm text-gray-500 mt-2">
+            Cycle ID: {activeCycle.id}
+          </p>
+
+        </div>
+
+      )}
+
+
       {/* Top Summary */}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -140,6 +211,7 @@ const ReviewStatus: React.FC<ReviewStatusProps> = ({
 
         </div>
 
+
         <div className="bg-gray-50 border border-gray-200 rounded-xl p-6">
 
           <p className="text-sm text-gray-500">
@@ -154,7 +226,8 @@ const ReviewStatus: React.FC<ReviewStatusProps> = ({
 
       </div>
 
-            {/* Status Summary */}
+
+      {/* Status Summary */}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
 
@@ -184,6 +257,7 @@ const ReviewStatus: React.FC<ReviewStatusProps> = ({
 
         </div>
 
+
         <div className="bg-white border border-gray-200 rounded-xl p-6">
 
           <p className="text-sm text-gray-500 mb-3">
@@ -197,6 +271,7 @@ const ReviewStatus: React.FC<ReviewStatusProps> = ({
         </div>
 
       </div>
+
 
       {/* Progress */}
 
@@ -214,6 +289,7 @@ const ReviewStatus: React.FC<ReviewStatusProps> = ({
 
         </div>
 
+
         <div className="w-full h-3 rounded-full bg-gray-200 overflow-hidden">
 
           <div
@@ -226,6 +302,7 @@ const ReviewStatus: React.FC<ReviewStatusProps> = ({
         </div>
 
       </div>
+
 
       {/* Assessment Cards */}
 
@@ -252,6 +329,7 @@ const ReviewStatus: React.FC<ReviewStatusProps> = ({
           </h3>
 
         </div>
+
 
         {/* Manager Review */}
 

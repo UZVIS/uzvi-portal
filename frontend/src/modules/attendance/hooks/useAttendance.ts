@@ -1,6 +1,10 @@
 // src/modules/attendance/hooks/useAttendance.ts
 
-import { useEffect, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 
 import {
   getAttendance,
@@ -27,7 +31,6 @@ import type {
 // =====================================
 
 export const useAttendance = () => {
-
   const [records, setRecords] =
     useState<Attendance[]>([]);
 
@@ -40,294 +43,295 @@ export const useAttendance = () => {
   const [error, setError] =
     useState<string | null>(null);
 
+
   // =====================================
   // Get All Attendance
   // =====================================
 
-  const fetchAttendance = async (
-    filter?: AttendanceFilter
-  ) => {
+  const fetchAttendance = useCallback(
+    async (filter?: AttendanceFilter) => {
+      try {
+        setLoading(true);
+        setError(null);
 
-    try {
+        const data =
+          await getAttendance(filter);
 
-      setLoading(true);
-      setError(null);
+        setRecords(
+          Array.isArray(data) ? data : []
+        );
 
-      const data =
-        await getAttendance(filter);
+      } catch (error) {
+        console.error(
+          "Failed to fetch attendance:",
+          error
+        );
 
-      setRecords(data);
+        setError(
+          "Failed to fetch attendance."
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
 
-    } catch {
-
-      setError(
-        "Failed to fetch attendance."
-      );
-
-    } finally {
-
-      setLoading(false);
-
-    }
-
-  };
 
   // =====================================
   // Employee Attendance
   // =====================================
 
-  const fetchMyAttendance = async (
-    employeeId: string
-  ) => {
+  const fetchMyAttendance =
+    useCallback(
+      async (employeeId: string) => {
+        try {
+          setLoading(true);
+          setError(null);
 
-    try {
+          const data =
+            await getEmployeeAttendance(
+              employeeId
+            );
 
-      setLoading(true);
-      setError(null);
+          setRecords(
+            Array.isArray(data) ? data : []
+          );
 
-      const data =
-        await getEmployeeAttendance(
-          employeeId
-        );
+        } catch (error) {
+          console.error(
+            "Failed to fetch employee attendance:",
+            error
+          );
 
-      setRecords(data);
+          setError(
+            "Failed to fetch employee attendance."
+          );
+        } finally {
+          setLoading(false);
+        }
+      },
+      []
+    );
 
-    } catch {
-
-      setError(
-        "Failed to fetch employee attendance."
-      );
-
-    } finally {
-
-      setLoading(false);
-
-    }
-
-  };
 
   // =====================================
   // Monthly Summary
   // =====================================
 
-  const fetchSummary = async (
-    employeeId: string,
-    year: number,
-    month: number
-  ) => {
+  const fetchSummary =
+    useCallback(
+      async (
+        employeeId: string,
+        year: number,
+        month: number
+      ) => {
+        try {
+          setLoading(true);
+          setError(null);
 
-    try {
+          const data =
+            await getAttendanceSummary(
+              employeeId,
+              year,
+              month
+            );
 
-      setLoading(true);
-      setError(null);
+          setSummary(data);
 
-      const data =
-        await getAttendanceSummary(
-          employeeId,
-          year,
-          month
-        );
+        } catch (error) {
+          console.error(
+            "Failed to fetch monthly summary:",
+            error
+          );
 
-      setSummary(data);
+          setError(
+            "Failed to fetch monthly summary."
+          );
+        } finally {
+          setLoading(false);
+        }
+      },
+      []
+    );
 
-    } catch {
-
-      setError(
-        "Failed to fetch monthly summary."
-      );
-
-    } finally {
-
-      setLoading(false);
-
-    }
-
-  };
 
   // =====================================
   // Create Attendance
   // =====================================
 
-  const markAttendance = async (
-    data: AttendanceFormData
-  ) => {
+  const markAttendance =
+    useCallback(
+      async (
+        data: AttendanceFormData
+      ) => {
+        try {
+          setLoading(true);
+          setError(null);
 
-    try {
+          const response =
+            await createAttendance(data);
 
-      setLoading(true);
-      setError(null);
+          setRecords((prev) => [
+            ...prev,
+            response,
+          ]);
 
-      const response =
-        await createAttendance(data);
+          return response;
 
-      setRecords(
-        (prev) => [
-          ...prev,
-          response,
-        ]
-      );
+        } catch (error) {
+          console.error(
+            "Failed to create attendance:",
+            error
+          );
 
-      return response;
+          setError(
+            "Failed to create attendance."
+          );
 
-    } catch {
+          throw new Error(
+            "Create attendance failed."
+          );
+        } finally {
+          setLoading(false);
+        }
+      },
+      []
+    );
 
-      setError(
-        "Failed to create attendance."
-      );
-
-      throw new Error(
-        "Create attendance failed."
-      );
-
-    } finally {
-
-      setLoading(false);
-
-    }
-
-  };
 
   // =====================================
   // Update Attendance
   // =====================================
 
-  const editAttendance = async (
-    id: number,
-    data: AttendanceFormData
-  ) => {
+  const editAttendance =
+    useCallback(
+      async (
+        id: number,
+        data: AttendanceFormData
+      ) => {
+        try {
+          setLoading(true);
+          setError(null);
 
-    try {
+          const updated =
+            await updateAttendance(
+              id,
+              data
+            );
 
-      setLoading(true);
-      setError(null);
+          setRecords((prev) =>
+            prev.map((item) =>
+              item.id === id
+                ? updated
+                : item
+            )
+          );
 
-      const updated =
-        await updateAttendance(
-          id,
-          data
-        );
+          return updated;
 
-      setRecords(
-        (prev) =>
-          prev.map((item) =>
-            item.id === id
-              ? updated
-              : item
-          )
-      );
+        } catch (error) {
+          console.error(
+            "Failed to update attendance:",
+            error
+          );
 
-      return updated;
+          setError(
+            "Failed to update attendance."
+          );
 
-    } catch {
+          throw new Error(
+            "Update attendance failed."
+          );
+        } finally {
+          setLoading(false);
+        }
+      },
+      []
+    );
 
-      setError(
-        "Failed to update attendance."
-      );
-
-      throw new Error(
-        "Update attendance failed."
-      );
-
-    } finally {
-
-      setLoading(false);
-
-    }
-
-  };
 
   // =====================================
   // Delete Attendance
   // =====================================
 
-  const removeAttendance = async (
-    id: number
-  ) => {
+  const removeAttendance =
+    useCallback(
+      async (id: number) => {
+        try {
+          setLoading(true);
+          setError(null);
 
-    try {
+          await deleteAttendance(id);
 
-      setLoading(true);
-      setError(null);
+          setRecords((prev) =>
+            prev.filter(
+              (item) =>
+                item.id !== id
+            )
+          );
 
-      await deleteAttendance(id);
+        } catch (error) {
+          console.error(
+            "Failed to delete attendance:",
+            error
+          );
 
-      setRecords(
-        (prev) =>
-          prev.filter(
-            (item) =>
-              item.id !== id
-          )
-      );
+          setError(
+            "Failed to delete attendance."
+          );
 
-    } catch {
+          throw new Error(
+            "Delete attendance failed."
+          );
+        } finally {
+          setLoading(false);
+        }
+      },
+      []
+    );
 
-      setError(
-        "Failed to delete attendance."
-      );
 
-      throw new Error(
-        "Delete attendance failed."
-      );
-
-    } finally {
-
-      setLoading(false);
-
-    }
-
-  };
+  // =====================================
+  // Initial Attendance Load
+  // =====================================
 
   useEffect(() => {
+    void fetchAttendance();
+  }, [fetchAttendance]);
 
-    fetchAttendance();
 
-  }, []);
-
-    // =====================================
+  // =====================================
   // Return
   // =====================================
 
   return {
-
     records,
-
     summary,
-
     loading,
-
     error,
 
     fetchAttendance,
-
     fetchMyAttendance,
-
     fetchSummary,
-
     markAttendance,
-
     editAttendance,
-
     removeAttendance,
-
   };
-
 };
+
 
 // =====================================
 // Team Attendance Hook
 // =====================================
 
 export const useTeamAttendance = () => {
-
   const [teamRecords, setTeamRecords] =
     useState<TeamAttendance[]>([]);
 
   const [
-
     unexplainedAbsences,
-
     setUnexplainedAbsences,
-
   ] =
     useState<UnexplainedAbsence[]>([]);
 
@@ -337,87 +341,100 @@ export const useTeamAttendance = () => {
   const [error, setError] =
     useState<string | null>(null);
 
+
   // =====================================
   // Team Attendance
   // =====================================
 
-  const fetchTeamAttendance = async (
-    teamId: string
-  ) => {
+  const fetchTeamAttendance =
+    useCallback(
+      async (teamId: string) => {
+        try {
+          setLoading(true);
+          setError(null);
 
-    try {
+          console.log(
+            "Fetching team attendance for:",
+            teamId
+          );
 
-      setLoading(true);
-      setError(null);
+          const data =
+            await getTeamAttendance(teamId);
 
-      const data =
-        await getTeamAttendance(teamId);
+          console.log(
+            "Team attendance response:",
+            data
+          );
 
-      setTeamRecords(data);
+          setTeamRecords(
+            Array.isArray(data) ? data : []
+          );
 
-    } catch {
+        } catch (error) {
+          console.error(
+            "Failed to fetch team attendance:",
+            error
+          );
 
-      setError(
-        "Failed to fetch team attendance."
-      );
+          setTeamRecords([]);
 
-    } finally {
+          setError(
+            "Failed to fetch team attendance."
+          );
+        } finally {
+          setLoading(false);
+        }
+      },
+      []
+    );
 
-      setLoading(false);
-
-    }
-
-  };
 
   // =====================================
   // Unexplained Absences
   // =====================================
 
   const fetchUnexplainedAbsences =
-    async () => {
+    useCallback(
+      async () => {
+        try {
+          setLoading(true);
+          setError(null);
 
-      try {
+          const data =
+            await getUnexplainedAbsences();
 
-        setLoading(true);
-        setError(null);
+          setUnexplainedAbsences(
+            Array.isArray(data) ? data : []
+          );
 
-        const data =
-          await getUnexplainedAbsences();
+        } catch (error) {
+          console.error(
+            "Failed to fetch unexplained absences:",
+            error
+          );
 
-        setUnexplainedAbsences(data);
+          setError(
+            "Failed to fetch unexplained absences."
+          );
+        } finally {
+          setLoading(false);
+        }
+      },
+      []
+    );
 
-      } catch {
-
-        setError(
-          "Failed to fetch unexplained absences."
-        );
-
-      } finally {
-
-        setLoading(false);
-
-      }
-
-    };
 
   // =====================================
   // Return
   // =====================================
 
   return {
-
     teamRecords,
-
     unexplainedAbsences,
-
     loading,
-
     error,
 
     fetchTeamAttendance,
-
     fetchUnexplainedAbsences,
-
   };
-
 };

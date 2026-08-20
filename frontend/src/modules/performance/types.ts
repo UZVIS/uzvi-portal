@@ -2,10 +2,15 @@
 
 
 export type GoalStatus =
+
   | "not_started"
+
   | "in_progress"
+
   | "self_submitted"
+
   | "manager_reviewed"
+
   | "completed";
 
 

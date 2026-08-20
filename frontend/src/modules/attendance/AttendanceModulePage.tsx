@@ -110,6 +110,106 @@ const [adminTab, setAdminTab] = useState<
 >("dashboard");
 
   /* ======================================
+     Employee - Today's Attendance
+  ====================================== */
+
+  const getLocalDate = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, "0");
+    const day = String(now.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+  };
+
+  const today = getLocalDate();
+
+  const [employeeStatus, setEmployeeStatus] = useState<
+    "in-office" | "wfh" | "on-leave" | "absent" | ""
+  >("");
+
+  const [employeeCheckIn, setEmployeeCheckIn] = useState("");
+  const [employeeCheckOut, setEmployeeCheckOut] = useState("");
+  const [employeeSaving, setEmployeeSaving] = useState(false);
+
+  const todayEmployeeRecord = useMemo(() => {
+    return (
+      records.find(
+        (record) =>
+          record.employee_id === employeeId &&
+          record.attendance_date === today
+      ) ?? null
+    );
+  }, [records, employeeId, today]);
+
+  useEffect(() => {
+    if (role !== "Employee") {
+      return;
+    }
+
+    if (todayEmployeeRecord) {
+      setEmployeeStatus(todayEmployeeRecord.status);
+      setEmployeeCheckIn(todayEmployeeRecord.check_in ?? "");
+      setEmployeeCheckOut(todayEmployeeRecord.check_out ?? "");
+    } else {
+      setEmployeeStatus("");
+      setEmployeeCheckIn("");
+      setEmployeeCheckOut("");
+    }
+  }, [role, todayEmployeeRecord]);
+
+  const handleEmployeeAttendance = async () => {
+    if (!employeeStatus) {
+      alert("Please select today's attendance status.");
+      return;
+    }
+
+    try {
+      setEmployeeSaving(true);
+
+      const data: AttendanceFormData = {
+        employee_id: employeeId,
+        attendance_date: today,
+        status: employeeStatus,
+        check_in:
+          employeeStatus === "in-office" || employeeStatus === "wfh"
+            ? employeeCheckIn || undefined
+            : undefined,
+        check_out:
+          employeeStatus === "in-office" || employeeStatus === "wfh"
+            ? employeeCheckOut || undefined
+            : undefined,
+        source: "manual",
+      };
+
+      if (todayEmployeeRecord) {
+        await editAttendance(todayEmployeeRecord.id, data);
+      } else {
+        await markAttendance(data);
+      }
+
+      await fetchAttendance();
+
+      await fetchSummary(
+        employeeId,
+        new Date().getFullYear(),
+        new Date().getMonth() + 1
+      );
+
+      alert(
+        todayEmployeeRecord
+          ? "Today's attendance updated successfully."
+          : "Today's attendance marked successfully."
+      );
+    } catch (err) {
+      console.error("Failed to save today's attendance:", err);
+      alert("Unable to save today's attendance. Please try again.");
+    } finally {
+      setEmployeeSaving(false);
+    }
+  };
+
+  /* ======================================
      Initial Load
   ====================================== */
 useEffect(() => {
@@ -143,6 +243,55 @@ const employeeNames = useMemo(() => {
     {}
   );
 }, [directoryEmployees]);
+
+
+/* ======================================
+   Admin - Monthly Summary From Records
+====================================== */
+
+const adminMonthlySummary = useMemo(() => {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+
+  const monthlyRecords = records.filter((record) => {
+    if (!record.attendance_date) {
+      return false;
+    }
+
+    const parts = record.attendance_date.split("-");
+
+    if (parts.length !== 3) {
+      return false;
+    }
+
+    const recordYear = Number(parts[0]);
+    const recordMonth = Number(parts[1]);
+
+    return (
+      recordYear === currentYear &&
+      recordMonth === currentMonth
+    );
+  });
+
+  return {
+    present_days: monthlyRecords.filter(
+      (record) => record.status === "in-office"
+    ).length,
+
+    wfh_days: monthlyRecords.filter(
+      (record) => record.status === "wfh"
+    ).length,
+
+    leave_days: monthlyRecords.filter(
+      (record) => record.status === "on-leave"
+    ).length,
+
+    absent_days: monthlyRecords.filter(
+      (record) => record.status === "absent"
+    ).length,
+  };
+}, [records]);
 
 
 const attendanceEmployees = useMemo(() => {
@@ -423,7 +572,7 @@ const attendanceEmployees = useMemo(() => {
 
         <div>
           <h3>In Office</h3>
-          <h2>{summary?.present_days ?? 0}</h2>
+          <h2>{adminMonthlySummary.present_days}</h2>
         </div>
       </div>
 
@@ -434,7 +583,7 @@ const attendanceEmployees = useMemo(() => {
 
         <div>
           <h3>WFH</h3>
-          <h2>{summary?.wfh_days ?? 0}</h2>
+          <h2>{adminMonthlySummary.wfh_days}</h2>
         </div>
       </div>
 
@@ -445,7 +594,7 @@ const attendanceEmployees = useMemo(() => {
 
         <div>
           <h3>On Leave</h3>
-          <h2>{summary?.leave_days ?? 0}</h2>
+          <h2>{adminMonthlySummary.leave_days}</h2>
         </div>
       </div>
 
@@ -456,7 +605,7 @@ const attendanceEmployees = useMemo(() => {
 
         <div>
           <h3>Absent</h3>
-          <h2>{summary?.absent_days ?? 0}</h2>
+          <h2>{adminMonthlySummary.absent_days}</h2>
         </div>
       </div>
 
@@ -479,22 +628,22 @@ const attendanceEmployees = useMemo(() => {
 
       <div className="summary-card office">
         <h3>Present Days</h3>
-        <h2>{summary?.present_days ?? 0}</h2>
+        <h2>{adminMonthlySummary.present_days}</h2>
       </div>
 
       <div className="summary-card wfh">
         <h3>WFH Days</h3>
-        <h2>{summary?.wfh_days ?? 0}</h2>
+        <h2>{adminMonthlySummary.wfh_days}</h2>
       </div>
 
       <div className="summary-card leave">
         <h3>Leave Days</h3>
-        <h2>{summary?.leave_days ?? 0}</h2>
+        <h2>{adminMonthlySummary.leave_days}</h2>
       </div>
 
       <div className="summary-card absent">
         <h3>Absent Days</h3>
-        <h2>{summary?.absent_days ?? 0}</h2>
+        <h2>{adminMonthlySummary.absent_days}</h2>
       </div>
 
     </div>
@@ -568,7 +717,7 @@ const attendanceEmployees = useMemo(() => {
 
             <div>
               <h3>In Office</h3>
-              <h2>{summary.present_days}</h2>
+              <h2>{adminMonthlySummary.present_days}</h2>
             </div>
 
           </div>
@@ -581,7 +730,7 @@ const attendanceEmployees = useMemo(() => {
 
             <div>
               <h3>WFH</h3>
-              <h2>{summary.wfh_days}</h2>
+              <h2>{adminMonthlySummary.wfh_days}</h2>
             </div>
 
           </div>
@@ -594,7 +743,7 @@ const attendanceEmployees = useMemo(() => {
 
             <div>
               <h3>On Leave</h3>
-              <h2>{summary.leave_days}</h2>
+              <h2>{adminMonthlySummary.leave_days}</h2>
             </div>
 
           </div>
@@ -607,7 +756,7 @@ const attendanceEmployees = useMemo(() => {
 
             <div>
               <h3>Absent</h3>
-              <h2>{summary.absent_days}</h2>
+              <h2>{adminMonthlySummary.absent_days}</h2>
             </div>
 
           </div>
@@ -895,22 +1044,22 @@ adminTab === "records" && (
 
     <div className="summary-card office">
       <h3>Present Days</h3>
-      <h2>{summary?.present_days ?? 0}</h2>
+      <h2>{adminMonthlySummary.present_days}</h2>
     </div>
 
     <div className="summary-card wfh">
       <h3>WFH Days</h3>
-      <h2>{summary?.wfh_days ?? 0}</h2>
+      <h2>{adminMonthlySummary.wfh_days}</h2>
     </div>
 
     <div className="summary-card leave">
       <h3>Leave Days</h3>
-      <h2>{summary?.leave_days ?? 0}</h2>
+      <h2>{adminMonthlySummary.leave_days}</h2>
     </div>
 
     <div className="summary-card absent">
       <h3>Absent Days</h3>
-      <h2>{summary?.absent_days ?? 0}</h2>
+      <h2>{adminMonthlySummary.absent_days}</h2>
     </div>
 
   </div>
@@ -947,11 +1096,284 @@ adminTab === "records" && (
 ====================================== */}
 
 {role === "Employee" && (
+  <>
+    {/* ======================================
+        EMPLOYEE - TODAY'S ATTENDANCE
+    ====================================== */}
 
-  <EmployeeAttendance
-    employeeId={employeeId}
-  />
+    <div
+      className="attendance-table"
+      style={{
+        marginBottom: "24px",
+        padding: "24px",
+      }}
+    >
+      <div className="table-header">
+        <div>
+          <h2>Today's Attendance</h2>
+          <p>
+            Mark your attendance for today by selecting your work status.
+          </p>
+        </div>
 
+        <div className="record-count">
+          {todayEmployeeRecord ? "Attendance Marked" : "Not Marked"}
+        </div>
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: "20px",
+          marginTop: "20px",
+        }}
+      >
+        {/* Date */}
+        <div>
+          <strong
+            style={{
+              display: "block",
+              marginBottom: "10px",
+              fontSize: "15px",
+            }}
+          >
+            Date
+          </strong>
+
+          <div
+            style={{
+              padding: "12px 14px",
+              background: "#f8fafc",
+              border: "1px solid #e2e8f0",
+              borderRadius: "10px",
+              width: "fit-content",
+              minWidth: "160px",
+            }}
+          >
+            {new Date(`${today}T00:00:00`).toLocaleDateString("en-IN", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })}
+          </div>
+        </div>
+
+        {/* Status */}
+        <div>
+          <strong
+            style={{
+              display: "block",
+              marginBottom: "10px",
+              fontSize: "15px",
+            }}
+          >
+            Attendance Status
+          </strong>
+
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "10px",
+            }}
+          >
+            {[
+              {
+                value: "in-office" as const,
+                label: "In-Office",
+                icon: <Briefcase size={17} />,
+              },
+              {
+                value: "wfh" as const,
+                label: "WFH",
+                icon: <Home size={17} />,
+              },
+              {
+                value: "on-leave" as const,
+                label: "On-Leave",
+                icon: <CalendarDays size={17} />,
+              },
+              {
+                value: "absent" as const,
+                label: "Absent",
+                icon: <UserX size={17} />,
+              },
+            ].map((option) => {
+              const selected = employeeStatus === option.value;
+
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setEmployeeStatus(option.value)}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    padding: "11px 16px",
+                    borderRadius: "10px",
+                    border: selected
+                      ? "2px solid #ff6b00"
+                      : "1px solid #d9e2ec",
+                    background: selected ? "#fff4eb" : "#ffffff",
+                    color: selected ? "#ff6b00" : "#475569",
+                    fontWeight: selected ? 700 : 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  {option.icon}
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Check In / Check Out */}
+        {(employeeStatus === "in-office" ||
+          employeeStatus === "wfh") && (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: "16px",
+            }}
+          >
+            <div>
+              <label
+                htmlFor="employee-check-in"
+                style={{
+                  display: "block",
+                  marginBottom: "8px",
+                  fontWeight: 600,
+                  fontSize: "14px",
+                }}
+              >
+                Check In
+              </label>
+
+              <input
+                id="employee-check-in"
+                type="time"
+                value={employeeCheckIn}
+                onChange={(e) => setEmployeeCheckIn(e.target.value)}
+                style={{
+                  width: "100%",
+                  boxSizing: "border-box",
+                  padding: "12px 14px",
+                  border: "1px solid #d9e2ec",
+                  borderRadius: "10px",
+                  fontSize: "14px",
+                  background: "#ffffff",
+                }}
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="employee-check-out"
+                style={{
+                  display: "block",
+                  marginBottom: "8px",
+                  fontWeight: 600,
+                  fontSize: "14px",
+                }}
+              >
+                Check Out
+              </label>
+
+              <input
+                id="employee-check-out"
+                type="time"
+                value={employeeCheckOut}
+                onChange={(e) => setEmployeeCheckOut(e.target.value)}
+                style={{
+                  width: "100%",
+                  boxSizing: "border-box",
+                  padding: "12px 14px",
+                  border: "1px solid #d9e2ec",
+                  borderRadius: "10px",
+                  fontSize: "14px",
+                  background: "#ffffff",
+                }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* On Leave information */}
+        {employeeStatus === "on-leave" && (
+          <div
+            style={{
+              padding: "12px 14px",
+              borderRadius: "10px",
+              background: "#fff8e1",
+              border: "1px solid #f6d365",
+              color: "#7c5a00",
+              fontSize: "14px",
+            }}
+          >
+            On-Leave can be populated from approved Leave Management
+            records where M2 integration is available.
+          </div>
+        )}
+
+        {/* Absent information */}
+        {employeeStatus === "absent" && (
+          <div
+            style={{
+              padding: "12px 14px",
+              borderRadius: "10px",
+              background: "#fff1f1",
+              border: "1px solid #f3b4b4",
+              color: "#9f1d1d",
+              fontSize: "14px",
+            }}
+          >
+            Select Absent when you need to record Absent for today.
+          </div>
+        )}
+
+        {/* Save */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            paddingTop: "4px",
+          }}
+        >
+          <button
+            type="button"
+            className="add-btn"
+            onClick={handleEmployeeAttendance}
+            disabled={!employeeStatus || employeeSaving}
+            style={{
+              opacity:
+                !employeeStatus || employeeSaving ? 0.6 : 1,
+              cursor:
+                !employeeStatus || employeeSaving
+                  ? "not-allowed"
+                  : "pointer",
+            }}
+          >
+            {employeeSaving
+              ? "Saving..."
+              : todayEmployeeRecord
+              ? "Update Today's Attendance"
+              : "Mark Attendance"}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    {/* ======================================
+        EMPLOYEE - ATTENDANCE HISTORY
+    ====================================== */}
+
+    <EmployeeAttendance employeeId={employeeId} />
+  </>
 )}
 
             {/* ======================================
