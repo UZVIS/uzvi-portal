@@ -14,6 +14,7 @@ import { EmployeeRow, teamNameFor } from "./components/EmployeeRow";
 import { EmployeeForm } from "./components/EmployeeForm";
 import { TeamManager } from "./components/TeamManager";
 import { ExitedEmployeesList } from "./components/ExitedEmployeesList";
+import { OrgChartView } from "./components/OrgChartView";
 import { Toast } from "../../shared/components/Toast";
 import "../shared-theme.css";
 import "./DirectoryPage.css";
@@ -64,8 +65,8 @@ export function DirectoryPage() {
     await load();
   }
 
-  async function handleCreateTeam(teamId: string, name: string) {
-    await createTeam(teamId, name);
+  async function handleCreateTeam(name: string) {
+    await createTeam(name);
     await load();
   }
 
@@ -193,6 +194,13 @@ export function DirectoryPage() {
           <ExitedEmployeesList requesterId={employee.employee_id} refreshKey={exitedRefreshKey} />
         </section>
       )}
+
+      <section className="directory-page__list">
+        <h2 className="directory-form__title">
+          Org chart
+        </h2>
+        <OrgChartView employees={employees} />
+      </section>
     </div>
   );
 }

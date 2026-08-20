@@ -1,60 +1,202 @@
 // import { useEffect, useState } from "react";
-// import { utilizationApi, type OrgUtilizationDashboard, type Project } from "./api";
+// import type { FormEvent } from "react";
+
+// import {
+//   utilizationApi,
+//   type OrgUtilizationDashboard,
+//   type Project,
+//   type TimeEntryEmployee,
+// } from "./api";
+
 // import { AddProjectForm } from "./components/AddProjectForm";
 // import { AdminLogHoursForm } from "./components/AdminLogHoursForm";
+
 // import "./OrgDashboardPage.css";
 // import "../shared-theme.css";
+
+// const EMPLOYEE_ID_STORAGE_KEY = "uzvi_portal_employee_id";
+
+// /*
+//  * Never use toISOString() for local dates - it converts to UTC first,
+//  * which shifts the date backward for any timezone ahead of UTC
+//  * (e.g. India, UTC+5:30). Always build the date string from local
+//  * year/month/day components instead.
+//  */
+// function toLocalISODate(d: Date): string {
+//   const year = d.getFullYear();
+//   const month = String(d.getMonth() + 1).padStart(2, "0");
+//   const day = String(d.getDate()).padStart(2, "0");
+//   return `${year}-${month}-${day}`;
+// }
 
 // function isoDateNDaysAgo(n: number): string {
 //   const d = new Date();
 //   d.setDate(d.getDate() - n);
-//   return d.toISOString().slice(0, 10);
+//   return toLocalISODate(d);
 // }
 
+// /*
+//  * Admin/Leadership-only Org Dashboard.
+//  *
+//  * Manager no longer has a dashboard here - Manager is routed to
+//  * ManagerDashboardPage (components/ManagerOrgDashboard.tsx) from
+//  * UtilizationModulePage.tsx instead. This page assumes Admin access;
+//  * UtilizationModulePage only renders it for isAdmin, so no in-page
+//  * role branching is needed.
+//  */
 // export function OrgDashboardPage() {
-//   const [periodStart, setPeriodStart] = useState(() => isoDateNDaysAgo(7));
-//   const [periodEnd, setPeriodEnd] = useState(() => isoDateNDaysAgo(0));
-//   const [capacityHoursPerWeek, setCapacityHoursPerWeek] = useState("40");
+//   /* =========================================================
+//      DATE / CAPACITY
 
-//   const [dashboard, setDashboard] = useState<OrgUtilizationDashboard | null>(null);
-//   const [projects, setProjects] = useState<Project[]>([]);
-//   const [loading, setLoading] = useState(true);
-//   const [loadError, setLoadError] = useState<string | null>(null);
+//      "Last 7 days INCLUDING TODAY" - inclusive 7-day range means
+//      going back 6 days, not 7 (7 would give an 8-day span).
+//   ========================================================= */
 
-//   function load(start: string, end: string, capacity: number) {
+//   const [periodStart, setPeriodStart] = useState(
+//     () => isoDateNDaysAgo(6)
+//   );
+
+//   const [periodEnd, setPeriodEnd] = useState(
+//     () => isoDateNDaysAgo(0)
+//   );
+
+//   const [capacityHoursPerWeek, setCapacityHoursPerWeek] =
+//     useState("40");
+
+//   /* =========================================================
+//      EMPLOYEES
+//   ========================================================= */
+
+//   const [currentEmployee, setCurrentEmployee] =
+//     useState<TimeEntryEmployee | null>(null);
+
+//   const [allEmployees, setAllEmployees] =
+//     useState<TimeEntryEmployee[]>([]);
+
+//   /* =========================================================
+//      DASHBOARD DATA
+//   ========================================================= */
+
+//   const [dashboard, setDashboard] =
+//     useState<OrgUtilizationDashboard | null>(null);
+
+//   const [projects, setProjects] =
+//     useState<Project[]>([]);
+
+//   /* =========================================================
+//      EMPLOYEE SEARCH
+
+//      Searches by Employee ID or name.
+//   ========================================================= */
+
+//   const [employeeSearch, setEmployeeSearch] =
+//     useState("");
+
+//   /* =========================================================
+//      PAGE STATE
+//   ========================================================= */
+
+//   const [loading, setLoading] =
+//     useState(true);
+
+//   const [loadError, setLoadError] =
+//     useState<string | null>(null);
+
+//   const [otNotice, setOtNotice] =
+//     useState<string | null>(null);
+
+//   /* =========================================================
+//      LOAD PAGE
+//   ========================================================= */
+
+//   async function load() {
 //     setLoading(true);
 //     setLoadError(null);
 
-//     Promise.all([
-//       utilizationApi.getOrgDashboard(start, end, capacity),
-//       utilizationApi.listProjects(),
-//     ])
-//       .then(([dash, projectList]) => {
-//         setDashboard(dash);
-//         setProjects(projectList);
-//       })
-//       .catch((err) =>
-//         setLoadError(err instanceof Error ? err.message : "Couldn't load the org dashboard.")
-//       )
-//       .finally(() => setLoading(false));
+//     try {
+//       const currentEmployeeId =
+//         localStorage.getItem(EMPLOYEE_ID_STORAGE_KEY);
+
+//       if (!currentEmployeeId) {
+//         throw new Error("Logged-in employee ID was not found.");
+//       }
+
+//       /*
+//        * Backend decides which employees the current user is
+//        * allowed to see. For Admin/Leadership this is everyone.
+//        */
+//       const employeeList =
+//         await utilizationApi.listTimeEntryEmployees();
+
+//       const me = employeeList.find(
+//         (employee) => employee.employee_id === currentEmployeeId
+//       );
+
+//       if (!me) {
+//         throw new Error("Current employee was not found.");
+//       }
+
+//       setCurrentEmployee(me);
+
+//       const accessTier = me.access_tier?.trim().toLowerCase();
+
+//       if (accessTier !== "admin/leadership") {
+//         throw new Error(
+//           "This dashboard is limited to Admin/Leadership accounts."
+//         );
+//       }
+
+//       const [dash, projectList] = await Promise.all([
+//         utilizationApi.getOrgDashboard(
+//           periodStart,
+//           periodEnd,
+//           Number(capacityHoursPerWeek) || 40
+//         ),
+//         utilizationApi.listProjects(),
+//       ]);
+
+//       setDashboard(dash);
+//       setProjects(projectList);
+//       setAllEmployees(employeeList);
+//     } catch (err) {
+//       setLoadError(
+//         err instanceof Error
+//           ? err.message
+//           : "Couldn't load the dashboard."
+//       );
+//     } finally {
+//       setLoading(false);
+//     }
 //   }
 
+//   /* =========================================================
+//      INITIAL LOAD
+//   ========================================================= */
+
 //   useEffect(() => {
-//     load(periodStart, periodEnd, Number(capacityHoursPerWeek) || 40);
+//     load();
+//     // Initial load only.
 //     // eslint-disable-next-line react-hooks/exhaustive-deps
 //   }, []);
 
-//   function handleApply(e: React.FormEvent) {
+//   /* =========================================================
+//      APPLY FILTER
+//   ========================================================= */
+
+//   function handleApply(e: FormEvent) {
 //     e.preventDefault();
-//     if (!periodStart || !periodEnd) return;
-//     load(periodStart, periodEnd, Number(capacityHoursPerWeek) || 40);
+//     load();
 //   }
+
+//   /* =========================================================
+//      ADD PROJECT
+//   ========================================================= */
 
 //   async function handleAddProject(input: {
 //     name: string;
 //     projectType: string;
-//     billingRate: number | null;
-//     costRate: number | null;
+//     billingRate: number;
+//     costRate: number;
 //   }) {
 //     await utilizationApi.createProject({
 //       project_id: `P-${Date.now()}`,
@@ -64,8 +206,12 @@
 //       cost_rate: input.costRate,
 //     });
 
-//     load(periodStart, periodEnd, Number(capacityHoursPerWeek) || 40);
+//     await load();
 //   }
+
+//   /* =========================================================
+//      ADMIN LOG HOURS
+//   ========================================================= */
 
 //   async function handleAdminLogHours(input: {
 //     employeeId: string;
@@ -74,30 +220,121 @@
 //     hours: number;
 //     billable: boolean;
 //   }) {
-//     await utilizationApi.createTimeEntry({
-//       entry_id: `TE-${input.employeeId}-${input.projectId}-${input.date}-${Date.now()}`,
-//       employee_id: input.employeeId,
-//       project_id: input.projectId,
-//       date: input.date,
-//       hours: input.hours,
-//       billable_flag: input.billable,
-//     });
+//     setOtNotice(null);
 
-//     load(periodStart, periodEnd, Number(capacityHoursPerWeek) || 40);
+//     try {
+//       const saved = await utilizationApi.createTimeEntry({
+//         entry_id: `TE-${input.employeeId}-${input.projectId}-${input.date}-${Date.now()}`,
+//         employee_id: input.employeeId,
+//         project_id: input.projectId,
+//         date: input.date,
+//         hours: input.hours,
+//         billable_flag: input.billable,
+//       });
+
+//       if (saved.ot_status === "Pending") {
+//         setOtNotice(
+//           `This includes ${saved.overtime_hours}h of overtime for ${input.employeeId}, sent for approval.`
+//         );
+//       }
+
+//       await load();
+//     } catch (err) {
+//       setLoadError(
+//         err instanceof Error
+//           ? err.message
+//           : "Couldn't log hours for this employee."
+//       );
+//     }
 //   }
+
+//   /* =========================================================
+//      EMPLOYEE NAME LOOKUP
+//   ========================================================= */
+
+//   function employeeName(employeeId: string): string {
+//     const employee = allEmployees.find(
+//       (item) => item.employee_id === employeeId
+//     );
+//     return employee?.name ?? employeeId;
+//   }
+
+//   /* =========================================================
+//      SEARCH
+//   ========================================================= */
+
+//   const normalizedSearch = employeeSearch.trim().toLowerCase();
+
+//   const filteredUtilization =
+//     dashboard?.utilization_by_employee.filter((summary) => {
+//       if (!normalizedSearch) return true;
+
+//       const employee = allEmployees.find(
+//         (item) => item.employee_id === summary.employee_id
+//       );
+
+//       const id = employee?.employee_id ?? summary.employee_id;
+//       const name = employee?.name ?? "";
+
+//       return (
+//         id.toLowerCase().includes(normalizedSearch) ||
+//         name.toLowerCase().includes(normalizedSearch)
+//       );
+//     }) ?? [];
+
+//   /* =========================================================
+//      LOADING
+//   ========================================================= */
+
+//   if (loading && !currentEmployee) {
+//     return (
+//       <div className="od-page">
+//         <p className="od-page__loading">Loading dashboard...</p>
+//       </div>
+//     );
+//   }
+
+//   /* =========================================================
+//      ACCESS DENIED
+//   ========================================================= */
+
+//   const accessTier = currentEmployee?.access_tier?.trim().toLowerCase();
+//   const isAdmin = accessTier === "admin/leadership";
+
+//   if (!isAdmin) {
+//     return (
+//       <p className="od-page__error">
+//         {loadError ?? "This dashboard is not available for your account."}
+//       </p>
+//     );
+//   }
+
+//   /* =========================================================
+//      PAGE
+//   ========================================================= */
 
 //   return (
 //     <div className="od-page">
 //       <h1 className="od-page__title">Org Utilization Dashboard</h1>
 //       <p className="od-page__subtitle">Admin/Leadership view</p>
 
+//       {/* ADD PROJECT */}
 //       <AddProjectForm onSubmit={handleAddProject} />
 
+//       {/* ADMIN LOG HOURS */}
 //       <AdminLogHoursForm
-//         projects={projects}
+//         employees={allEmployees}
+//         projects={projects.map((project) => ({
+//           project_id: project.project_id,
+//           project_name: project.name,
+//         }))}
 //         onSubmit={handleAdminLogHours}
 //       />
 
+//       {/* OT NOTICE */}
+//       {otNotice && <p className="od-page__ot-notice">{otNotice}</p>}
+
+//       {/* DATE / CAPACITY FILTER */}
 //       <form className="od-filters" onSubmit={handleApply}>
 //         <label>
 //           Start date
@@ -128,26 +365,25 @@
 //         </label>
 
 //         <button type="submit" disabled={loading}>
-//           {loading ? "Loading…" : "Apply"}
+//           {loading ? "Loading..." : "Apply"}
 //         </button>
 //       </form>
 
+//       {/* ERROR */}
 //       {loadError && (
 //         <p className="od-page__error">
 //           Couldn't load this page: {loadError}
 //         </p>
 //       )}
 
-//       {loading && !dashboard && (
-//         <p className="od-page__loading">Loading org dashboard…</p>
-//       )}
-
+//       {/* DASHBOARD */}
 //       {dashboard && (
 //         <>
 //           <p className="od-page__range">
 //             Showing {dashboard.period_start} to {dashboard.period_end}
 //           </p>
 
+//           {/* FLAGS */}
 //           <div className="od-page__flags">
 //             <div className="od-flag od-flag--warn">
 //               <div className="od-flag__count">
@@ -165,85 +401,93 @@
 //               <div className="od-flag__count">
 //                 {dashboard.over_allocated.length}
 //               </div>
-//               <div className="od-flag__label">
-//                 Over-allocated
-//               </div>
+//               <div className="od-flag__label">Over-allocated</div>
 //               <div className="od-flag__ids">
 //                 {dashboard.over_allocated.join(", ") || "—"}
 //               </div>
 //             </div>
 //           </div>
 
+//           {/* UTILIZATION */}
 //           <section className="od-panel">
-//             <h2 className="od-panel__title">
-//               Utilization by employee
-//             </h2>
+//             <h2 className="od-panel__title">Utilization by employee</h2>
 
-//             {dashboard.utilization_by_employee.length === 0 ? (
+//             <div className="od-employee-search">
+//               <input
+//                 type="text"
+//                 value={employeeSearch}
+//                 onChange={(e) => setEmployeeSearch(e.target.value)}
+//                 placeholder="Search by employee name or ID..."
+//                 aria-label="Search employees by name or ID"
+//                 autoComplete="off"
+//               />
+//             </div>
+
+//             {filteredUtilization.length === 0 ? (
 //               <p className="od-panel__empty">
-//                 No time entries logged in this period yet.
+//                 {employeeSearch.trim()
+//                   ? "No employees found matching your search."
+//                   : "No time entries logged in this period yet."}
 //               </p>
 //             ) : (
-//               <table className="od-table">
-//                 <thead>
-//                   <tr>
-//                     <th>Employee</th>
-//                     <th>Billable hours</th>
-//                     <th>Available hours</th>
-//                     <th>Utilization</th>
-//                     <th>Flag</th>
-//                   </tr>
-//                 </thead>
-
-//                 <tbody>
-//                   {dashboard.utilization_by_employee.map((u) => (
-//                     <tr key={u.employee_id}>
-//                       <td>{u.employee_id}</td>
-//                       <td>{u.billable_hours.toFixed(1)}h</td>
-//                       <td>{u.available_hours.toFixed(1)}h</td>
-//                       <td>{Math.round(u.utilization_pct * 100)}%</td>
-//                       <td>{u.flag ?? "on track"}</td>
+//               <div className="od-table-wrapper">
+//                 <table className="od-table">
+//                   <thead>
+//                     <tr>
+//                       <th>ID</th>
+//                       <th>Name</th>
+//                       <th>Billable hours</th>
+//                       <th>Available hours</th>
+//                       <th>Utilization</th>
+//                       <th>Flag</th>
 //                     </tr>
-//                   ))}
-//                 </tbody>
-//               </table>
+//                   </thead>
+//                   <tbody>
+//                     {filteredUtilization.map((u) => (
+//                       <tr key={u.employee_id}>
+//                         <td>{u.employee_id}</td>
+//                         <td>{employeeName(u.employee_id)}</td>
+//                         <td>{u.billable_hours.toFixed(1)}h</td>
+//                         <td>{u.available_hours.toFixed(1)}h</td>
+//                         <td>{Math.round(u.utilization_pct * 100)}%</td>
+//                         <td>{u.flag ?? "on track"}</td>
+//                       </tr>
+//                     ))}
+//                   </tbody>
+//                 </table>
+//               </div>
 //             )}
 //           </section>
 
+//           {/* PROJECT MARGINS */}
 //           <section className="od-panel">
 //             <h2 className="od-panel__title">Project margins</h2>
 
 //             {dashboard.project_margins.length === 0 ? (
 //               <p className="od-panel__empty">No projects yet.</p>
 //             ) : (
-//               <table className="od-table">
-//                 <thead>
-//                   <tr>
-//                     <th>Project</th>
-//                     <th>Revenue</th>
-//                     <th>Cost</th>
-//                     <th>Margin</th>
-//                   </tr>
-//                 </thead>
-
-//                 <tbody>
-//                   {dashboard.project_margins.map((m) => (
-//                     <tr key={m.project_id}>
-//                       <td>{m.project_name}</td>
-
-//                       <td>₹{m.revenue.toLocaleString()}</td>
-
-//                       <td>₹{m.cost.toLocaleString()}</td>
-
-//                       <td className={m.margin < 0 ? "od-table__negative" : ""}>
-//                         {m.margin > 0
-//                           ? `+₹${m.margin.toLocaleString()}`
-//                           : `₹${m.margin.toLocaleString()}`}
-//                       </td>
+//               <div className="od-table-wrapper">
+//                 <table className="od-table">
+//                   <thead>
+//                     <tr>
+//                       <th>Project</th>
+//                       <th>Revenue</th>
+//                       <th>Cost</th>
+//                       <th>Margin</th>
 //                     </tr>
-//                   ))}
-//                 </tbody>
-//               </table>
+//                   </thead>
+//                   <tbody>
+//                     {dashboard.project_margins.map((m) => (
+//                       <tr key={m.project_id}>
+//                         <td>{m.project_name}</td>
+//                         <td>₹{m.revenue.toLocaleString()}</td>
+//                         <td>₹{m.cost.toLocaleString()}</td>
+//                         <td>₹{m.margin.toLocaleString()}</td>
+//                       </tr>
+//                     ))}
+//                   </tbody>
+//                 </table>
+//               </div>
 //             )}
 //           </section>
 //         </>
@@ -252,528 +496,239 @@
 //   );
 // }
 
-// import { useEffect, useState } from "react";
-// import { utilizationApi, OvertimeConfirmationError, type OrgUtilizationDashboard, type Project } from "./api";
-// import { AddProjectForm } from "./components/AddProjectForm";
-// import { AdminLogHoursForm } from "./components/AdminLogHoursForm";
-// import "./OrgDashboardPage.css";
-// import "../shared-theme.css";
+import { useEffect, useRef, useState } from "react";
+import type { FormEvent } from "react";
 
-// function isoDateNDaysAgo(n: number): string {
-//   const d = new Date();
-//   d.setDate(d.getDate() - n);
-//   return d.toISOString().slice(0, 10);
-// }
+import {
+  utilizationApi,
+  type OrgUtilizationDashboard,
+  type Project,
+  type TimeEntryEmployee,
+} from "./api";
 
-// export function OrgDashboardPage() {
-//   const [periodStart, setPeriodStart] = useState(() => isoDateNDaysAgo(7));
-//   const [periodEnd, setPeriodEnd] = useState(() => isoDateNDaysAgo(0));
-//   const [capacityHoursPerWeek, setCapacityHoursPerWeek] = useState("40");
-
-//   const [dashboard, setDashboard] = useState<OrgUtilizationDashboard | null>(null);
-//   const [projects, setProjects] = useState<Project[]>([]);
-//   const [loading, setLoading] = useState(true);
-//   const [loadError, setLoadError] = useState<string | null>(null);
-
-//   function load(start: string, end: string, capacity: number) {
-//     setLoading(true);
-//     setLoadError(null);
-//     Promise.all([
-//       utilizationApi.getOrgDashboard(start, end, capacity),
-//       utilizationApi.listProjects(),
-//     ])
-//       .then(([dash, projectList]) => {
-//         setDashboard(dash);
-//         setProjects(projectList);
-//       })
-//       .catch((err) => setLoadError(err instanceof Error ? err.message : "Couldn't load the org dashboard."))
-//       .finally(() => setLoading(false));
-//   }
-
-//   // Initial load with the default "last 7 days" window.
-//   useEffect(() => {
-//     load(periodStart, periodEnd, Number(capacityHoursPerWeek) || 40);
-//     // eslint-disable-next-line react-hooks/exhaustive-deps
-//   }, []);
-
-//   function handleApply(e: React.FormEvent) {
-//     e.preventDefault();
-//     if (!periodStart || !periodEnd) return;
-//     load(periodStart, periodEnd, Number(capacityHoursPerWeek) || 40);
-//   }
-
-//   async function handleAddProject(input: {
-//     name: string;
-//     projectType: string;
-//     billingRate: number | null;
-//     costRate: number | null;
-//   }) {
-//     await utilizationApi.createProject({
-//       project_id: `P-${Date.now()}`,
-//       name: input.name,
-//       project_type: input.projectType,
-//       billing_rate: input.billingRate,
-//       cost_rate: input.costRate,
-//     });
-//     load(periodStart, periodEnd, Number(capacityHoursPerWeek) || 40); // refresh so new project shows in margins table
-//   }
-
-//   async function handleAdminLogHours(input: {
-//     employeeId: string;
-//     projectId: string;
-//     date: string;
-//     hours: number;
-//     billable: boolean;
-//     notes?: string;
-//   }) {
-//     const baseEntry = {
-//       entry_id: `TE-${input.employeeId}-${input.projectId}-${input.date}-${Date.now()}`,
-//       employee_id: input.employeeId,
-//       project_id: input.projectId,
-//       date: input.date,
-//       billable_flag: input.billable,
-//       notes: input.notes || undefined,
-//     };
-
-//     try {
-//       await utilizationApi.createTimeEntry({ ...baseEntry, hours: input.hours });
-//     } catch (err) {
-//       if (err instanceof OvertimeConfirmationError) {
-//         const wantsOvertime = window.confirm(
-//           `${input.employeeId} has only ${err.remainingNormalHours}h of normal time remaining that day. ` +
-//             `Logging ${input.hours}h would include overtime. Continue and log the overtime hours too?`
-//         );
-//         if (wantsOvertime) {
-//           await utilizationApi.createTimeEntry({ ...baseEntry, hours: input.hours, confirm_overtime: true });
-//         } else if (err.remainingNormalHours > 0) {
-//           await utilizationApi.createTimeEntry({ ...baseEntry, hours: err.remainingNormalHours });
-//         } else {
-//           window.alert(`${input.employeeId} already has 8 normal hours logged that day. Nothing was logged.`);
-//           return;
-//         }
-//       } else {
-//         throw err;
-//       }
-//     }
-//     load(periodStart, periodEnd, Number(capacityHoursPerWeek) || 40); // refresh so the entry shows in utilization-by-employee
-//   }
-
-//   return (
-//     <div className="od-page">
-//       <h1 className="od-page__title">Org Utilization Dashboard</h1>
-//       <p className="od-page__subtitle">Admin/Leadership view</p>
-
-//       <AddProjectForm onSubmit={handleAddProject} />
-
-//       <AdminLogHoursForm projects={projects} onSubmit={handleAdminLogHours} />
-
-//       <form className="od-filters" onSubmit={handleApply}>
-//         <label>
-//           Start date
-//           <input type="date" value={periodStart} onChange={(e) => setPeriodStart(e.target.value)} />
-//         </label>
-//         <label>
-//           End date
-//           <input type="date" value={periodEnd} onChange={(e) => setPeriodEnd(e.target.value)} />
-//         </label>
-//         <label>
-//           Capacity hrs/week
-//           <input
-//             type="number"
-//             min="1"
-//             value={capacityHoursPerWeek}
-//             onChange={(e) => setCapacityHoursPerWeek(e.target.value)}
-//           />
-//         </label>
-//         <button type="submit" disabled={loading}>
-//           {loading ? "Loading…" : "Apply"}
-//         </button>
-//       </form>
-
-//       {loadError && <p className="od-page__error">Couldn't load this page: {loadError}</p>}
-
-//       {loading && !dashboard && <p className="od-page__loading">Loading org dashboard…</p>}
-
-//       {dashboard && (
-//         <>
-//           <p className="od-page__range">
-//             Showing {dashboard.period_start} to {dashboard.period_end}
-//           </p>
-
-//           <div className="od-page__flags">
-//             <div className="od-flag od-flag--warn">
-//               <div className="od-flag__count">{dashboard.bench_risk.length}</div>
-//               <div className="od-flag__label">Bench-risk (under-utilized)</div>
-//               <div className="od-flag__ids">{dashboard.bench_risk.join(", ") || "—"}</div>
-//             </div>
-//             <div className="od-flag od-flag--danger">
-//               <div className="od-flag__count">{dashboard.over_allocated.length}</div>
-//               <div className="od-flag__label">Over-allocated</div>
-//               <div className="od-flag__ids">{dashboard.over_allocated.join(", ") || "—"}</div>
-//             </div>
-//           </div>
-
-//           <section className="od-panel">
-//             <h2 className="od-panel__title">Utilization by employee</h2>
-//             {dashboard.utilization_by_employee.length === 0 ? (
-//               <p className="od-panel__empty">No time entries logged in this period yet.</p>
-//             ) : (
-//               <table className="od-table">
-//                 <thead>
-//                   <tr>
-//                     <th>Employee</th>
-//                     <th>Billable hours</th>
-//                     <th>Available hours</th>
-//                     <th>Utilization</th>
-//                     <th>Flag</th>
-//                   </tr>
-//                 </thead>
-//                 <tbody>
-//                   {dashboard.utilization_by_employee.map((u) => (
-//                     <tr key={u.employee_id}>
-//                       <td>{u.employee_id}</td>
-//                       <td>{u.billable_hours.toFixed(1)}h</td>
-//                       <td>{u.available_hours.toFixed(1)}h</td>
-//                       <td>{Math.round(u.utilization_pct * 100)}%</td>
-//                       <td>{u.flag ?? "on track"}</td>
-//                     </tr>
-//                   ))}
-//                 </tbody>
-//               </table>
-//             )}
-//           </section>
-
-//           <section className="od-panel">
-//             <h2 className="od-panel__title">Project margins</h2>
-//             {dashboard.project_margins.length === 0 ? (
-//               <p className="od-panel__empty">No projects yet.</p>
-//             ) : (
-//               <table className="od-table">
-//                 <thead>
-//                   <tr>
-//                     <th>Project</th>
-//                     <th>Revenue</th>
-//                     <th>Cost</th>
-//                     <th>Margin</th>
-//                   </tr>
-//                 </thead>
-//                 <tbody>
-//                   {dashboard.project_margins.map((m) => (
-//                     <tr key={m.project_id}>
-//                       <td>{m.project_name}</td>
-//                       <td>₹{m.revenue.toLocaleString()}</td>
-//                       <td>₹{m.cost.toLocaleString()}</td>
-//                       <td>₹{m.margin.toLocaleString()}</td>
-//                     </tr>
-//                   ))}
-//                 </tbody>
-//               </table>
-//             )}
-//           </section>
-//         </>
-//       )}
-//     </div>
-//   );
-// }
-
-// import { useEffect, useRef, useState } from "react";
-// import { utilizationApi, OvertimeConfirmationError, type OrgUtilizationDashboard, type Project } from "./api";
-// import { AddProjectForm } from "./components/AddProjectForm";
-// import { AdminLogHoursForm } from "./components/AdminLogHoursForm";
-// import { ConfirmDialog } from "../../shared/components/ConfirmDialog";
-// import "./OrgDashboardPage.css";
-// import "../shared-theme.css";
-
-// function isoDateNDaysAgo(n: number): string {
-//   const d = new Date();
-//   d.setDate(d.getDate() - n);
-//   return d.toISOString().slice(0, 10);
-// }
-
-// export function OrgDashboardPage() {
-//   const [periodStart, setPeriodStart] = useState(() => isoDateNDaysAgo(7));
-//   const [periodEnd, setPeriodEnd] = useState(() => isoDateNDaysAgo(0));
-//   const [capacityHoursPerWeek, setCapacityHoursPerWeek] = useState("40");
-
-//   const [dashboard, setDashboard] = useState<OrgUtilizationDashboard | null>(null);
-//   const [projects, setProjects] = useState<Project[]>([]);
-//   const [loading, setLoading] = useState(true);
-//   const [loadError, setLoadError] = useState<string | null>(null);
-
-//   const [dialog, setDialog] = useState<{ message: string; mode: "confirm" | "alert" } | null>(null);
-//   const dialogResolveRef = useRef<((value: boolean) => void) | null>(null);
-
-//   function askConfirm(message: string): Promise<boolean> {
-//     return new Promise((resolve) => {
-//       dialogResolveRef.current = resolve;
-//       setDialog({ message, mode: "confirm" });
-//     });
-//   }
-
-//   function handleDialogChoice(choice: boolean) {
-//     dialogResolveRef.current?.(choice);
-//     dialogResolveRef.current = null;
-//     setDialog(null);
-//   }
-
-//   function load(start: string, end: string, capacity: number) {
-//     setLoading(true);
-//     setLoadError(null);
-//     Promise.all([
-//       utilizationApi.getOrgDashboard(start, end, capacity),
-//       utilizationApi.listProjects(),
-//     ])
-//       .then(([dash, projectList]) => {
-//         setDashboard(dash);
-//         setProjects(projectList);
-//       })
-//       .catch((err) => setLoadError(err instanceof Error ? err.message : "Couldn't load the org dashboard."))
-//       .finally(() => setLoading(false));
-//   }
-
-//   // Initial load with the default "last 7 days" window.
-//   useEffect(() => {
-//     load(periodStart, periodEnd, Number(capacityHoursPerWeek) || 40);
-//     // eslint-disable-next-line react-hooks/exhaustive-deps
-//   }, []);
-
-//   function handleApply(e: React.FormEvent) {
-//     e.preventDefault();
-//     if (!periodStart || !periodEnd) return;
-//     load(periodStart, periodEnd, Number(capacityHoursPerWeek) || 40);
-//   }
-
-//   async function handleAddProject(input: {
-//     name: string;
-//     projectType: string;
-//     billingRate: number | null;
-//     costRate: number | null;
-//   }) {
-//     await utilizationApi.createProject({
-//       project_id: `P-${Date.now()}`,
-//       name: input.name,
-//       project_type: input.projectType,
-//       billing_rate: input.billingRate,
-//       cost_rate: input.costRate,
-//     });
-//     load(periodStart, periodEnd, Number(capacityHoursPerWeek) || 40); // refresh so new project shows in margins table
-//   }
-
-//   async function handleAdminLogHours(input: {
-//     employeeId: string;
-//     projectId: string;
-//     date: string;
-//     hours: number;
-//     billable: boolean;
-//     notes?: string;
-//   }) {
-//     const baseEntry = {
-//       entry_id: `TE-${input.employeeId}-${input.projectId}-${input.date}-${Date.now()}`,
-//       employee_id: input.employeeId,
-//       project_id: input.projectId,
-//       date: input.date,
-//       billable_flag: input.billable,
-//       notes: input.notes || undefined,
-//     };
-
-//     try {
-//       await utilizationApi.createTimeEntry({ ...baseEntry, hours: input.hours });
-//     } catch (err) {
-//       if (err instanceof OvertimeConfirmationError) {
-//         const wantsOvertime = await askConfirm(
-//           `${input.employeeId} has only ${err.remainingNormalHours}h of normal time remaining that day. ` +
-//             `Logging ${input.hours}h would include overtime. Continue and log the overtime hours too?`
-//         );
-//         if (wantsOvertime) {
-//           await utilizationApi.createTimeEntry({ ...baseEntry, hours: input.hours, confirm_overtime: true });
-//         } else {
-//           // Declined - nothing is saved. Admin can adjust the hours field
-//           // themselves and submit again.
-//           return;
-//         }
-//       } else {
-//         throw err;
-//       }
-//     }
-//     load(periodStart, periodEnd, Number(capacityHoursPerWeek) || 40); // refresh so the entry shows in utilization-by-employee
-//   }
-
-//   return (
-//     <div className="od-page">
-//       <h1 className="od-page__title">Org Utilization Dashboard</h1>
-//       <p className="od-page__subtitle">Admin/Leadership view</p>
-
-//       <AddProjectForm onSubmit={handleAddProject} />
-
-//       <AdminLogHoursForm projects={projects} onSubmit={handleAdminLogHours} />
-
-//       <form className="od-filters" onSubmit={handleApply}>
-//         <label>
-//           Start date
-//           <input type="date" value={periodStart} onChange={(e) => setPeriodStart(e.target.value)} />
-//         </label>
-//         <label>
-//           End date
-//           <input type="date" value={periodEnd} onChange={(e) => setPeriodEnd(e.target.value)} />
-//         </label>
-//         <label>
-//           Capacity hrs/week
-//           <input
-//             type="number"
-//             min="1"
-//             value={capacityHoursPerWeek}
-//             onChange={(e) => setCapacityHoursPerWeek(e.target.value)}
-//           />
-//         </label>
-//         <button type="submit" disabled={loading}>
-//           {loading ? "Loading…" : "Apply"}
-//         </button>
-//       </form>
-
-//       {loadError && <p className="od-page__error">Couldn't load this page: {loadError}</p>}
-
-//       {loading && !dashboard && <p className="od-page__loading">Loading org dashboard…</p>}
-
-//       {dashboard && (
-//         <>
-//           <p className="od-page__range">
-//             Showing {dashboard.period_start} to {dashboard.period_end}
-//           </p>
-
-//           <div className="od-page__flags">
-//             <div className="od-flag od-flag--warn">
-//               <div className="od-flag__count">{dashboard.bench_risk.length}</div>
-//               <div className="od-flag__label">Bench-risk (under-utilized)</div>
-//               <div className="od-flag__ids">{dashboard.bench_risk.join(", ") || "—"}</div>
-//             </div>
-//             <div className="od-flag od-flag--danger">
-//               <div className="od-flag__count">{dashboard.over_allocated.length}</div>
-//               <div className="od-flag__label">Over-allocated</div>
-//               <div className="od-flag__ids">{dashboard.over_allocated.join(", ") || "—"}</div>
-//             </div>
-//           </div>
-
-//           <section className="od-panel">
-//             <h2 className="od-panel__title">Utilization by employee</h2>
-//             {dashboard.utilization_by_employee.length === 0 ? (
-//               <p className="od-panel__empty">No time entries logged in this period yet.</p>
-//             ) : (
-//               <table className="od-table">
-//                 <thead>
-//                   <tr>
-//                     <th>Employee</th>
-//                     <th>Billable hours</th>
-//                     <th>Available hours</th>
-//                     <th>Utilization</th>
-//                     <th>Flag</th>
-//                   </tr>
-//                 </thead>
-//                 <tbody>
-//                   {dashboard.utilization_by_employee.map((u) => (
-//                     <tr key={u.employee_id}>
-//                       <td>{u.employee_id}</td>
-//                       <td>{u.billable_hours.toFixed(1)}h</td>
-//                       <td>{u.available_hours.toFixed(1)}h</td>
-//                       <td>{Math.round(u.utilization_pct * 100)}%</td>
-//                       <td>{u.flag ?? "on track"}</td>
-//                     </tr>
-//                   ))}
-//                 </tbody>
-//               </table>
-//             )}
-//           </section>
-
-//           <section className="od-panel">
-//             <h2 className="od-panel__title">Project margins</h2>
-//             {dashboard.project_margins.length === 0 ? (
-//               <p className="od-panel__empty">No projects yet.</p>
-//             ) : (
-//               <table className="od-table">
-//                 <thead>
-//                   <tr>
-//                     <th>Project</th>
-//                     <th>Revenue</th>
-//                     <th>Cost</th>
-//                     <th>Margin</th>
-//                   </tr>
-//                 </thead>
-//                 <tbody>
-//                   {dashboard.project_margins.map((m) => (
-//                     <tr key={m.project_id}>
-//                       <td>{m.project_name}</td>
-//                       <td>₹{m.revenue.toLocaleString()}</td>
-//                       <td>₹{m.cost.toLocaleString()}</td>
-//                       <td>₹{m.margin.toLocaleString()}</td>
-//                     </tr>
-//                   ))}
-//                 </tbody>
-//               </table>
-//             )}
-//           </section>
-//         </>
-//       )}
-//     </div>
-//   );
-// }
-
-
-import { useEffect, useState } from "react";
-import { utilizationApi, type OrgUtilizationDashboard, type Project } from "./api";
 import { AddProjectForm } from "./components/AddProjectForm";
 import { AdminLogHoursForm } from "./components/AdminLogHoursForm";
+
 import "./OrgDashboardPage.css";
 import "../shared-theme.css";
+
+const EMPLOYEE_ID_STORAGE_KEY = "uzvi_portal_employee_id";
+
+/* =========================================================
+   DATE HELPERS
+========================================================= */
+
+function toLocalISODate(d: Date): string {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
 
 function isoDateNDaysAgo(n: number): string {
   const d = new Date();
   d.setDate(d.getDate() - n);
-  return d.toISOString().slice(0, 10);
+
+  return toLocalISODate(d);
 }
 
+/* =========================================================
+   TABLE FILTER TYPE
+========================================================= */
+
+type EmployeeTableFilter =
+  | "all"
+  | "bench-risk"
+  | "over-allocated";
+
+/* =========================================================
+   ADMIN / LEADERSHIP ORG DASHBOARD
+========================================================= */
+
 export function OrgDashboardPage() {
-  const [periodStart, setPeriodStart] = useState(() => isoDateNDaysAgo(7));
-  const [periodEnd, setPeriodEnd] = useState(() => isoDateNDaysAgo(0));
-  const [capacityHoursPerWeek, setCapacityHoursPerWeek] = useState("40");
+  /* =========================================================
+     DATE / CAPACITY
+  ========================================================= */
 
-  const [dashboard, setDashboard] = useState<OrgUtilizationDashboard | null>(null);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [periodStart, setPeriodStart] = useState(
+    () => isoDateNDaysAgo(6)
+  );
 
-  // Simple non-blocking FYI banner - overtime always saves immediately now
-  // and just needs Admin/HR review afterward (see OT Approvals tab).
-  const [otNotice, setOtNotice] = useState<string | null>(null);
+  const [periodEnd, setPeriodEnd] = useState(
+    () => isoDateNDaysAgo(0)
+  );
 
-  function load(start: string, end: string, capacity: number) {
+  const [capacityHoursPerWeek, setCapacityHoursPerWeek] =
+    useState("40");
+
+  /* =========================================================
+     EMPLOYEES
+  ========================================================= */
+
+  const [currentEmployee, setCurrentEmployee] =
+    useState<TimeEntryEmployee | null>(null);
+
+  const [allEmployees, setAllEmployees] =
+    useState<TimeEntryEmployee[]>([]);
+
+  /* =========================================================
+     DASHBOARD DATA
+  ========================================================= */
+
+  const [dashboard, setDashboard] =
+    useState<OrgUtilizationDashboard | null>(null);
+
+  const [projects, setProjects] =
+    useState<Project[]>([]);
+
+  /* =========================================================
+     EMPLOYEE SEARCH
+  ========================================================= */
+
+  const [employeeSearch, setEmployeeSearch] =
+    useState("");
+
+  /* =========================================================
+     TABLE FILTER
+  ========================================================= */
+
+  const [employeeTableFilter, setEmployeeTableFilter] =
+    useState<EmployeeTableFilter>("all");
+
+  /* =========================================================
+     TABLE REF
+  ========================================================= */
+
+  const employeeTableRef =
+    useRef<HTMLDivElement>(null);
+
+  /* =========================================================
+     PAGE STATE
+  ========================================================= */
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [loadError, setLoadError] =
+    useState<string | null>(null);
+
+  const [otNotice, setOtNotice] =
+    useState<string | null>(null);
+
+  /* =========================================================
+     LOAD PAGE
+  ========================================================= */
+
+  async function load() {
     setLoading(true);
     setLoadError(null);
-    Promise.all([
-      utilizationApi.getOrgDashboard(start, end, capacity),
-      utilizationApi.listProjects(),
-    ])
-      .then(([dash, projectList]) => {
-        setDashboard(dash);
-        setProjects(projectList);
-      })
-      .catch((err) => setLoadError(err instanceof Error ? err.message : "Couldn't load the org dashboard."))
-      .finally(() => setLoading(false));
+
+    try {
+      const currentEmployeeId =
+        localStorage.getItem(
+          EMPLOYEE_ID_STORAGE_KEY
+        );
+
+      if (!currentEmployeeId) {
+        throw new Error(
+          "Logged-in employee ID was not found."
+        );
+      }
+
+      /*
+       * Backend decides which employees the current user
+       * is allowed to see.
+       *
+       * For Admin/Leadership this should return everyone.
+       */
+      const employeeList =
+        await utilizationApi.listTimeEntryEmployees();
+
+      const me = employeeList.find(
+        (employee) =>
+          employee.employee_id === currentEmployeeId
+      );
+
+      if (!me) {
+        throw new Error(
+          "Current employee was not found."
+        );
+      }
+
+      setCurrentEmployee(me);
+
+      const accessTier =
+        me.access_tier?.trim().toLowerCase();
+
+      if (accessTier !== "admin/leadership") {
+        throw new Error(
+          "This dashboard is limited to Admin/Leadership accounts."
+        );
+      }
+
+      const [dash, projectList] =
+        await Promise.all([
+          utilizationApi.getOrgDashboard(
+            periodStart,
+            periodEnd,
+            Number(capacityHoursPerWeek) || 40
+          ),
+
+          utilizationApi.listProjects(),
+        ]);
+
+      setDashboard(dash);
+      setProjects(projectList);
+      setAllEmployees(employeeList);
+
+    } catch (err) {
+      setLoadError(
+        err instanceof Error
+          ? err.message
+          : "Couldn't load the dashboard."
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
+  /* =========================================================
+     INITIAL LOAD
+  ========================================================= */
+
   useEffect(() => {
-    load(periodStart, periodEnd, Number(capacityHoursPerWeek) || 40);
+    load();
+
+    // Initial load only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function handleApply(e: React.FormEvent) {
+  /* =========================================================
+     APPLY FILTER
+  ========================================================= */
+
+  function handleApply(e: FormEvent) {
     e.preventDefault();
-    if (!periodStart || !periodEnd) return;
-    load(periodStart, periodEnd, Number(capacityHoursPerWeek) || 40);
+
+    /*
+     * Whenever date/capacity changes,
+     * return table to ALL employees.
+     */
+    setEmployeeTableFilter("all");
+    setEmployeeSearch("");
+
+    load();
   }
+
+  /* =========================================================
+     ADD PROJECT
+  ========================================================= */
 
   async function handleAddProject(input: {
     name: string;
     projectType: string;
-    billingRate: number ;
+    billingRate: number;
     costRate: number;
   }) {
     await utilizationApi.createProject({
@@ -783,8 +738,13 @@ export function OrgDashboardPage() {
       billing_rate: input.billingRate,
       cost_rate: input.costRate,
     });
-    load(periodStart, periodEnd, Number(capacityHoursPerWeek) || 40);
+
+    await load();
   }
+
+  /* =========================================================
+     ADMIN LOG HOURS
+  ========================================================= */
 
   async function handleAdminLogHours(input: {
     employeeId: string;
@@ -792,143 +752,744 @@ export function OrgDashboardPage() {
     date: string;
     hours: number;
     billable: boolean;
-    notes?: string;
   }) {
     setOtNotice(null);
-    const saved = await utilizationApi.createTimeEntry({
-      entry_id: `TE-${input.employeeId}-${input.projectId}-${input.date}-${Date.now()}`,
-      employee_id: input.employeeId,
-      project_id: input.projectId,
-      date: input.date,
-      hours: input.hours,
-      billable_flag: input.billable,
-      notes: input.notes || undefined,
-    });
-    if (saved.ot_status === "Pending") {
-      setOtNotice(
-        `This includes ${saved.overtime_hours}h of overtime for ${input.employeeId}, sent for Admin/HR approval ` +
-          `(see the OT Approvals tab). It won't count toward utilization until approved.`
+
+    try {
+      const saved =
+        await utilizationApi.createTimeEntry({
+          entry_id:
+            `TE-${input.employeeId}-${input.projectId}-${input.date}-${Date.now()}`,
+          employee_id: input.employeeId,
+          project_id: input.projectId,
+          date: input.date,
+          hours: input.hours,
+          billable_flag: input.billable,
+        });
+
+      if (saved.ot_status === "Pending") {
+        setOtNotice(
+          `This includes ${saved.overtime_hours}h of overtime for ${input.employeeId}, sent for approval.`
+        );
+      }
+
+      await load();
+
+    } catch (err) {
+      setLoadError(
+        err instanceof Error
+          ? err.message
+          : "Couldn't log hours for this employee."
       );
     }
-    load(periodStart, periodEnd, Number(capacityHoursPerWeek) || 40);
   }
+
+  /* =========================================================
+     EMPLOYEE NAME LOOKUP
+  ========================================================= */
+
+  function employeeName(
+    employeeId: string
+  ): string {
+    const employee = allEmployees.find(
+      (item) =>
+        item.employee_id === employeeId
+    );
+
+    return employee?.name ?? employeeId;
+  }
+
+  /* =========================================================
+     FILTER EMPLOYEE TABLE
+  ========================================================= */
+
+  function showEmployeeCategory(
+    filter: EmployeeTableFilter
+  ) {
+    setEmployeeTableFilter(filter);
+
+    /*
+     * Clear existing search when changing category.
+     * This makes sure the user sees the complete category.
+     */
+    setEmployeeSearch("");
+
+    /*
+     * Scroll directly to employee table.
+     */
+    setTimeout(() => {
+      employeeTableRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 50);
+  }
+
+  /* =========================================================
+     SEARCH + CATEGORY FILTER
+  ========================================================= */
+
+  const normalizedSearch =
+    employeeSearch.trim().toLowerCase();
+
+  const filteredUtilization =
+    dashboard?.utilization_by_employee.filter(
+      (summary) => {
+
+        /* -----------------------------------------------
+           CATEGORY FILTER
+        ----------------------------------------------- */
+
+        if (
+          employeeTableFilter ===
+          "bench-risk"
+        ) {
+          if (
+            !dashboard.bench_risk.includes(
+              summary.employee_id
+            )
+          ) {
+            return false;
+          }
+        }
+
+        if (
+          employeeTableFilter ===
+          "over-allocated"
+        ) {
+          if (
+            !dashboard.over_allocated.includes(
+              summary.employee_id
+            )
+          ) {
+            return false;
+          }
+        }
+
+        /* -----------------------------------------------
+           SEARCH FILTER
+        ----------------------------------------------- */
+
+        if (!normalizedSearch) {
+          return true;
+        }
+
+        const employee =
+          allEmployees.find(
+            (item) =>
+              item.employee_id ===
+              summary.employee_id
+          );
+
+        const id =
+          employee?.employee_id ??
+          summary.employee_id;
+
+        const name =
+          employee?.name ?? "";
+
+        return (
+          id
+            .toLowerCase()
+            .includes(normalizedSearch) ||
+          name
+            .toLowerCase()
+            .includes(normalizedSearch)
+        );
+      }
+    ) ?? [];
+
+  /* =========================================================
+     ACTIVE FILTER LABEL
+  ========================================================= */
+
+  function getTableFilterLabel(): string {
+    if (
+      employeeTableFilter ===
+      "bench-risk"
+    ) {
+      return "Bench-risk employees";
+    }
+
+    if (
+      employeeTableFilter ===
+      "over-allocated"
+    ) {
+      return "Over-allocated employees";
+    }
+
+    return "All employees";
+  }
+
+  /* =========================================================
+     LOADING
+  ========================================================= */
+
+  if (loading && !currentEmployee) {
+    return (
+      <div className="od-page">
+        <p className="od-page__loading">
+          Loading dashboard...
+        </p>
+      </div>
+    );
+  }
+
+  /* =========================================================
+     ACCESS DENIED
+  ========================================================= */
+
+  const accessTier =
+    currentEmployee?.access_tier
+      ?.trim()
+      .toLowerCase();
+
+  const isAdmin =
+    accessTier === "admin/leadership";
+
+  if (!isAdmin) {
+    return (
+      <p className="od-page__error">
+        {loadError ??
+          "This dashboard is not available for your account."}
+      </p>
+    );
+  }
+
+  /* =========================================================
+     PAGE
+  ========================================================= */
 
   return (
     <div className="od-page">
-      <h1 className="od-page__title">Org Utilization Dashboard</h1>
-      <p className="od-page__subtitle">Admin/Leadership view</p>
 
-      <AddProjectForm onSubmit={handleAddProject} />
+      {/* =====================================================
+          PAGE TITLE
+      ===================================================== */}
 
-      <AdminLogHoursForm projects={projects} onSubmit={handleAdminLogHours} />
+      <h1 className="od-page__title">
+        Org Utilization Dashboard
+      </h1>
 
-      {otNotice && <p className="od-page__ot-notice">{otNotice}</p>}
+      <p className="od-page__subtitle">
+        Admin/Leadership view
+      </p>
 
-      <form className="od-filters" onSubmit={handleApply}>
+      {/* =====================================================
+          ADD PROJECT
+      ===================================================== */}
+
+      <AddProjectForm
+        onSubmit={handleAddProject}
+      />
+
+      {/* =====================================================
+          ADMIN LOG HOURS
+      ===================================================== */}
+
+      <AdminLogHoursForm
+        employees={allEmployees}
+        projects={projects.map(
+          (project) => ({
+            project_id:
+              project.project_id,
+            project_name:
+              project.name,
+          })
+        )}
+        onSubmit={
+          handleAdminLogHours
+        }
+      />
+
+      {/* =====================================================
+          OT NOTICE
+      ===================================================== */}
+
+      {otNotice && (
+        <p className="od-page__ot-notice">
+          {otNotice}
+        </p>
+      )}
+
+      {/* =====================================================
+          DATE / CAPACITY FILTER
+      ===================================================== */}
+
+      <form
+        className="od-filters"
+        onSubmit={handleApply}
+      >
+
         <label>
           Start date
-          <input type="date" value={periodStart} onChange={(e) => setPeriodStart(e.target.value)} />
+
+          <input
+            type="date"
+            value={periodStart}
+            onChange={(e) =>
+              setPeriodStart(
+                e.target.value
+              )
+            }
+          />
         </label>
+
         <label>
           End date
-          <input type="date" value={periodEnd} onChange={(e) => setPeriodEnd(e.target.value)} />
+
+          <input
+            type="date"
+            value={periodEnd}
+            onChange={(e) =>
+              setPeriodEnd(
+                e.target.value
+              )
+            }
+          />
         </label>
+
         <label>
           Capacity hrs/week
+
           <input
             type="number"
             min="1"
-            value={capacityHoursPerWeek}
-            onChange={(e) => setCapacityHoursPerWeek(e.target.value)}
+            value={
+              capacityHoursPerWeek
+            }
+            onChange={(e) =>
+              setCapacityHoursPerWeek(
+                e.target.value
+              )
+            }
           />
         </label>
-        <button type="submit" disabled={loading}>
-          {loading ? "Loading…" : "Apply"}
+
+        <button
+          type="submit"
+          disabled={loading}
+        >
+          {loading
+            ? "Loading..."
+            : "Apply"}
         </button>
+
       </form>
 
-      {loadError && <p className="od-page__error">Couldn't load this page: {loadError}</p>}
+      {/* =====================================================
+          ERROR
+      ===================================================== */}
 
-      {loading && !dashboard && <p className="od-page__loading">Loading org dashboard…</p>}
+      {loadError && (
+        <p className="od-page__error">
+          Couldn't load this page:{" "}
+          {loadError}
+        </p>
+      )}
+
+      {/* =====================================================
+          DASHBOARD
+      ===================================================== */}
 
       {dashboard && (
         <>
+
+          {/* =================================================
+              DATE RANGE
+          ================================================= */}
+
           <p className="od-page__range">
-            Showing {dashboard.period_start} to {dashboard.period_end}
+            Showing{" "}
+            {dashboard.period_start}{" "}
+            to{" "}
+            {dashboard.period_end}
           </p>
 
+          {/* =================================================
+              FLAG CARDS
+          ================================================= */}
+
           <div className="od-page__flags">
+
+            {/* -----------------------------------------------
+                BENCH RISK
+            ----------------------------------------------- */}
+
             <div className="od-flag od-flag--warn">
-              <div className="od-flag__count">{dashboard.bench_risk.length}</div>
-              <div className="od-flag__label">Bench-risk (under-utilized)</div>
-              <div className="od-flag__ids">{dashboard.bench_risk.join(", ") || "—"}</div>
+
+              <div className="od-flag__count">
+                {
+                  dashboard
+                    .bench_risk
+                    .length
+                }
+              </div>
+
+              <div className="od-flag__label">
+                Bench-risk
+                (under-utilized)
+              </div>
+
+              <button
+                type="button"
+                className="od-flag__link"
+                onClick={() =>
+                  showEmployeeCategory(
+                    "bench-risk"
+                  )
+                }
+              >
+                View in table →
+              </button>
+
             </div>
+
+            {/* -----------------------------------------------
+                OVER ALLOCATED
+            ----------------------------------------------- */}
+
             <div className="od-flag od-flag--danger">
-              <div className="od-flag__count">{dashboard.over_allocated.length}</div>
-              <div className="od-flag__label">Over-allocated</div>
-              <div className="od-flag__ids">{dashboard.over_allocated.join(", ") || "—"}</div>
+
+              <div className="od-flag__count">
+                {
+                  dashboard
+                    .over_allocated
+                    .length
+                }
+              </div>
+
+              <div className="od-flag__label">
+                Over-allocated
+              </div>
+
+              <button
+                type="button"
+                className="od-flag__link"
+                onClick={() =>
+                  showEmployeeCategory(
+                    "over-allocated"
+                  )
+                }
+              >
+                View in table →
+              </button>
+
             </div>
+
           </div>
 
-          <section className="od-panel">
-            <h2 className="od-panel__title">Utilization by employee</h2>
-            {dashboard.utilization_by_employee.length === 0 ? (
-              <p className="od-panel__empty">No time entries logged in this period yet.</p>
+          {/* =================================================
+              UTILIZATION BY EMPLOYEE
+          ================================================= */}
+
+          <section
+            className="od-panel"
+            ref={employeeTableRef}
+          >
+
+            <div className="od-panel__header">
+
+              <div>
+
+                <h2 className="od-panel__title">
+                  Utilization by employee
+                </h2>
+
+                {employeeTableFilter !==
+                  "all" && (
+                  <p className="od-table-filter-label">
+                    Showing:{" "}
+                    <strong>
+                      {getTableFilterLabel()}
+                    </strong>
+                  </p>
+                )}
+
+              </div>
+
+              {/* =================================================
+                  SHOW ALL EMPLOYEES BUTTON
+              ================================================= */}
+
+              {employeeTableFilter !==
+                "all" && (
+                <button
+                  type="button"
+                  className="od-clear-filter"
+                  onClick={() => {
+                    setEmployeeTableFilter(
+                      "all"
+                    );
+
+                    setEmployeeSearch("");
+
+                    /*
+                     * Keep the user at the table.
+                     */
+                    setTimeout(() => {
+                      employeeTableRef.current?.scrollIntoView({
+                        behavior: "smooth",
+                        block: "start",
+                      });
+                    }, 50);
+                  }}
+                >
+                  Show all employees
+                </button>
+              )}
+
+            </div>
+
+            {/* =================================================
+                SEARCH
+            ================================================= */}
+
+            <div className="od-employee-search">
+
+              <input
+                type="text"
+                value={
+                  employeeSearch
+                }
+                onChange={(e) =>
+                  setEmployeeSearch(
+                    e.target.value
+                  )
+                }
+                placeholder="Search by employee name or ID..."
+                aria-label="Search employees by name or ID"
+                autoComplete="off"
+              />
+
+            </div>
+
+            {/* =================================================
+                TABLE
+            ================================================= */}
+
+            {filteredUtilization.length ===
+            0 ? (
+
+              <p className="od-panel__empty">
+
+                {employeeSearch.trim()
+                  ? "No employees found matching your search."
+                  : employeeTableFilter !==
+                    "all"
+                  ? `No ${getTableFilterLabel().toLowerCase()} found.`
+                  : "No time entries logged in this period yet."}
+
+              </p>
+
             ) : (
-              <table className="od-table">
-                <thead>
-                  <tr>
-                    <th>Employee</th>
-                    <th>Billable hours</th>
-                    <th>Available hours</th>
-                    <th>Utilization</th>
-                    <th>Flag</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dashboard.utilization_by_employee.map((u) => (
-                    <tr key={u.employee_id}>
-                      <td>{u.employee_id}</td>
-                      <td>{u.billable_hours.toFixed(1)}h</td>
-                      <td>{u.available_hours.toFixed(1)}h</td>
-                      <td>{Math.round(u.utilization_pct * 100)}%</td>
-                      <td>{u.flag ?? "on track"}</td>
+
+              /*
+               * IMPORTANT:
+               * This wrapper is the scrollable area.
+               * It prevents 300+ employees from making
+               * the whole page extremely tall.
+               */
+              <div className="od-table-wrapper">
+
+                <table className="od-table">
+
+                  <thead>
+
+                    <tr>
+
+                      <th>
+                        ID
+                      </th>
+
+                      <th>
+                        Name
+                      </th>
+
+                      <th>
+                        Billable hours
+                      </th>
+
+                      <th>
+                        Available hours
+                      </th>
+
+                      <th>
+                        Utilization
+                      </th>
+
+                      <th>
+                        Flag
+                      </th>
+
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+
+                  </thead>
+
+                  <tbody>
+
+                    {filteredUtilization.map(
+                      (u) => (
+
+                        <tr
+                          key={
+                            u.employee_id
+                          }
+                        >
+
+                          <td>
+                            {
+                              u.employee_id
+                            }
+                          </td>
+
+                          <td>
+                            {employeeName(
+                              u.employee_id
+                            )}
+                          </td>
+
+                          <td>
+                            {u.billable_hours.toFixed(
+                              1
+                            )}
+                            h
+                          </td>
+
+                          <td>
+                            {u.available_hours.toFixed(
+                              1
+                            )}
+                            h
+                          </td>
+
+                          <td>
+                            {Math.round(
+                              u.utilization_pct *
+                                100
+                            )}
+                            %
+                          </td>
+
+                          <td>
+                            {u.flag ??
+                              "on track"}
+                          </td>
+
+                        </tr>
+
+                      )
+                    )}
+
+                  </tbody>
+
+                </table>
+
+              </div>
+
             )}
+
           </section>
 
+          {/* =================================================
+              PROJECT MARGINS
+          ================================================= */}
+
           <section className="od-panel">
-            <h2 className="od-panel__title">Project margins</h2>
-            {dashboard.project_margins.length === 0 ? (
-              <p className="od-panel__empty">No projects yet.</p>
+
+            <h2 className="od-panel__title">
+              Project margins
+            </h2>
+
+            {dashboard
+              .project_margins
+              .length === 0 ? (
+
+              <p className="od-panel__empty">
+                No projects yet.
+              </p>
+
             ) : (
-              <table className="od-table">
-                <thead>
-                  <tr>
-                    <th>Project</th>
-                    <th>Revenue</th>
-                    <th>Cost</th>
-                    <th>Margin</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {dashboard.project_margins.map((m) => (
-                    <tr key={m.project_id}>
-                      <td>{m.project_name}</td>
-                      <td>₹{m.revenue.toLocaleString()}</td>
-                      <td>₹{m.cost.toLocaleString()}</td>
-                      <td>₹{m.margin.toLocaleString()}</td>
+
+              <div className="od-table-wrapper">
+
+                <table className="od-table">
+
+                  <thead>
+
+                    <tr>
+
+                      <th>
+                        Project
+                      </th>
+
+                      <th>
+                        Revenue
+                      </th>
+
+                      <th>
+                        Cost
+                      </th>
+
+                      <th>
+                        Margin
+                      </th>
+
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+
+                  </thead>
+
+                  <tbody>
+
+                    {dashboard
+                      .project_margins
+                      .map((m) => (
+
+                        <tr
+                          key={
+                            m.project_id
+                          }
+                        >
+
+                          <td>
+                            {
+                              m.project_name
+                            }
+                          </td>
+
+                          <td>
+                            ₹
+                            {m.revenue.toLocaleString()}
+                          </td>
+
+                          <td>
+                            ₹
+                            {m.cost.toLocaleString()}
+                          </td>
+
+                          <td>
+                            ₹
+                            {m.margin.toLocaleString()}
+                          </td>
+
+                        </tr>
+
+                      ))}
+
+                  </tbody>
+
+                </table>
+
+              </div>
+
             )}
+
           </section>
+
         </>
+
       )}
+
     </div>
   );
 }

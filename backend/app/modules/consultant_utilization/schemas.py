@@ -178,6 +178,15 @@ class TimeEntryRead(TimeEntryCreate):
 
     model_config = {"from_attributes": True}
 
+class EmployeeRead(BaseModel):
+    employee_id: str
+    name: str
+    designation: Optional[str] = None
+    manager_id: Optional[str] = None
+    access_tier: str
+
+    model_config = {"from_attributes": True}
+
 
 class UtilizationSummary(BaseModel):
     employee_id: str

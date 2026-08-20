@@ -8,7 +8,7 @@ class OnboardingTemplateBase(BaseModel):
 
 
 class OnboardingTemplateCreate(OnboardingTemplateBase):
-    template_id: str = Field(..., description="Primary unique template identifier")
+    template_id: Optional[str] = Field(None, description="Ignored - the server always auto-generates a TPL### ID")
     requester_id: str = Field(
         ..., description="Employee ID of whoever is creating this template"
     )
@@ -36,7 +36,7 @@ class OnboardingTaskBase(BaseModel):
 
 
 class OnboardingTaskCreate(OnboardingTaskBase):
-    task_id: str = Field(..., description="Primary unique task identifier")
+    task_id: Optional[str] = Field(None, description="Ignored - the server always auto-generates a TSK### ID")
     requester_id: str = Field(
         ..., description="Employee ID of whoever is adding this task"
     )
@@ -54,7 +54,7 @@ class OnboardingInstanceBase(BaseModel):
 
 
 class OnboardingInstanceCreate(OnboardingInstanceBase):
-    instance_id: str = Field(..., description="Primary unique instance identifier")
+    instance_id: Optional[str] = Field(None, description="Ignored - the server always auto-generates an OI### ID")
     requester_id: str = Field(..., description="Employee ID of whoever is starting this instance")
 
 

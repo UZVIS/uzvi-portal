@@ -17,7 +17,7 @@ interface InstanceTrackerProps {
   canManage: boolean;
   currentEmployeeId: string;
   onEmployeeChange: (employeeId: string) => void;
-  onStart: (instanceId: string, employeeId: string, templateId: string) => Promise<void>;
+  onStart: (employeeId: string, templateId: string) => Promise<void>;
   onCompleteTask: (taskId: string) => Promise<void>;
   onReset: () => void;
 }
@@ -39,7 +39,6 @@ export function InstanceTracker({
   onCompleteTask,
   onReset,
 }: InstanceTrackerProps) {
-  const [instanceId, setInstanceId] = useState("");
   const [templateId, setTemplateId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -47,13 +46,12 @@ export function InstanceTracker({
 
   async function handleStart(e: FormEvent) {
     e.preventDefault();
-    if (!instanceId.trim() || !currentEmployeeId || !templateId) return;
+    if (!currentEmployeeId || !templateId) return;
     setIsSubmitting(true);
     setError(null);
     setSuccess(false);
     try {
-      await onStart(instanceId.trim(), currentEmployeeId, templateId);
-      setInstanceId("");
+      await onStart(currentEmployeeId, templateId);
       setTemplateId("");
       setSuccess(true);
     } catch (err) {
@@ -71,7 +69,7 @@ export function InstanceTracker({
       {error && <Toast message={error} kind="error" onDismiss={() => setError(null)} />}
       {success && <Toast message="Onboarding instance created successfully." kind="success" onDismiss={() => setSuccess(false)} />}
 
-      {instance ? (
+    {instance ? (
         <div className="instance-tracker__viewing">
           <div className="instance-tracker__viewing-header">
             <div>
@@ -111,15 +109,8 @@ export function InstanceTracker({
               ))}
             </select>
           </label>
-
           {currentEmployeeId && (
             <form className="instance-tracker__start" onSubmit={handleStart}>
-              <input
-                className="field__input"
-                value={instanceId}
-                onChange={(e) => setInstanceId(e.target.value)}
-                placeholder="Instance ID (OI2)"
-              />
               <select
                 className="field__input"
                 value={templateId}
@@ -144,11 +135,10 @@ export function InstanceTracker({
           an existing instance" below to view or complete tasks on one already started.
         </p>
       )}
-
+  
       {instance && progress && (
         <div className="instance-tracker__progress">
           <ProgressBar pct={progress.completion_pct} />
-
           <ul className="instance-tracker__tasks">
             {tasks
               .slice()
