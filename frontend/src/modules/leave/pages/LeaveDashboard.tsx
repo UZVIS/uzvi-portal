@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { apiPost, apiGet } from "../../../api/client";
 import { useAuth } from "../../../shared/auth/AuthContext";
-import { CalendarPlus, Paperclip, Lock, Check, X, Clock, AlertCircle } from "lucide-react";
+import { CalendarPlus, Paperclip, Lock, Check, X, Clock, AlertCircle, CheckCircle } from "lucide-react";
 
 export default function LeaveDashboard() {
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -15,6 +15,14 @@ export default function LeaveDashboard() {
     const [endDate, setEndDate] = useState("");
     const [attachment, setAttachment] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // --- NEW: MODAL STATE FOR SUCCESS/ERROR POPUPS ---
+    const [modalState, setModalState] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        isError: false
+    });
 
     const { employee } = useAuth();
     const employeeId = employee?.employee_id;
@@ -69,7 +77,7 @@ export default function LeaveDashboard() {
     }, [employeeId]);
 
     // --- PURE BACKEND DRIVEN LOGIC ---
-    // బ్యాకెండ్ ఏ లీవ్స్ కి బ్యాలెన్స్ ఇస్తే అవే ఫ్రంటెండ్ లో కనిపిస్తాయి. జెండర్ తో సంబంధం లేదు!
+    // Only display leave types for which the backend has provided a balance. Independent of gender.
     const eligibleLeaveTypes = leaveTypes.filter(type =>
         leaveBalances.some(balance => balance.leave_type_id === type.leave_type_id)
     );
@@ -173,7 +181,41 @@ export default function LeaveDashboard() {
         if (new Date(startDate) < today) return;
         if (new Date(startDate) > new Date(endDate)) return;
 
-        if (isDocumentMandatory && !attachment) return;
+        // --- FIX: FRONTEND OVERLAPPING DATES CHECK ---
+        const isOverlapping = leaveHistory.some((leave) => {
+            // Ignore rejected leaves in the overlap check
+            if (leave.status?.toUpperCase() === "REJECTED") return false;
+
+            const existingStart = new Date(leave.start_date).setHours(0, 0, 0, 0);
+            const existingEnd = new Date(leave.end_date).setHours(23, 59, 59, 999);
+            const newStart = new Date(startDate).setHours(0, 0, 0, 0);
+            const newEnd = new Date(endDate).setHours(23, 59, 59, 999);
+
+            // Logic to check if the new dates overlap with any existing active leave
+            return (newStart <= existingEnd && newEnd >= existingStart);
+        });
+
+        if (isOverlapping) {
+            setModalState({
+                isOpen: true,
+                title: "Duplicate Leave Request",
+                message: "You already have an active leave request applied for these dates. Please choose different dates.",
+                isError: true
+            });
+            return; // Stop execution here, no API call is made
+        }
+        // ---------------------------------------------
+
+        if (isDocumentMandatory && !attachment) {
+            setModalState({
+                isOpen: true,
+                title: "Document Required",
+                message: "Please attach a supporting document to proceed with this leave application.",
+                isError: true
+            });
+            return;
+        }
+
         if (!employeeId) return;
 
         setIsSubmitting(true);
@@ -206,8 +248,30 @@ export default function LeaveDashboard() {
             setLeaveHistory(Array.isArray(updatedMyApps) ? updatedMyApps : []);
 
             resetForm();
+
+            // --- SUCCESS MODAL TRIGGER ---
+            setModalState({
+                isOpen: true,
+                title: "Leave Applied",
+                message: "Your leave request has been submitted successfully and is pending review.",
+                isError: false
+            });
+
         } catch (error: any) {
             console.error("Error submitting leave:", error);
+
+            // Extra safety to catch and display backend error messages clearly
+            const errorMsg = error?.response?.data?.detail
+                || error?.message
+                || (typeof error === 'string' ? error : "An error occurred while submitting your leave request. Please try again.");
+
+            // --- ERROR MODAL TRIGGER ---
+            setModalState({
+                isOpen: true,
+                title: "Submission Failed",
+                message: errorMsg,
+                isError: true
+            });
         } finally {
             setIsSubmitting(false);
         }
@@ -500,6 +564,31 @@ export default function LeaveDashboard() {
                                 className="px-4 py-2 bg-gray-900 text-white text-xs font-semibold rounded-xl hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                             >
                                 {isSubmitting ? 'Submitting...' : 'Submit request'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* --- NEW: MODAL POPUP FOR SUCCESS & ERRORS --- */}
+            {modalState.isOpen && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-[2px] px-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className={`p-5 flex items-start space-x-4 border-b ${modalState.isError ? 'bg-red-50 border-red-100' : 'bg-emerald-50 border-emerald-100'}`}>
+                            <div className={`p-2 rounded-full ${modalState.isError ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                                {modalState.isError ? <AlertCircle size={24} /> : <CheckCircle size={24} />}
+                            </div>
+                            <div>
+                                <h3 className={`text-lg font-bold ${modalState.isError ? 'text-red-900' : 'text-emerald-900'}`}>{modalState.title}</h3>
+                                <p className={`text-sm mt-1 ${modalState.isError ? 'text-red-800' : 'text-emerald-800'}`}>{modalState.message}</p>
+                            </div>
+                        </div>
+                        <div className="px-6 py-4 bg-gray-50 flex justify-end border-t border-gray-100">
+                            <button
+                                onClick={() => setModalState({ isOpen: false, title: "", message: "", isError: false })}
+                                className={`px-5 py-2 text-white rounded-xl text-sm font-bold shadow-sm transition ${modalState.isError ? 'bg-red-600 hover:bg-red-700' : 'bg-slate-900 hover:bg-black'}`}
+                            >
+                                OK
                             </button>
                         </div>
                     </div>

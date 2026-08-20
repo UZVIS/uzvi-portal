@@ -32,7 +32,15 @@ export default function ManagerDashboard() {
             setLeaveTypes(Array.isArray(typesData) ? typesData : []);
 
             const appsData = await apiGet(`/v1/leave/applications?employee_id=${managerId}&role=Manager`);
-            setRequests(Array.isArray(appsData) ? appsData : []);
+            const allApps = Array.isArray(appsData) ? appsData : [];
+
+            // --- FRONTEND FILTER ADDED HERE ---
+            // అడ్మిన్ అప్రూవ్ చేసినవి కాకుండా, కేవలం PENDING లో ఉన్నవి మాత్రమే మేనేజర్ కి చూపిస్తాం
+            const pendingOnly = allApps.filter(app =>
+                !app.status || app.status.toUpperCase() === "PENDING"
+            );
+
+            setRequests(pendingOnly);
 
             try {
                 const holidaysData = await apiGet('/v1/calendar/holidays');
@@ -276,5 +284,4 @@ export default function ManagerDashboard() {
             )}
         </div>
     );
-
 }

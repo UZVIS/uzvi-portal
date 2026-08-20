@@ -116,6 +116,18 @@ def create_leave_application(db: Session, application_data: LeaveApplicationCrea
     employee = crud.get_employee_by_id(db=db, employee_id=application_data.employee_id)
     if not employee:
         raise HTTPException(status_code=404, detail="Employee not found")
+    overlapping_leave = db.query(LeaveApplication).filter(
+        LeaveApplication.employee_id == application_data.employee_id,
+        LeaveApplication.status.in_(["PENDING", "PENDING_HR", "APPROVED"]),
+        LeaveApplication.start_date <= application_data.end_date,
+        LeaveApplication.end_date >= application_data.start_date
+    ).first()
+
+    if overlapping_leave:
+        raise HTTPException(
+            status_code=400, 
+            detail="You already have an active leave request applied for these dates."
+        )
 
     new_app = LeaveApplication(
         employee_id=application_data.employee_id,

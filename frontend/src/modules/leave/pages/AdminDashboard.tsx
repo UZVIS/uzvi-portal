@@ -1,20 +1,24 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../../shared/auth/AuthContext";
 import { apiGet } from "../../../api/client";
-import { Lightbulb, Activity, Settings2, Wallet } from "lucide-react";
+import { Activity, CheckCircle, AlertCircle, X, Check } from "lucide-react";
 
 export default function AdminDashboard() {
-    const [activeTab, setActiveTab] = useState<'tracker' | 'config' | 'balances'>('tracker');
-
     const [allLeaves, setAllLeaves] = useState<any[]>([]);
     const [leaveTypes, setLeaveTypes] = useState<any[]>([]);
     const [holidays, setHolidays] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
+    const [modalState, setModalState] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        isError: false
+    });
+
     const { employee } = useAuth();
     const adminId = employee?.employee_id;
 
-    // Timezone-safe Working Days Calculation (Skipping Sat, Sun & Holidays)
     const getDurationNumber = (start: string, end: string) => {
         if (!start || !end) return 0;
 
@@ -63,7 +67,17 @@ export default function AdminDashboard() {
             setLeaveTypes(validTypes);
 
             const appsData = await apiGet('/v1/leave/applications?role=Admin');
-            setAllLeaves(Array.isArray(appsData) ? appsData : []);
+            const allApps = Array.isArray(appsData) ? appsData : [];
+
+            allApps.sort((a, b) => {
+                const aPending = a.status === 'PENDING' || a.status === 'PENDING_HR';
+                const bPending = b.status === 'PENDING' || b.status === 'PENDING_HR';
+                if (aPending && !bPending) return -1;
+                if (!aPending && bPending) return 1;
+                return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+            });
+
+            setAllLeaves(allApps);
 
             try {
                 const holidaysData = await apiGet('/v1/calendar/holidays');
@@ -104,7 +118,6 @@ export default function AdminDashboard() {
                 approver_id: adminId
             };
 
-            // Using the base URL configured in your API client instead of hardcoding localhost
             const response = await fetch(`http://127.0.0.1:8000/api/v1/leave/applications/${applicationId}/status`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
@@ -113,52 +126,59 @@ export default function AdminDashboard() {
 
             if (response.ok) {
                 fetchAdminData();
+                setModalState({
+                    isOpen: true,
+                    title: "Success",
+                    message: `Leave application successfully ${actionType.toLowerCase()} by Admin.`,
+                    isError: false
+                });
             } else {
                 const err = await response.json();
-                console.error(`Failed to update status:`, err.detail || err);
+                setModalState({
+                    isOpen: true,
+                    title: "Action Failed",
+                    message: err.detail || "Error occurred while processing request.",
+                    isError: true
+                });
             }
         } catch (error) {
             console.error("Error updating status:", error);
+            setModalState({
+                isOpen: true,
+                title: "Network Error",
+                message: "Unable to connect to the server.",
+                isError: true
+            });
         }
     };
 
     return (
-        <div className="space-y-6 max-w-7xl mx-auto p-4 md:p-6">
-            {/* Header Section */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-                <div>
-                    <h2 className="text-2xl font-extrabold text-gray-800">Admin Control Center</h2>
-                    <p className="text-sm text-gray-500 mt-1">Manage org-wide leaves, policies, and employee balances.</p>
-                </div>
-                <div className="mt-4 md:mt-0 flex space-x-2 bg-gray-100 p-1 rounded-lg">
-                    <button onClick={() => setActiveTab('tracker')} className={`px-4 py-2 text-sm font-bold rounded-md transition flex items-center space-x-2 ${activeTab === 'tracker' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-                        <Activity size={16} /> <span>Tracker</span>
-                    </button>
-                    <button onClick={() => setActiveTab('config')} className={`px-4 py-2 text-sm font-bold rounded-md transition flex items-center space-x-2 ${activeTab === 'config' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-                        <Settings2 size={16} /> <span>Configurations</span>
-                    </button>
-                    <button onClick={() => setActiveTab('balances')} className={`px-4 py-2 text-sm font-bold rounded-md transition flex items-center space-x-2 ${activeTab === 'balances' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-                        <Wallet size={16} /> <span>Balances</span>
-                    </button>
-                </div>
-            </div>
+        <div className="max-w-7xl mx-auto p-4 md:p-6 relative">
 
-            {isLoading && <div className="text-center py-10 text-gray-500 font-bold">Loading Data...</div>}
-
-            {/* TAB 1: Global Leave Tracker */}
-            {!isLoading && activeTab === 'tracker' && (
+            {isLoading ? (
+                <div className="text-center py-20 text-gray-500 font-bold animate-pulse">Loading Data...</div>
+            ) : (
                 <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden animate-in fade-in duration-300">
-                    <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
-                        <h3 className="font-bold text-gray-800">Global Leave Activity</h3>
+
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center p-6 border-b border-gray-100 bg-gray-50/30">
+                        <div>
+                            <h2 className="text-xl font-extrabold text-gray-800">Admin Control Center</h2>
+                            <p className="text-sm text-gray-500 mt-1">Manage org-wide leave activity and approvals.</p>
+                        </div>
+                        <div className="mt-4 md:mt-0 flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 text-gray-700 shadow-sm">
+                            <Activity size={16} className="text-indigo-600" />
+                            <span className="text-sm font-extrabold tracking-wide">Global Tracker</span>
+                        </div>
                     </div>
+
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead className="bg-white border-b border-gray-100">
                                 <tr className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                                    <th className="py-4 px-6">Employee</th>
-                                    <th className="py-4 px-6">Leave Details</th>
-                                    <th className="py-4 px-6">Status</th>
-                                    <th className="py-4 px-6">Actions</th>
+                                    <th className="py-4 px-6 w-[25%]">Employee</th>
+                                    <th className="py-4 px-6 w-[35%]">Leave Details</th>
+                                    <th className="py-4 px-6 w-[15%]">Status</th>
+                                    <th className="py-4 px-6 w-[25%] text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
@@ -170,12 +190,11 @@ export default function AdminDashboard() {
                                         const isPendingAction = currentStatus === "PENDING" || currentStatus === "PENDING_HR";
                                         const daysCount = getDurationDays(leave.start_date, leave.end_date);
 
-                                        // PHASE 1: Using the joined employee data from backend
                                         const empName = leave.employee?.name || (leave.employee?.first_name ? `${leave.employee.first_name} ${leave.employee.last_name || ''}`.trim() : null) || leave.employee_id;
                                         const teamId = leave.employee?.team_id || "Unassigned";
 
                                         return (
-                                            <tr key={leave.application_id} className="hover:bg-gray-50 transition">
+                                            <tr key={leave.application_id} className={`hover:bg-gray-50 transition ${isPendingAction ? 'bg-amber-50/20' : ''}`}>
                                                 <td className="py-4 px-6">
                                                     <div className="font-bold text-gray-900">{empName}</div>
                                                     <div className="text-xs text-gray-500 mt-0.5">
@@ -184,29 +203,36 @@ export default function AdminDashboard() {
                                                 </td>
                                                 <td className="py-4 px-6">
                                                     <span className="font-bold text-sm text-gray-800">{getLeaveName(leave.leave_type_id)}</span>
-                                                    <span className="text-xs text-gray-500 block">
+                                                    <span className="text-xs text-gray-500 block mt-0.5">
                                                         {formatDate(leave.start_date)} – {formatDate(leave.end_date)} ({daysCount} Day{daysCount > 1 ? 's' : ''})
                                                     </span>
                                                 </td>
                                                 <td className="py-4 px-6">
-                                                    <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs font-bold">{leave.status}</span>
+                                                    <span className={`px-2.5 py-1 rounded text-xs font-bold ${currentStatus === 'APPROVED' ? 'bg-green-100 text-green-700' :
+                                                            currentStatus === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                                                                'bg-amber-100 text-amber-700'
+                                                        }`}>
+                                                        {currentStatus || "PENDING"}
+                                                    </span>
                                                 </td>
                                                 <td className="py-4 px-6">
                                                     {isPendingAction ? (
-                                                        <div className="flex space-x-2">
+                                                        <div className="flex justify-center space-x-2">
                                                             <button
                                                                 onClick={() => handleAction(leave.application_id, 'REJECTED')}
-                                                                className="px-3 py-1 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-xs font-bold transition">
-                                                                Reject
+                                                                className="px-3 py-1.5 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-xs font-bold transition flex items-center space-x-1">
+                                                                <X size={14} /> <span>Reject</span>
                                                             </button>
                                                             <button
                                                                 onClick={() => handleAction(leave.application_id, 'APPROVED')}
-                                                                className="px-3 py-1 bg-gray-900 hover:bg-black text-white rounded-lg text-xs font-bold transition">
-                                                                Approve
+                                                                className="px-3 py-1.5 bg-gray-900 hover:bg-black text-white rounded-lg text-xs font-bold transition flex items-center space-x-1 shadow-sm">
+                                                                <Check size={14} /> <span>Approve</span>
                                                             </button>
                                                         </div>
                                                     ) : (
-                                                        <span className="text-xs text-gray-400 font-medium">Completed</span>
+                                                        <div className="flex justify-center">
+                                                            <span className="text-xs text-gray-400 font-medium italic">Action Completed</span>
+                                                        </div>
                                                     )}
                                                 </td>
                                             </tr>
@@ -219,58 +245,26 @@ export default function AdminDashboard() {
                 </div>
             )}
 
-            {/* TAB 2: Configurations (Automated via Backend) */}
-            {!isLoading && activeTab === 'config' && (
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden animate-in fade-in duration-300">
-                    <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
-                        <div>
-                            <h3 className="font-bold text-gray-800">Leave Policies & Setup</h3>
-                            <p className="text-xs text-gray-500 mt-0.5">Leave policies are now globally automated and managed by the system.</p>
-                        </div>
-                    </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead className="bg-white border-b border-gray-100">
-                                <tr className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                                    <th className="py-4 px-6">Leave Name</th>
-                                    <th className="py-4 px-6">Accrual Method</th>
-                                    <th className="py-4 px-6">Carry Forward</th>
-                                    <th className="py-4 px-6">Doc Threshold</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {leaveTypes.map((type) => (
-                                    <tr key={type.leave_type_id} className="hover:bg-gray-50 transition">
-                                        <td className="py-4 px-6 font-bold text-gray-900 text-sm">{type.name}</td>
-                                        <td className="py-4 px-6 text-xs text-gray-700">{type.accrual_method}</td>
-                                        <td className="py-4 px-6 text-xs font-bold text-gray-800">{type.carry_forward_limit} Days</td>
-                                        <td className="py-4 px-6 text-xs text-orange-600 font-medium">
-                                            {type.doc_required_threshold > 0 ? `${type.doc_required_threshold} Days` : "None"}
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            )}
-
-            {/* TAB 3: Balances (Automated via Backend) */}
-            {!isLoading && activeTab === 'balances' && (
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden animate-in fade-in duration-300">
-                    <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-                        <h3 className="font-bold text-gray-800">Employee Leave Balances</h3>
-                        <p className="text-xs text-gray-500 mt-0.5">Balances are automatically credited by the system.</p>
-                    </div>
-                    <div className="p-6">
-                        <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 flex items-start space-x-4">
-                            <Lightbulb className="text-emerald-600 shrink-0 mt-0.5" size={24} />
-                            <div>
-                                <h4 className="font-bold text-emerald-900 text-sm">System Automated Balances (Active)</h4>
-                                <p className="text-xs text-emerald-700 mt-1 leading-relaxed">
-                                    Leave balances (Earned, Casual, Sick, Maternity, Paternity) are now automatically assigned by the backend engine when an employee logs in or checks their dashboard. Manual allocation is no longer required.
-                                </p>
+            {/* MODAL POPUP */}
+            {modalState.isOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] px-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className={`p-5 flex items-start space-x-4 border-b ${modalState.isError ? 'bg-red-50 border-red-100' : 'bg-emerald-50 border-emerald-100'}`}>
+                            <div className={`p-2 rounded-full ${modalState.isError ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                                {modalState.isError ? <AlertCircle size={24} /> : <CheckCircle size={24} />}
                             </div>
+                            <div>
+                                <h3 className={`text-lg font-bold ${modalState.isError ? 'text-red-900' : 'text-emerald-900'}`}>{modalState.title}</h3>
+                                <p className={`text-sm mt-1 ${modalState.isError ? 'text-red-800' : 'text-emerald-800'}`}>{modalState.message}</p>
+                            </div>
+                        </div>
+                        <div className="px-6 py-4 bg-gray-50 flex justify-end border-t border-gray-100">
+                            <button
+                                onClick={() => setModalState({ isOpen: false, title: "", message: "", isError: false })}
+                                className={`px-5 py-2 text-white rounded-xl text-sm font-bold shadow-sm transition ${modalState.isError ? 'bg-red-600 hover:bg-red-700' : 'bg-slate-900 hover:bg-black'}`}
+                            >
+                                OK
+                            </button>
                         </div>
                     </div>
                 </div>

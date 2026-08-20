@@ -67,7 +67,15 @@ export default function HRDashboard() {
             setLeaveTypes(Array.isArray(typesData) ? typesData : []);
 
             const appsData = await apiGet('/v1/leave/applications?role=HR');
-            setRequests(Array.isArray(appsData) ? appsData : []);
+            const allApps = Array.isArray(appsData) ? appsData : [];
+
+            // --- FRONTEND FILTER ADDED HERE ---
+            // అడ్మిన్ డైరెక్ట్ గా APPROVED చేసినవి తీసేసి, కేవలం PENDING_HR ఉన్నవి మాత్రమే చూపిస్తాం
+            const pendingHROnly = allApps.filter(app =>
+                app.status && app.status.toUpperCase() === "PENDING_HR"
+            );
+
+            setRequests(pendingHROnly);
 
             try {
                 const holidaysData = await apiGet('/v1/calendar/holidays');
