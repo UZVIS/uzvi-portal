@@ -16,7 +16,6 @@ export interface Asset {
 }
 
 export interface AssetCreate {
-  asset_id: string;
   tag: string;
   asset_type: string;
   purchase_date: string;

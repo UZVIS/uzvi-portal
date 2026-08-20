@@ -28,6 +28,7 @@ class ReviewCycleResponse(ReviewCycleBase):
     id: int
     created_at: datetime
     updated_at: Optional[datetime] = None
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -55,6 +56,7 @@ class GoalResponse(GoalBase):
     status: GoalStatusEnum
     created_at: datetime
     updated_at: Optional[datetime] = None
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -72,6 +74,7 @@ class SelfAssessmentResponse(SelfAssessmentBase):
     id: int
     goal_id: int
     submitted_at: datetime
+
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -91,6 +94,7 @@ class ManagerReviewResponse(ManagerReviewBase):
     goal_id: int
     reviewer_id: str
     submitted_at: datetime
+
     model_config = ConfigDict(from_attributes=True)
 
 

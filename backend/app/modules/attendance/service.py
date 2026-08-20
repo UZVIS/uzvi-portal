@@ -7,19 +7,22 @@ from app.modules.attendance.models import (
     AttendanceRecord,
     AttendanceStatus,
 )
+
 from app.modules.attendance.schemas import (
     AttendanceCreate,
     AttendanceUpdate,
 )
+
 
 class AttendanceService:
 
     def __init__(self, db: Session):
         self.db = db
 
-    # -----------------------------
-    # Create Attendance
-    # -----------------------------
+    # ==========================================================
+    # CREATE ATTENDANCE
+    # ==========================================================
+
     def create_attendance(
         self,
         attendance: AttendanceCreate,
@@ -28,8 +31,10 @@ class AttendanceService:
         existing = (
             self.db.query(AttendanceRecord)
             .filter(
-                AttendanceRecord.employee_id == attendance.employee_id,
-                AttendanceRecord.attendance_date == attendance.attendance_date,
+                AttendanceRecord.employee_id
+                == attendance.employee_id,
+                AttendanceRecord.attendance_date
+                == attendance.attendance_date,
             )
             .first()
         )
@@ -37,7 +42,10 @@ class AttendanceService:
         if existing:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Attendance already exists for this employee and date.",
+                detail=(
+                    "Attendance already exists for "
+                    "this employee and date."
+                ),
             )
 
         record = AttendanceRecord(
@@ -55,9 +63,10 @@ class AttendanceService:
 
         return record
 
-    # -----------------------------
-    # Get Attendance By Id
-    # -----------------------------
+    # ==========================================================
+    # GET ATTENDANCE BY ID
+    # ==========================================================
+
     def get_attendance(
         self,
         attendance_id: int,
@@ -66,7 +75,8 @@ class AttendanceService:
         attendance = (
             self.db.query(AttendanceRecord)
             .filter(
-                AttendanceRecord.id == attendance_id
+                AttendanceRecord.id
+                == attendance_id
             )
             .first()
         )
@@ -79,9 +89,10 @@ class AttendanceService:
 
         return attendance
 
-    # -----------------------------
-    # Get All Attendance
-    # -----------------------------
+    # ==========================================================
+    # GET ALL ATTENDANCE
+    # ==========================================================
+
     def get_all_attendance(self):
 
         return (
@@ -92,9 +103,10 @@ class AttendanceService:
             .all()
         )
 
-    # -----------------------------
-    # Get Employee Attendance
-    # -----------------------------
+    # ==========================================================
+    # GET EMPLOYEE ATTENDANCE
+    # ==========================================================
+
     def get_employee_attendance(
         self,
         employee_id: str,
@@ -103,7 +115,8 @@ class AttendanceService:
         return (
             self.db.query(AttendanceRecord)
             .filter(
-                AttendanceRecord.employee_id == employee_id
+                AttendanceRecord.employee_id
+                == employee_id
             )
             .order_by(
                 AttendanceRecord.attendance_date.desc()
@@ -111,9 +124,10 @@ class AttendanceService:
             .all()
         )
 
-            # -----------------------------
-    # Update Attendance
-    # -----------------------------
+    # ==========================================================
+    # UPDATE ATTENDANCE
+    # ==========================================================
+
     def update_attendance(
         self,
         attendance_id: int,
@@ -122,7 +136,10 @@ class AttendanceService:
 
         attendance = (
             self.db.query(AttendanceRecord)
-            .filter(AttendanceRecord.id == attendance_id)
+            .filter(
+                AttendanceRecord.id
+                == attendance_id
+            )
             .first()
         )
 
@@ -132,19 +149,26 @@ class AttendanceService:
                 detail="Attendance record not found.",
             )
 
-        update_data = attendance_update.model_dump(exclude_unset=True)
+        update_data = attendance_update.model_dump(
+            exclude_unset=True
+        )
 
         for key, value in update_data.items():
-            setattr(attendance, key, value)
+            setattr(
+                attendance,
+                key,
+                value,
+            )
 
         self.db.commit()
         self.db.refresh(attendance)
 
         return attendance
 
-    # -----------------------------
-    # Delete Attendance
-    # -----------------------------
+    # ==========================================================
+    # DELETE ATTENDANCE
+    # ==========================================================
+
     def delete_attendance(
         self,
         attendance_id: int,
@@ -152,7 +176,10 @@ class AttendanceService:
 
         attendance = (
             self.db.query(AttendanceRecord)
-            .filter(AttendanceRecord.id == attendance_id)
+            .filter(
+                AttendanceRecord.id
+                == attendance_id
+            )
             .first()
         )
 
@@ -165,11 +192,16 @@ class AttendanceService:
         self.db.delete(attendance)
         self.db.commit()
 
-        return {"message": "Attendance deleted successfully"}
+        return {
+            "message": (
+                "Attendance deleted successfully"
+            )
+        }
 
-    # -----------------------------
-    # Monthly Summary
-    # -----------------------------
+    # ==========================================================
+    # MONTHLY SUMMARY
+    # ==========================================================
+
     def get_monthly_summary(
         self,
         employee_id: str,
@@ -180,7 +212,8 @@ class AttendanceService:
         records = (
             self.db.query(AttendanceRecord)
             .filter(
-                AttendanceRecord.employee_id == employee_id
+                AttendanceRecord.employee_id
+                == employee_id
             )
             .all()
         )
@@ -196,39 +229,112 @@ class AttendanceService:
 
             if (
                 record.attendance_date.year == year
-                and record.attendance_date.month == month
+                and record.attendance_date.month
+                == month
             ):
 
-                if record.status == AttendanceStatus.IN_OFFICE:
+                if (
+                    record.status
+                    == AttendanceStatus.IN_OFFICE
+                ):
                     summary["present"] += 1
 
-                elif record.status == AttendanceStatus.WFH:
+                elif (
+                    record.status
+                    == AttendanceStatus.WFH
+                ):
                     summary["wfh"] += 1
 
-                elif record.status == AttendanceStatus.ON_LEAVE:
+                elif (
+                    record.status
+                    == AttendanceStatus.ON_LEAVE
+                ):
                     summary["leave"] += 1
 
-                elif record.status == AttendanceStatus.ABSENT:
+                elif (
+                    record.status
+                    == AttendanceStatus.ABSENT
+                ):
                     summary["absent"] += 1
 
         return summary
 
-    # -----------------------------
-    # Unexplained Absence
-    # -----------------------------
+    # ==========================================================
+    # UNEXPLAINED ABSENCES
+    # ==========================================================
+
     def get_unexplained_absences(self):
 
-        return (
+        absent_records = (
             self.db.query(AttendanceRecord)
             .filter(
-                AttendanceRecord.status == AttendanceStatus.ABSENT
+                AttendanceRecord.status
+                == AttendanceStatus.ABSENT
+            )
+            .order_by(
+                AttendanceRecord.attendance_date.desc()
             )
             .all()
         )
 
-    # -----------------------------
-    # Export Attendance
-    # -----------------------------
+        result = []
+
+        for record in absent_records:
+
+            employee = (
+                self.db.query(Employee)
+                .filter(
+                    Employee.employee_id
+                    == record.employee_id
+                )
+                .first()
+            )
+
+            employee_name = "-"
+
+            if employee:
+                employee_name = (
+                    getattr(
+                        employee,
+                        "name",
+                        None,
+                    )
+                    or getattr(
+                        employee,
+                        "full_name",
+                        None,
+                    )
+                    or getattr(
+                        employee,
+                        "employee_name",
+                        None,
+                    )
+                    or "-"
+                )
+
+            result.append(
+                {
+                    "id": record.id,
+                    "employee_id": record.employee_id,
+                    "employee_name": employee_name,
+                    "attendance_date": (
+                        record.attendance_date
+                    ),
+                    "status": record.status,
+                    "check_in": record.check_in,
+                    "check_out": record.check_out,
+                    "source": record.source,
+                    "created_at": record.created_at,
+                    "updated_at": record.updated_at,
+                }
+            )
+
+        return result
+
+    # ==========================================================
+    # EXPORT ATTENDANCE
+    # ==========================================================
+
     def export_attendance(
         self,
         employee_id: str,
@@ -237,42 +343,105 @@ class AttendanceService:
         records = (
             self.db.query(AttendanceRecord)
             .filter(
-                AttendanceRecord.employee_id == employee_id
+                AttendanceRecord.employee_id
+                == employee_id
+            )
+            .order_by(
+                AttendanceRecord.attendance_date.desc()
             )
             .all()
         )
 
         return records
 
+    # ==========================================================
+    # TEAM ATTENDANCE
+    # ==========================================================
 
-
-    # -----------------------------
-    # Team Attendance
-    # -----------------------------
     def get_team_attendance(
         self,
         team_id: str,
     ):
+        """
+        Return team attendance together with
+        employee details.
+
+        Sorted by employee_id ascending and then
+        attendance date descending.
+        """
 
         records = (
-        self.db.query(AttendanceRecord)
-        .join(
-            Employee,
-            AttendanceRecord.employee_id == Employee.employee_id
+            self.db.query(
+                AttendanceRecord,
+                Employee,
+            )
+            .join(
+                Employee,
+                AttendanceRecord.employee_id
+                == Employee.employee_id,
+            )
+            .filter(
+                Employee.team_id
+                == team_id
+            )
+            .order_by(
+                Employee.employee_id.asc(),
+                AttendanceRecord.attendance_date.desc(),
+            )
+            .all()
         )
 
+        result = []
 
-        .filter(
-            Employee.team_id == team_id
-        )
-        .all()
-        )
+        for attendance, employee in records:
 
-        return records
+            result.append(
+                {
+                    "employee_id": (
+                        employee.employee_id
+                    ),
 
+                    "employee_name": (
+                        employee.name
+                        or "-"
+                    ),
 
-       
-        
+                    "designation": (
+                        getattr(
+                            employee,
+                            "designation",
+                            None,
+                        )
+                    ),
 
-    
+                    "department": (
+                        getattr(
+                            employee,
+                            "department",
+                            None,
+                        )
+                    ),
 
+                    "attendance_date": (
+                        attendance.attendance_date
+                    ),
+
+                    "status": (
+                        attendance.status
+                    ),
+
+                    "check_in": (
+                        attendance.check_in
+                    ),
+
+                    "check_out": (
+                        attendance.check_out
+                    ),
+
+                    "source": (
+                        attendance.source
+                    ),
+                }
+            )
+
+        return result

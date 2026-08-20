@@ -558,6 +558,30 @@ def _transition(
     return claim
 
 
+def _assert_can_decide(
+    claim: models.ExpenseClaim,
+    decided_by_role: str,
+) -> None:
+    """FR-EXP-03: above the admin threshold, a Manager alone isn't
+    enough - Admin/Finance must decide. This applies to BOTH approve
+    and reject, since deciding a claim's outcome either way is the
+    action being gated, not just the approve path specifically."""
+
+    if (
+        claim.amount > ADMIN_APPROVAL_THRESHOLD
+        and decided_by_role
+        not in (
+            "Admin/Leadership",
+            "HR-Restricted",
+        )
+    ):
+        raise PermissionError(
+            f"Claim {claim.claim_id} exceeds "
+            f"{ADMIN_APPROVAL_THRESHOLD} and requires "
+            f"Admin/Finance approval"
+        )
+
+
 def approve_claim(
     db: Session,
     claim_id: str,
@@ -569,19 +593,10 @@ def approve_claim(
         claim_id,
     )
 
-    if (
-        claim.amount > ADMIN_APPROVAL_THRESHOLD
-        and decided_by_role
-        not in (
-            "Admin/Leadership",
-            "HR-Restricted",
-        )
-    ):
-        raise PermissionError(
-            f"Claim {claim_id} exceeds "
-            f"{ADMIN_APPROVAL_THRESHOLD} and requires "
-            f"Admin/Finance approval"
-        )
+    _assert_can_decide(
+        claim,
+        decided_by_role,
+    )
 
     return _transition(
         db,
@@ -596,6 +611,16 @@ def reject_claim(
     claim_id: str,
     decided_by_role: str,
 ) -> models.ExpenseClaim:
+
+    claim = get_claim(
+        db,
+        claim_id,
+    )
+
+    _assert_can_decide(
+        claim,
+        decided_by_role,
+    )
 
     return _transition(
         db,

@@ -13,7 +13,7 @@ export type AssetType =
     | "Keyboard";
 
 export interface AssetFormData {
-    id: string;
+    asset_id: string;
     tag: string;
     type: AssetType | "";
     status: AssetStatus | "";
@@ -23,7 +23,7 @@ export interface AssetFormData {
 type AssetFormErrors = Partial<Record<keyof AssetFormData, string>>;
 
 export const emptyAssetForm: AssetFormData = {
-    id: "",
+    asset_id: "",
     tag: "",
     type: "",
     status: "",
@@ -86,28 +86,32 @@ export default function AssetForm({
         };
 
     const validate = () => {
+    const next: AssetFormErrors = {};
 
-        const next: AssetFormErrors = {};
+    if (!form.tag.trim()) {
+        next.tag = "Tag is required";
+    }
 
-        if (!form.id.trim())
-            next.id = "Asset ID is required";
+    if (!form.type) {
+        next.type = "Select Asset Type";
+    }
 
-        if (!form.tag.trim())
-            next.tag = "Tag is required";
+    if (!form.status) {
+        next.status = "Select Status";
+    }
 
-        if (!form.type)
-            next.type = "Select Asset Type";
+    const today = new Date().toISOString().split("T")[0];
 
-        if (!form.status)
-            next.status = "Select Status";
+    if (!form.purchaseDate) {
+        next.purchaseDate = "Purchase Date is required";
+    } else if (form.purchaseDate > today) {
+        next.purchaseDate = "Purchase Date cannot be in the future";
+    }
 
-        if (!form.purchaseDate)
-            next.purchaseDate = "Purchase Date is required";
+    setErrors(next);
 
-        setErrors(next);
-
-        return Object.keys(next).length === 0;
-    };
+    return Object.keys(next).length === 0;
+};
 
     const handleSave = () => {
 
@@ -189,26 +193,23 @@ export default function AssetForm({
 
                         {/* Asset ID */}
 
-                        <div className="asset-form-field">
+                        {/* Asset ID - Show only when editing or viewing */}
 
-                            <label className="asset-form-label">
-                                Asset ID
-                                <span className="required">*</span>
-                            </label>
+{(isEdit || readOnly) && (
+    <div className="asset-form-field">
 
-                            <input
-                                className={`asset-form-input ${errors.id ? "input-error" : ""}`}
-                                placeholder="AST001"
-                                value={form.id}
-                                onChange={handleChange("id")}
-                                disabled={readOnly || isEdit}
-                            />
+        <label className="asset-form-label">
+            Asset ID
+        </label>
 
-                            {errors.id &&
-                                <p className="asset-form-error">
-                                    {errors.id}
-                                </p>}
-                        </div>
+        <input
+            className="asset-form-input"
+            value={form.asset_id}
+            readOnly
+        />
+
+    </div>
+)}
 
                         {/* Tag */}
 
@@ -303,13 +304,14 @@ export default function AssetForm({
                                 <span className="required">*</span>
                             </label>
 
-                            <input
-                                type="date"
-                                className={`asset-form-input ${errors.purchaseDate ? "input-error" : ""}`}
-                                value={form.purchaseDate}
-                                onChange={handleChange("purchaseDate")}
-                                disabled={readOnly}
-                            />
+                           <input
+    type="date"
+    className={`asset-form-input ${errors.purchaseDate ? "input-error" : ""}`}
+    value={form.purchaseDate}
+    max={new Date().toISOString().split("T")[0]}
+    onChange={handleChange("purchaseDate")}
+    disabled={readOnly}
+/>
 
                             {errors.purchaseDate &&
                                 <p className="asset-form-error">

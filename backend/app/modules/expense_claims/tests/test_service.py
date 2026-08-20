@@ -402,3 +402,18 @@ def test_employee_name_property_resolves_from_directory(db, employee):
     _make_category(db)
     claim = _submit_claim(db, "E1", "CAT1", date(2026, 1, 5), 500)
     assert claim.employee_name == "Test Employee"
+
+def test_manager_cannot_reject_claim_over_threshold(db, employee):
+    """Regression test: the ₹25,000 threshold must block Manager from
+    REJECTING a high-value claim too, not just approving it."""
+    _make_category(db)
+    claim = _submit_claim(db, "E1", "CAT1", date(2026, 1, 5), 30000)
+    with pytest.raises(PermissionError):
+        service.reject_claim(db, claim.claim_id, decided_by_role="Manager")
+
+
+def test_admin_can_reject_claim_over_threshold(db, employee):
+    _make_category(db)
+    claim = _submit_claim(db, "E1", "CAT1", date(2026, 1, 5), 30000)
+    rejected = service.reject_claim(db, claim.claim_id, decided_by_role="Admin/Leadership")
+    assert rejected.status == "Rejected"    

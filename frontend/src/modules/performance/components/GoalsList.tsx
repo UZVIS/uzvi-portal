@@ -56,6 +56,8 @@ const GoalsList: React.FC = () => {
       setSelectedGoal(data);
     } catch (err) {
       console.error(err);
+
+      setError("Unable to load goal details");
     }
   };
 
@@ -154,7 +156,7 @@ const GoalsList: React.FC = () => {
 
             <tbody className="divide-y divide-gray-200">
 
-                            {goals.map((goal) => (
+              {goals.map((goal) => (
 
                 <tr
                   key={goal.id}
@@ -262,7 +264,7 @@ const GoalsList: React.FC = () => {
 
       )}
 
-            {/* Goal Details */}
+      {/* Goal Details */}
 
       {selectedGoal && (
 
@@ -360,4 +362,3 @@ const GoalsList: React.FC = () => {
 };
 
 export default GoalsList;
-          
