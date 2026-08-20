@@ -25,22 +25,30 @@ def _get_requester(db: Session, requester_id: str) -> Employee | None:
 
 def create_document(db: Session, doc_in: DocumentCreate) -> EmployeeDocument:
     uploader = _get_requester(db, doc_in.uploaded_by)
-    is_hr = uploader is not None and uploader.access_tier == "HR-Restricted"
-    is_self_upload = doc_in.uploaded_by == doc_in.employee_id
+    is_active = uploader is not None and uploader.employment_status == "active"
+    is_hr = is_active and uploader.access_tier == "HR-Restricted"
+    is_self_upload = is_active and doc_in.uploaded_by == doc_in.employee_id
     if not (is_hr or is_self_upload):
         raise NotAuthorized(
             "Only HR-Restricted staff, or the employee themselves, may upload a document."
         )
 
-    existing = get_document(db, doc_in.document_id)
-    if existing:
-        raise DocumentAlreadyExists(doc_in.document_id)
-
-    new_doc = EmployeeDocument(**doc_in.model_dump())
+    new_document_id = _generate_next_document_id(db)
+    data = doc_in.model_dump(exclude={"document_id"}, exclude_unset=True)
+    new_doc = EmployeeDocument(document_id=new_document_id, **data)
     db.add(new_doc)
     db.commit()
     db.refresh(new_doc)
     return new_doc
+
+
+def _generate_next_document_id(db: Session) -> str:
+    all_ids = [row[0] for row in db.query(EmployeeDocument.document_id).all()]
+    max_num = 0
+    for did in all_ids:
+        if did.startswith("DOC") and did[3:].isdigit():
+            max_num = max(max_num, int(did[3:]))
+    return f"DOC{max_num + 1:03d}"
 
 
 def get_document(db: Session, document_id: str) -> EmployeeDocument | None:
@@ -57,8 +65,9 @@ def view_document(db: Session, document_id: str, requester_id: str) -> EmployeeD
         raise DocumentNotFound(document_id)
 
     requester = _get_requester(db, requester_id)
-    is_owner = requester_id == doc.employee_id
-    is_hr = requester is not None and requester.access_tier == "HR-Restricted"
+    is_active = requester is not None and requester.employment_status == "active"
+    is_owner = is_active and requester_id == doc.employee_id
+    is_hr = is_active and requester.access_tier == "HR-Restricted"
     if not (is_owner or is_hr):
         raise NotAuthorized(
             "Only the document owner and HR-Restricted staff may view this document."
@@ -85,7 +94,7 @@ def is_document_expired(doc: EmployeeDocument) -> bool:
 
 def list_expired_documents(db: Session, requester_id: str) -> list[EmployeeDocument]:
     requester = _get_requester(db, requester_id)
-    if requester is None or requester.access_tier != "HR-Restricted":
+    if requester is None or requester.employment_status != "active" or requester.access_tier != "HR-Restricted":
         raise NotAuthorized("Only HR-Restricted staff may view expired documents.")
 
     all_docs = (
@@ -94,3 +103,16 @@ def list_expired_documents(db: Session, requester_id: str) -> list[EmployeeDocum
         .all()
     )
     return [doc for doc in all_docs if is_document_expired(doc)]
+
+
+def list_visible_documents(db: Session, requester_id: str) -> list[EmployeeDocument]:
+   
+    requester = _get_requester(db, requester_id)
+    if requester is None or requester.employment_status != "active":
+        raise NotAuthorized("Unknown requester.")
+
+    return (
+        db.query(EmployeeDocument)
+        .filter(EmployeeDocument.employee_id == requester_id)
+        .all()
+    )

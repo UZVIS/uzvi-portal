@@ -48,11 +48,6 @@ export function CandidateDetailPage() {
   const [scoreValue, setScoreValue] = useState("");
   const [questionsValue, setQuestionsValue] = useState("");
 
-  const [showConvert, setShowConvert] = useState(false);
-  const [newEmployeeId, setNewEmployeeId] = useState("");
-  const [designation, setDesignation] = useState("");
-  const [joinDate, setJoinDate] = useState("");
-
   async function load() {
     if (!candidateId) return;
     setIsLoading(true);
@@ -147,9 +142,8 @@ export function CandidateDetailPage() {
     }
   }
 
-  async function handleConvert(e: React.FormEvent) {
-    e.preventDefault();
-    if (!newEmployeeId.trim() || !joinDate || !candidateId) return;
+  async function handleConvert() {
+    if (!candidateId) return;
     if (!employee?.employee_id) {
       setError("You must be logged in to convert a candidate to an employee.");
       return;
@@ -157,14 +151,14 @@ export function CandidateDetailPage() {
     setBusy(true);
     setError(null);
     try {
+      // Nothing to fill in — the backend auto-increments the next EMP###
+      // id, defaults designation to the candidate's applied role, and
+      // defaults join date to today.
+      const today = new Date().toISOString().slice(0, 10);
       await recruitingApi.convertToEmployee(candidateId, {
-        employee_id: newEmployeeId.trim(),
         requester_id: employee.employee_id,
-        designation: designation.trim() || undefined,
-        join_date: joinDate,
+        join_date: today,
       });
-      setShowConvert(false);
-      setJoinDate("");
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't convert to employee.");
@@ -201,6 +195,9 @@ export function CandidateDetailPage() {
           <div className="detail__body">
             {candidate.resume_details && (
               <p className="detail__resume">{candidate.resume_details}</p>
+            )}
+            {candidate.aadhar_number && (
+              <p className="detail__resume">Aadhar: {candidate.aadhar_number}</p>
             )}
 
             <div className="detail__stepper">
@@ -266,58 +263,14 @@ export function CandidateDetailPage() {
                     </span>
                     <button
                       className="c-toolbar__btn c-toolbar__btn--teal"
-                      onClick={() => setShowConvert((v) => !v)}
+                      onClick={handleConvert}
+                      disabled={busy}
                     >
                       Convert to Employee
                     </button>
                   </>
                 )}
               </div>
-            )}
-
-            {showConvert && (
-              <form className="detail__convert-form" onSubmit={handleConvert}>
-                <label className="field">
-                  <span className="field__label">New employee ID</span>
-                  <input
-                    className="field__input"
-                    value={newEmployeeId}
-                    onChange={(e) => setNewEmployeeId(e.target.value)}
-                    placeholder="e.g. EMP-2045"
-                  />
-                </label>
-                <label className="field">
-                  <span className="field__label">Designation (optional)</span>
-                  <input
-                    className="field__input"
-                    value={designation}
-                    onChange={(e) => setDesignation(e.target.value)}
-                    placeholder={candidate.applied_role}
-                  />
-                </label>
-                <label className="field">
-                  <span className="field__label">Join date</span>
-                  <input
-                    className="field__input"
-                    type="date"
-                    value={joinDate}
-                    onChange={(e) => setJoinDate(e.target.value)}
-                    required
-                  />
-                </label>
-                <div className="modal__actions">
-                  <button
-                    type="button"
-                    className="button-secondary"
-                    onClick={() => setShowConvert(false)}
-                  >
-                    Cancel
-                  </button>
-                  <button type="submit" className="button-primary" disabled={busy}>
-                    Confirm hire
-                  </button>
-                </div>
-              </form>
             )}
           </div>
 

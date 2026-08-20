@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { getExpiredDocuments, type DocumentRecord } from "../api";
+import { getVisibleDocuments, type DocumentRecord } from "../api";
 
-interface ExpiredDocumentsListProps {
+interface DocumentsListProps {
   requesterId: string;
   refreshKey: number;
 }
 
-export function ExpiredDocumentsList({ requesterId, refreshKey }: ExpiredDocumentsListProps) {
+export function DocumentsList({ requesterId, refreshKey }: DocumentsListProps) {
   const [docs, setDocs] = useState<DocumentRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -14,12 +14,12 @@ export function ExpiredDocumentsList({ requesterId, refreshKey }: ExpiredDocumen
   useEffect(() => {
     let cancelled = false;
     setIsLoading(true);
-    getExpiredDocuments(requesterId)
+    getVisibleDocuments(requesterId)
       .then((data) => {
         if (!cancelled) setDocs(data);
       })
       .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Could not load expired documents.");
+        if (!cancelled) setError(err instanceof Error ? err.message : "Could not load documents.");
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false);
@@ -31,7 +31,7 @@ export function ExpiredDocumentsList({ requesterId, refreshKey }: ExpiredDocumen
 
   if (isLoading) return <p className="directory-row__muted">Loading…</p>;
   if (error) return <div className="error-banner">{error}</div>;
-  if (docs.length === 0) return <p className="directory-row__muted">No expired documents.</p>;
+  if (docs.length === 0) return <p className="directory-row__muted">No documents yet.</p>;
 
   return (
     <table className="directory-table" style={{ tableLayout: "auto" }}>
@@ -40,7 +40,7 @@ export function ExpiredDocumentsList({ requesterId, refreshKey }: ExpiredDocumen
           <th>Document ID</th>
           <th>Type</th>
           <th>Owner</th>
-          <th>Expired on</th>
+          <th>Retention expiry</th>
         </tr>
       </thead>
       <tbody>
@@ -49,9 +49,7 @@ export function ExpiredDocumentsList({ requesterId, refreshKey }: ExpiredDocumen
             <td className="directory-row__id">{doc.document_id}</td>
             <td>{doc.doc_type.replace(/_/g, " ")}</td>
             <td>{doc.employee_id}</td>
-            <td>
-              <span className="instance-tracker__overdue-badge">{doc.retention_expiry}</span>
-            </td>
+            <td>{doc.retention_expiry ?? <span className="directory-row__muted">—</span>}</td>
           </tr>
         ))}
       </tbody>

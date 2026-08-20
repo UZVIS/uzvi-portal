@@ -63,20 +63,18 @@ export function listTasksForTemplate(templateId: string): Promise<OnboardingTask
 
 /** POST /api/v1/onboarding/templates - Admin/Leadership only */
 export function createTemplate(
-  templateId: string,
   name: string,
   requesterId: string
 ): Promise<OnboardingTemplate> {
   return fetch(`${BASE_PATH}/templates`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ template_id: templateId, name, requester_id: requesterId }),
+    body: JSON.stringify({ name, requester_id: requesterId }),
   }).then((r) => handle(r, "Could not create the template."));
 }
 
 /** POST /api/v1/onboarding/tasks ordered tasks within a template, Admin/Leadership only */
 export function addTask(input: {
-  task_id: string;
   template_id: string;
   name: string;
   seq: number;
@@ -94,7 +92,6 @@ export function addTask(input: {
 
 /** POST /api/v1/onboarding/instances */
 export function startOnboarding(
-  instanceId: string,
   employeeId: string,
   templateId: string,
   requesterId: string
@@ -103,7 +100,6 @@ export function startOnboarding(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      instance_id: instanceId,
       employee_id: employeeId,
       template_id: templateId,
       requester_id: requesterId,

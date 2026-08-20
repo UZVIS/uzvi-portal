@@ -385,7 +385,6 @@ def complete_training_unit(
     completion = UnitCompletion(
         enrollment_id=completion_in.enrollment_id,
         unit_id=completion_in.unit_id,
-        score=completion_in.score,
     )
 
     db.add(completion)
@@ -393,6 +392,55 @@ def complete_training_unit(
     db.refresh(completion)
 
     return completion
+
+@router.delete(
+    "/completions/{completion_id}",
+    status_code=204,
+)
+def undo_unit_completion(
+    completion_id: int,
+    db: Session = Depends(get_db),
+    current_employee: Employee = Depends(get_current_employee),
+):
+    """
+    Undo a unit completion (mark it incomplete again).
+
+    Completion is self-attested, so undoing it is subject to the same
+    self-only rule as marking it complete in the first place — this is a
+    safety net for accidental clicks, not a way for anyone else to alter
+    someone's record.
+    """
+
+    completion = (
+        db.query(UnitCompletion)
+        .filter(UnitCompletion.completion_id == completion_id)
+        .first()
+    )
+
+    if not completion:
+        raise HTTPException(
+            status_code=404,
+            detail="Completion not found.",
+        )
+
+    enrollment = (
+        db.query(Enrollment)
+        .filter(
+            Enrollment.enrollment_id == completion.enrollment_id
+        )
+        .first()
+    )
+
+    if not enrollment or enrollment.employee_id != current_employee.employee_id:
+        raise HTTPException(
+            status_code=403,
+            detail="You can only undo your own training completions.",
+        )
+
+    db.delete(completion)
+    db.commit()
+
+    return None
 
 @router.get(
     "/completions",
@@ -503,6 +551,7 @@ def get_employee_progress(
 
     return ProgressResponse(
         employee_id=employee_id,
+        employee_name=enrollments[0].employee_name,
         completed_units=completed_units,
         total_units=total_units,
         completion_percentage=percentage,
@@ -576,7 +625,7 @@ def get_cohort_progress(
 
         total_percentage += percentage
         enrollee_percentages.append(
-            (enrollment.employee_id, percentage)
+            (enrollment.employee_id, enrollment.employee_name, percentage)
         )
 
         if (
@@ -599,12 +648,13 @@ def get_cohort_progress(
     # there is no cohort average worth comparing against.
     lagging_employees = []
     if total_enrollments > 1:
-        for employee_id, percentage in enrollee_percentages:
+        for employee_id, employee_name, percentage in enrollee_percentages:
             points_behind = average_percentage - percentage
             if points_behind > LAGGING_THRESHOLD_POINTS:
                 lagging_employees.append(
                     LaggingEnrollee(
                         employee_id=employee_id,
+                        employee_name=employee_name,
                         completion_percentage=round(percentage, 2),
                         points_behind_average=round(points_behind, 2),
                     )

@@ -5,13 +5,17 @@ from collections import defaultdict
 from sqlalchemy.orm import Session
 
 from app.modules.consultant_utilization import models, schemas
-
+from app.modules.directory.models import Employee
+from app.modules.leave.models import LeaveApplication, LeaveStatus
 
 DEFAULT_CAPACITY_HOURS_PER_WEEK = 40.0
 UNDER_UTILIZED_THRESHOLD = 0.60   # FR-UTL-03
 OVER_ALLOCATED_THRESHOLD = 1.05  # FR-UTL-03
 NORMAL_HOURS_PER_DAY = 8.0
 MAX_HOURS_PER_DAY = 16.0  # 8 normal + 8 overtime
+
+MANAGER_SCOPED_TIER = "Manager"
+OT_APPROVER_TIERS = {"Admin/Leadership", "HR-Restricted", "Manager"}
 
 
 class NotFoundError(Exception):
@@ -26,6 +30,9 @@ class WeekendDateError(Exception):
     pass
 
 
+class OnLeaveError(Exception):
+    pass
+
 
 class DailyHoursExceededError(Exception):
     pass
@@ -35,7 +42,12 @@ class InvalidOTTransitionError(Exception):
     pass
 
 
-# --- Projects ---
+class NotYourReportError(Exception):
+
+    pass
+
+
+
 
 def create_project(
     db: Session,
@@ -70,6 +82,97 @@ def get_project(
 
     return project
 
+def can_log_hours_for(
+    current_employee: Employee,
+    target_employee: Employee,
+) -> bool:
+
+    if current_employee.employee_id == target_employee.employee_id:
+        return True
+
+    # Company decision: only Admin/Leadership may log hours on behalf
+    # of another employee. Manager and HR-Restricted can each SEE
+    # their own direct reports (list_time_entry_employees), but
+    # logging hours for someone else is Admin-only.
+    if current_employee.access_tier == "Admin/Leadership":
+        return True
+
+    return False
+
+def list_time_entry_employees(
+    db: Session,
+    current_employee: Employee,
+) -> List[Employee]:
+
+    # =====================================================
+    # ADMIN / LEADERSHIP
+    # =====================================================
+    # Admin can log hours for EVERY employee in the directory.
+    if current_employee.access_tier == "Admin/Leadership":
+        return (
+            db.query(Employee)
+            .order_by(Employee.employee_id)
+            .all()
+        )
+
+    # =====================================================
+    # MANAGER
+    # =====================================================
+    # Manager should NOT use the admin log-hours form.
+    # If this endpoint is called, only return the manager
+    # and direct reports as a safe fallback.
+    if current_employee.access_tier == "Manager":
+        direct_reports = (
+            db.query(Employee)
+            .filter(
+                Employee.manager_id == current_employee.employee_id
+            )
+            .order_by(Employee.employee_id)
+            .all()
+        )
+
+        return [current_employee] + direct_reports
+
+    # =====================================================
+    # HR-RESTRICTED
+    # =====================================================
+    if current_employee.access_tier == "HR-Restricted":
+        direct_reports = (
+            db.query(Employee)
+            .filter(
+                Employee.manager_id == current_employee.employee_id
+            )
+            .order_by(Employee.employee_id)
+            .all()
+        )
+
+        return [current_employee] + direct_reports
+
+    # =====================================================
+    # NORMAL EMPLOYEE
+    # =====================================================
+    return [current_employee]
+
+
+
+def _is_employee_on_approved_leave(
+    db: Session,
+    employee_id: str,
+    entry_date: date,
+) -> bool:
+    approved_leave = (
+        db.query(LeaveApplication)
+        .filter(
+            LeaveApplication.employee_id == employee_id,
+            LeaveApplication.status == LeaveStatus.APPROVED,
+            LeaveApplication.start_date <= entry_date,
+            LeaveApplication.end_date >= entry_date,
+        )
+        .first()
+    )
+
+    return approved_leave is not None
+
 
 # --- Time entries ---
 
@@ -83,15 +186,37 @@ def create_time_entry(
         data.project_id,
     )
 
+    employee = db.get(
+        Employee,
+        data.employee_id,
+    )
+
+    if employee is None:
+        raise NotFoundError(
+            f"Employee {data.employee_id} not found."
+        )
+
     if data.date > date.today():
         raise FutureDateError(
             f"Cannot log hours for {data.date} - it's in the future. "
             "Log hours for today or an earlier date."
         )
 
-    if data.date.weekday() >= 5:  # Monday=0 ... Saturday=5, Sunday=6
+    if data.date.weekday() >= 5:
         raise WeekendDateError(
-            f"{data.date} is a weekend. Hours can only be logged on weekdays (Monday-Friday)."
+            f"{data.date} is a weekend. "
+            "Hours can only be logged on weekdays (Monday-Friday)."
+        )
+
+    if _is_employee_on_approved_leave(
+        db,
+        data.employee_id,
+        data.date,
+    ):
+        raise OnLeaveError(
+            f"You're on approved leave on {data.date}. "
+            "Log hours against the 'Leave' project instead, "
+            "or pick a different date."
         )
 
     same_day_entries = (
@@ -126,14 +251,31 @@ def create_time_entry(
         NORMAL_HOURS_PER_DAY - normal_already_logged,
     )
 
+
     if data.hours <= remaining_normal:
         normal_hours = data.hours
         overtime_hours = 0.0
+
         ot_status = None
+        ot_decided_by_role = None
+        ot_decided_at = None
+
     else:
         normal_hours = remaining_normal
         overtime_hours = data.hours - remaining_normal
+
         ot_status = "Pending"
+        ot_decided_by_role = None
+        ot_decided_at = None
+
+        if (
+            employee.access_tier == "Admin/Leadership"
+            and employee.manager_id is None
+        ):
+            ot_status = "Approved"
+            ot_decided_by_role = "No approval required"
+            ot_decided_at = datetime.now(timezone.utc)
+
 
     entry = models.TimeEntry(
         entry_id=data.entry_id,
@@ -147,6 +289,8 @@ def create_time_entry(
         normal_hours=normal_hours,
         overtime_hours=overtime_hours,
         ot_status=ot_status,
+        ot_decided_by_role=ot_decided_by_role,
+        ot_decided_at=ot_decided_at,
     )
 
     db.add(entry)
@@ -181,42 +325,114 @@ def list_time_entries(
 
     query = db.query(models.TimeEntry)
 
+    # Filter by employee
     if employee_id:
         query = query.filter(
             models.TimeEntry.employee_id == employee_id
         )
 
+    # Filter by start date
     if start_date:
         query = query.filter(
             models.TimeEntry.date >= start_date
         )
 
+    # Filter by end date
     if end_date:
         query = query.filter(
             models.TimeEntry.date <= end_date
         )
 
+    # Ignore old/invalid zero-hour records.
+    # TimeEntryCreate already requires hours > 0,
+    # but this protects existing database records.
+    query = query.filter(
+        models.TimeEntry.hours > 0
+    )
+
+    # Newest entries first
+    query = query.order_by(
+        models.TimeEntry.date.desc()
+    )
+
     return query.all()
+
+
+
+
+def _manager_report_ids(
+    db: Session,
+    manager_employee_id: str,
+) -> List[str]:
+
+    reports = (
+        db.query(Employee.employee_id)
+        .filter(
+            Employee.manager_id == manager_employee_id
+        )
+        .all()
+    )
+
+    return [
+        employee_id
+        for (employee_id,) in reports
+    ]
 
 
 def list_pending_ot_entries(
     db: Session,
+    current_employee: Employee,
 ) -> List[models.TimeEntry]:
-    """Admin/HR approval queue."""
+
+    report_ids = _manager_report_ids(
+        db,
+        current_employee.employee_id,
+    )
+
+    if not report_ids:
+        return []
 
     return (
         db.query(models.TimeEntry)
         .filter(
-            models.TimeEntry.ot_status == "Pending"
+            models.TimeEntry.ot_status == "Pending",
+            models.TimeEntry.employee_id.in_(
+                report_ids
+            ),
+        )
+        .order_by(
+            models.TimeEntry.date.desc()
         )
         .all()
     )
 
 
+def _assert_can_decide_ot(
+    db: Session,
+    entry: models.TimeEntry,
+    current_employee: Employee,
+) -> None:
+
+    owner = db.get(
+        Employee,
+        entry.employee_id,
+    )
+
+    if owner is None:
+        raise NotYourReportError(
+            "The employee who submitted this overtime could not be found."
+        )
+
+    if owner.manager_id != current_employee.employee_id:
+        raise NotYourReportError(
+            "You can only approve or reject overtime for your own direct reports."
+        )
+
+
 def approve_ot(
     db: Session,
     entry_id: str,
-    decided_by_role: str,
+    current_employee: Employee,
 ) -> models.TimeEntry:
 
     entry = get_time_entry(
@@ -226,12 +442,25 @@ def approve_ot(
 
     if entry.ot_status != "Pending":
         raise InvalidOTTransitionError(
-            f"Time entry {entry_id} has no pending overtime to approve."
+            f"Time entry {entry_id} has no pending "
+            "overtime to approve."
         )
 
+    _assert_can_decide_ot(
+        db,
+        entry,
+        current_employee,
+    )
+
     entry.ot_status = "Approved"
-    entry.ot_decided_by_role = decided_by_role
-    entry.ot_decided_at = datetime.now(timezone.utc)
+
+    entry.ot_decided_by_role = (
+        current_employee.access_tier
+    )
+
+    entry.ot_decided_at = (
+        datetime.now(timezone.utc)
+    )
 
     db.commit()
     db.refresh(entry)
@@ -242,7 +471,7 @@ def approve_ot(
 def reject_ot(
     db: Session,
     entry_id: str,
-    decided_by_role: str,
+    current_employee: Employee,
 ) -> models.TimeEntry:
 
     entry = get_time_entry(
@@ -252,14 +481,27 @@ def reject_ot(
 
     if entry.ot_status != "Pending":
         raise InvalidOTTransitionError(
-            f"Time entry {entry_id} has no pending overtime to reject."
+            f"Time entry {entry_id} has no pending "
+            "overtime to reject."
         )
+
+    _assert_can_decide_ot(
+        db,
+        entry,
+        current_employee,
+    )
 
     entry.hours = entry.normal_hours
     entry.overtime_hours = 0.0
     entry.ot_status = "Rejected"
-    entry.ot_decided_by_role = decided_by_role
-    entry.ot_decided_at = datetime.now(timezone.utc)
+
+    entry.ot_decided_by_role = (
+        current_employee.access_tier
+    )
+
+    entry.ot_decided_at = (
+        datetime.now(timezone.utc)
+    )
 
     db.commit()
     db.refresh(entry)
@@ -282,7 +524,7 @@ def _weeks_in_period(
     end_date: date,
 ) -> float:
 
-    days = (end_date - start_date).days
+    days = (end_date - start_date).days +1
 
     return max(
         days / 7.0,

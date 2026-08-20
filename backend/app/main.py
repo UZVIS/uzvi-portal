@@ -83,6 +83,8 @@ app.include_router(performance_router, prefix="/api/v1")
 app.mount("/receipts", StaticFiles(directory=RECEIPT_STORAGE_DIR), name="receipts")
 
 
+
+
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
