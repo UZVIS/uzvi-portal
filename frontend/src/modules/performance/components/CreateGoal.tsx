@@ -1,22 +1,108 @@
 // src/modules/performance/components/CreateGoal.tsx
 
-import React, { useState } from "react";
+import React, {
+  useEffect,
+  useState,
+} from "react";
+
 import { useNavigate } from "react-router-dom";
 
-import { createGoal } from "../services/performanceService";
-import type { CreateGoalData } from "../types";
+import {
+  createGoal,
+  getActiveCycle,
+} from "../services/performanceService";
+
+import type {
+  CreateGoalData,
+  ReviewCycle,
+} from "../types";
 
 const CreateGoal: React.FC = () => {
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState<CreateGoalData>({
-    description: "",
-    target_outcome: "",
-    cycle_id: 0,
-  });
+  // =====================================
+  // Form Data
+  // =====================================
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [formData, setFormData] =
+    useState<CreateGoalData>({
+      description: "",
+      target_outcome: "",
+      cycle_id: 0,
+    });
+
+  // =====================================
+  // Active Review Cycle
+  // =====================================
+
+  const [activeCycle, setActiveCycle] =
+    useState<ReviewCycle | null>(null);
+
+  const [cycleLoading, setCycleLoading] =
+    useState(true);
+
+  // =====================================
+  // Submit State
+  // =====================================
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  // =====================================
+  // Load Active Review Cycle
+  // =====================================
+
+  useEffect(() => {
+    const loadActiveCycle = async () => {
+      try {
+        setCycleLoading(true);
+        setError("");
+
+        const cycle =
+          await getActiveCycle();
+
+        if (!cycle) {
+          setActiveCycle(null);
+
+          setError(
+            "No active review cycle is available."
+          );
+
+          return;
+        }
+
+        setActiveCycle(cycle);
+
+        // Automatically assign active cycle ID
+        setFormData((prev) => ({
+          ...prev,
+          cycle_id: cycle.id,
+        }));
+      } catch (err) {
+        console.error(
+          "Failed to load active review cycle:",
+          err
+        );
+
+        setActiveCycle(null);
+
+        setError(
+          "Unable to load active review cycle."
+        );
+      } finally {
+        setCycleLoading(false);
+      }
+    };
+
+    loadActiveCycle();
+  }, []);
+
+  // =====================================
+  // Handle Form Change
+  // =====================================
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -27,6 +113,7 @@ const CreateGoal: React.FC = () => {
 
     setFormData((prev) => ({
       ...prev,
+
       [name]:
         name === "cycle_id"
           ? Number(value)
@@ -34,10 +121,23 @@ const CreateGoal: React.FC = () => {
     }));
   };
 
+  // =====================================
+  // Handle Submit
+  // =====================================
+
   const handleSubmit = async (
     e: React.FormEvent
   ) => {
     e.preventDefault();
+
+    // Safety check
+    if (!formData.cycle_id) {
+      setError(
+        "No active review cycle is available."
+      );
+
+      return;
+    }
 
     try {
       setLoading(true);
@@ -47,16 +147,23 @@ const CreateGoal: React.FC = () => {
 
       navigate("/performance");
     } catch (err: any) {
-      console.error(err);
+      console.error(
+        "Failed to create goal:",
+        err
+      );
 
       setError(
-        err.response?.data?.detail ||
-          "Unable to create goal"
+        err?.response?.data?.detail ||
+          "Unable to create goal."
       );
     } finally {
       setLoading(false);
     }
   };
+
+  // =====================================
+  // Render
+  // =====================================
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
@@ -73,6 +180,8 @@ const CreateGoal: React.FC = () => {
         </p>
       </div>
 
+      {/* Error Message */}
+
       {error && (
         <div className="mb-6 rounded-xl border border-red-200 bg-red-50 p-4">
           <p className="text-red-600 font-medium">
@@ -86,7 +195,9 @@ const CreateGoal: React.FC = () => {
         className="space-y-7"
       >
 
+        {/* ===================================== */}
         {/* Goal Description */}
+        {/* ===================================== */}
 
         <div>
 
@@ -121,7 +232,9 @@ const CreateGoal: React.FC = () => {
 
         </div>
 
+        {/* ===================================== */}
         {/* Target Outcome */}
+        {/* ===================================== */}
 
         <div>
 
@@ -134,6 +247,7 @@ const CreateGoal: React.FC = () => {
             value={formData.target_outcome}
             onChange={handleChange}
             placeholder="Enter target outcome"
+            required
             rows={5}
             className="
               w-full
@@ -155,47 +269,67 @@ const CreateGoal: React.FC = () => {
 
         </div>
 
-                {/* Review Cycle ID */}
+        {/* ===================================== */}
+        {/* Active Review Cycle */}
+        {/* ===================================== */}
 
         <div>
 
           <label className="block text-sm font-semibold text-gray-700 mb-3">
-            Review Cycle ID
+            Active Review Cycle
           </label>
 
-          <input
-            type="number"
-            name="cycle_id"
-            value={formData.cycle_id}
-            onChange={handleChange}
-            placeholder="Enter Review Cycle ID"
-            required
+          <div
             className="
               w-full
-              h-12
+              min-h-12
               rounded-xl
               border
               border-gray-300
+              bg-gray-50
               px-4
+              py-3
               text-gray-700
-              placeholder:text-gray-400
-              focus:border-orange-500
-              focus:ring-2
-              focus:ring-orange-200
-              outline-none
-              transition-all
             "
-          />
+          >
+            {cycleLoading ? (
+              <span className="text-gray-500">
+                Loading active review cycle...
+              </span>
+            ) : activeCycle ? (
+              <div className="flex flex-col gap-1">
+
+                <span className="font-semibold text-gray-800">
+                  {activeCycle.name}
+                </span>
+
+                <span className="text-sm text-gray-500">
+                  Cycle ID: {activeCycle.id}
+                </span>
+
+              </div>
+            ) : (
+              <span className="text-red-500">
+                No active review cycle available.
+              </span>
+            )}
+          </div>
 
         </div>
 
+        {/* ===================================== */}
         {/* Buttons */}
+        {/* ===================================== */}
 
         <div className="flex justify-end gap-4 pt-4">
 
+          {/* Cancel */}
+
           <button
             type="button"
-            onClick={() => navigate("/performance")}
+            onClick={() =>
+              navigate("/performance")
+            }
             className="
               px-6
               py-3
@@ -212,9 +346,16 @@ const CreateGoal: React.FC = () => {
             Cancel
           </button>
 
+          {/* Create Goal */}
+
           <button
             type="submit"
-            disabled={loading}
+            disabled={
+              loading ||
+              cycleLoading ||
+              !activeCycle ||
+              !formData.cycle_id
+            }
             className="
               px-8
               py-3
@@ -228,7 +369,11 @@ const CreateGoal: React.FC = () => {
               disabled:cursor-not-allowed
             "
           >
-            {loading ? "Creating..." : "Create Goal"}
+            {loading
+              ? "Creating..."
+              : cycleLoading
+              ? "Loading Cycle..."
+              : "Create Goal"}
           </button>
 
         </div>

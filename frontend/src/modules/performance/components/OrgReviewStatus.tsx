@@ -7,6 +7,15 @@ import React, {
 
 import axios from "axios";
 
+import {
+  getActiveCycle,
+} from "../services/performanceService";
+
+import type {
+  ReviewCycle,
+} from "../types";
+
+
 interface EmployeeStatus {
 
   employee_id: string;
@@ -24,6 +33,7 @@ interface EmployeeStatus {
   completion_percentage: number;
 
 }
+
 
 interface OrgStatus {
 
@@ -43,14 +53,19 @@ interface OrgStatus {
 
 }
 
+
 const API =
   import.meta.env.VITE_API_URL ||
   "http://localhost:8000/api/v1/performance";
+
 
 const OrgReviewStatus: React.FC = () => {
 
   const [data, setData] =
     useState<OrgStatus | null>(null);
+
+  const [activeCycle, setActiveCycle] =
+    useState<ReviewCycle | null>(null);
 
   const [loading, setLoading] =
     useState(true);
@@ -58,11 +73,13 @@ const OrgReviewStatus: React.FC = () => {
   const [error, setError] =
     useState("");
 
+
   useEffect(() => {
 
     loadStatus();
 
   }, []);
+
 
   const loadStatus = async () => {
 
@@ -70,16 +87,48 @@ const OrgReviewStatus: React.FC = () => {
 
       setLoading(true);
 
+      setError("");
+
+
+      // ================= ACTIVE REVIEW CYCLE =================
+
+      const cycle =
+        await getActiveCycle("ADMIN1");
+
+
+      setActiveCycle(cycle);
+
+
+      if (!cycle) {
+
+        setError(
+          "No active review cycle found."
+        );
+
+        setData(null);
+
+        return;
+
+      }
+
+
+      // ================= ORGANIZATION STATUS =================
+
       const response =
         await axios.get(
-          `${API}/status/org?cycle_id=1`
+          `${API}/status/org?cycle_id=${cycle.id}`
         );
+
 
       setData(response.data);
 
+
     } catch (err) {
 
-      console.error(err);
+      console.error(
+        "Organization review status error:",
+        err
+      );
 
       setError(
         "Unable to load organization review status."
@@ -92,6 +141,7 @@ const OrgReviewStatus: React.FC = () => {
     }
 
   };
+
 
   if (loading) {
 
@@ -111,6 +161,7 @@ const OrgReviewStatus: React.FC = () => {
 
   }
 
+
   if (error) {
 
     return (
@@ -125,9 +176,31 @@ const OrgReviewStatus: React.FC = () => {
 
   }
 
+
+  if (!data) {
+
+    return (
+
+      <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
+
+        <h2 className="text-yellow-700 font-semibold">
+
+          No Organization Review Status Found
+
+        </h2>
+
+      </div>
+
+    );
+
+  }
+
+
   return (
 
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+
+      {/* Header */}
 
       <h2 className="text-3xl font-bold text-gray-800">
 
@@ -135,15 +208,51 @@ const OrgReviewStatus: React.FC = () => {
 
       </h2>
 
+
       <p className="text-gray-500 mt-2">
 
         Organization Performance Review Summary
 
       </p>
 
-      <div className="grid grid-cols-4 gap-5 mt-8">
 
-                <div className="bg-blue-50 rounded-xl p-5 border">
+      {/* Active Cycle */}
+
+      {activeCycle && (
+
+        <div className="mt-6 bg-orange-50 border border-orange-200 rounded-xl p-5">
+
+          <p className="text-sm text-gray-500">
+
+            Active Review Cycle
+
+          </p>
+
+          <h3 className="text-xl font-bold text-gray-800 mt-1">
+
+            {activeCycle.name}
+
+          </h3>
+
+          <p className="text-sm text-gray-500 mt-1">
+
+            Cycle ID: {activeCycle.id}
+
+          </p>
+
+        </div>
+
+      )}
+
+
+      {/* Summary Cards */}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5 mt-8">
+
+
+        {/* Total Employees */}
+
+        <div className="bg-blue-50 rounded-xl p-5 border">
 
           <h4 className="text-sm text-gray-500">
 
@@ -153,11 +262,14 @@ const OrgReviewStatus: React.FC = () => {
 
           <h2 className="text-3xl font-bold mt-2">
 
-            {data?.total_employees}
+            {data.total_employees}
 
           </h2>
 
         </div>
+
+
+        {/* Completed Reviews */}
 
         <div className="bg-green-50 rounded-xl p-5 border">
 
@@ -169,11 +281,14 @@ const OrgReviewStatus: React.FC = () => {
 
           <h2 className="text-3xl font-bold mt-2 text-green-600">
 
-            {data?.completed_count}
+            {data.completed_count}
 
           </h2>
 
         </div>
+
+
+        {/* Pending Self Assessment */}
 
         <div className="bg-yellow-50 rounded-xl p-5 border">
 
@@ -185,11 +300,14 @@ const OrgReviewStatus: React.FC = () => {
 
           <h2 className="text-3xl font-bold mt-2 text-yellow-600">
 
-            {data?.pending_self_assessment_count}
+            {data.pending_self_assessment_count}
 
           </h2>
 
         </div>
+
+
+        {/* Pending Manager Review */}
 
         <div className="bg-red-50 rounded-xl p-5 border">
 
@@ -201,13 +319,16 @@ const OrgReviewStatus: React.FC = () => {
 
           <h2 className="text-3xl font-bold mt-2 text-red-600">
 
-            {data?.pending_manager_review_count}
+            {data.pending_manager_review_count}
 
           </h2>
 
         </div>
 
       </div>
+
+
+      {/* Employee Table */}
 
       <div className="overflow-x-auto mt-10">
 
@@ -257,11 +378,11 @@ const OrgReviewStatus: React.FC = () => {
 
           </thead>
 
+
           <tbody>
 
-            {
-
-              data?.employees.map((employee) => (
+            {data.employees.map(
+              (employee) => (
 
                 <tr
                   key={employee.employee_id}
@@ -274,45 +395,41 @@ const OrgReviewStatus: React.FC = () => {
 
                   </td>
 
+
                   <td className="px-4 py-4">
 
                     {employee.goals_count}
 
                   </td>
 
-                  <td className="px-4 py-4">
-
-                    {employee.status.replaceAll("_", " ")}
-
-                  </td>
 
                   <td className="px-4 py-4">
 
-                    {
-
-                      employee.self_assessment_submitted
-
-                        ? "Yes"
-
-                        : "No"
-
-                    }
+                    {employee.status.replaceAll(
+                      "_",
+                      " "
+                    )}
 
                   </td>
+
 
                   <td className="px-4 py-4">
 
-                    {
-
-                      employee.manager_review_completed
-
-                        ? "Completed"
-
-                        : "Pending"
-
-                    }
+                    {employee.self_assessment_submitted
+                      ? "Yes"
+                      : "No"}
 
                   </td>
+
+
+                  <td className="px-4 py-4">
+
+                    {employee.manager_review_completed
+                      ? "Completed"
+                      : "Pending"}
+
+                  </td>
+
 
                   <td className="px-4 py-4">
 
@@ -322,9 +439,8 @@ const OrgReviewStatus: React.FC = () => {
 
                 </tr>
 
-              ))
-
-            }
+              )
+            )}
 
           </tbody>
 
@@ -332,11 +448,11 @@ const OrgReviewStatus: React.FC = () => {
 
       </div>
 
-          </div>
+    </div>
 
   );
 
 };
 
+
 export default OrgReviewStatus;
-    
