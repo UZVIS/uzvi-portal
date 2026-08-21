@@ -25,9 +25,15 @@ type ViewMode = "feed" | "all" | "needsAck";
 
 interface AnnouncementsPageProps {
   initialView?: ViewMode;
+  /** Called after a successful post or acknowledgment, so a parent page
+   * (like the announcements dashboard) can refresh its own summary data. */
+  onChange?: () => void;
 }
 
-export function AnnouncementsPage({ initialView: initialViewProp }: AnnouncementsPageProps = {}) {
+export function AnnouncementsPage({
+  initialView: initialViewProp,
+  onChange,
+}: AnnouncementsPageProps = {}) {
   const { employee } = useAuth();
   const canManage = employee ? POSTER_TIERS.has(employee.access_tier) : false;
 
@@ -86,6 +92,7 @@ export function AnnouncementsPage({ initialView: initialViewProp }: Announcement
     try {
       await acknowledgeAnnouncement(announcementId, employee.employee_id);
       await load();
+      onChange?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not record acknowledgment.");
     } finally {
