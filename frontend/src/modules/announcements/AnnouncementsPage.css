@@ -445,6 +445,13 @@
   color: #111827;
 }
 
+.drawer__employee-id {
+  font-weight: 500;
+  font-family: var(--font-mono, monospace);
+  color: #9ca3af;
+  font-size: 12.5px;
+}
+
 .drawer__status {
   font-size: 12.5px;
   font-weight: 700;
