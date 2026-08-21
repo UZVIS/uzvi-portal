@@ -25,6 +25,8 @@ export interface OnboardingTask {
   name: string;
   seq: number;
   responsible_role: string;
+  expected_days: number | null;
+  required_doc_type: string | null;
 }
 
 export interface OnboardingInstance {
@@ -112,6 +114,19 @@ export function getInstance(instanceId: string): Promise<OnboardingInstance> {
   return fetch(`${BASE_PATH}/instances/${encodeURIComponent(instanceId)}`).then((r) =>
     handle(r, "That onboarding instance wasn't found.")
   );
+}
+
+/** GET /api/v1/onboarding/instances/by-employee/{id}?requester_id=... - own instance only for a plain Employee, or Admin/HR for anyone */
+export function getInstanceForEmployee(
+  employeeId: string,
+  requesterId: string
+): Promise<OnboardingInstance | null> {
+  return fetch(
+    `${BASE_PATH}/instances/by-employee/${encodeURIComponent(employeeId)}?requester_id=${encodeURIComponent(requesterId)}`
+  ).then((r) => {
+    if (r.status === 404) return null;
+    return handle(r, "Could not load your onboarding instance.");
+  });
 }
 
 /** GET /api/v1/onboarding/instances/{id}/progress */

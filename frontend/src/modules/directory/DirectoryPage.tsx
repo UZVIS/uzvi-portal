@@ -145,6 +145,7 @@ export function DirectoryPage() {
         ) : filtered.length === 0 ? (
           <p className="directory-row__muted">No employees match your search.</p>
         ) : (
+          <div className="directory-table__scroll">
           <table className="directory-table">
             <colgroup>
               <col />
@@ -183,6 +184,7 @@ export function DirectoryPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </section>
 

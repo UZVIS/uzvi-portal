@@ -1,5 +1,6 @@
-import { useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useAuth } from "../../shared/auth/AuthContext";
+import { listActiveEmployees, type Employee } from "../directory/api";
 import { registerDocument, viewDocument, getAccessLogs } from "./api";
 import { DocumentUploadForm } from "./components/DocumentUploadForm";
 import { DocumentLookup } from "./components/DocumentLookup";
@@ -14,6 +15,13 @@ export function DocumentsPage() {
   const { employee } = useAuth();
   const canUpload = employee ? UPLOAD_TIERS.has(employee.access_tier) : false;
   const [docsRefreshKey, setDocsRefreshKey] = useState(0);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+
+  useEffect(() => {
+    listActiveEmployees()
+      .then(setEmployees)
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="directory-page uzvi-portal-theme">
@@ -41,6 +49,7 @@ export function DocumentsPage() {
 
         <DocumentLookup
           requesterId={employee?.employee_id ?? ""}
+          employees={employees}
           onLookup={(id) => viewDocument(id, employee!.employee_id)}
           onGetLogs={(id) => getAccessLogs(id)}
         />

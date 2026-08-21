@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { listExitedEmployees, type Employee } from "../api";
 
 interface ExitedEmployeesListProps {
@@ -34,7 +34,13 @@ export function ExitedEmployeesList({ requesterId, refreshKey }: ExitedEmployees
   if (employees.length === 0) return <p className="directory-row__muted">No exited employees.</p>;
 
   return (
-    <table className="directory-table" style={{ tableLayout: "auto" }}>
+    <table className="directory-table directory-table--compact">
+      <colgroup>
+        <col style={{ width: "15%" }} />
+        <col style={{ width: "30%" }} />
+        <col style={{ width: "35%" }} />
+        <col style={{ width: "20%" }} />
+      </colgroup>
       <thead>
         <tr>
           <th>ID</th>
