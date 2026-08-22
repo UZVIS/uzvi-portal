@@ -311,11 +311,27 @@ def test_ticket_left_unassigned_when_category_has_no_configured_owner():
     assert response.json()["assigned_to"] is None
 
 
+def _seed_employee(db, employee_id, employment_status="active"):
+    db.add(
+        Employee(
+            employee_id=employee_id,
+            name=employee_id,
+            access_tier="Employee",
+            employment_status=employment_status,
+        )
+    )
+    db.commit()
+
+
 def test_ticket_auto_assigned_to_configured_category_owner(monkeypatch):
+    db = TestingSessionLocal()
+    _seed_employee(db, "EMP-IT-01")
+    db.close()
+
     monkeypatch.setitem(
-        helpdesk_router_module.CATEGORY_DEFAULT_OWNERS,
+        helpdesk_router_module.CATEGORY_RESOLVERS,
         "Hardware",
-        "EMP-IT-01",
+        ["EMP-IT-01"],
     )
 
     response = client.post(
@@ -328,10 +344,14 @@ def test_ticket_auto_assigned_to_configured_category_owner(monkeypatch):
 
 
 def test_explicit_assigned_to_overrides_category_routing(monkeypatch):
+    db = TestingSessionLocal()
+    _seed_employee(db, "EMP-IT-01")
+    db.close()
+
     monkeypatch.setitem(
-        helpdesk_router_module.CATEGORY_DEFAULT_OWNERS,
+        helpdesk_router_module.CATEGORY_RESOLVERS,
         "Hardware",
-        "EMP-IT-01",
+        ["EMP-IT-01"],
     )
 
     response = client.post(
@@ -345,6 +365,56 @@ def test_explicit_assigned_to_overrides_category_routing(monkeypatch):
 
     assert response.status_code == 201
     assert response.json()["assigned_to"] == "EMP-IT-02"
+
+
+def test_ticket_routing_skips_inactive_resolvers_and_falls_back_to_manual(
+    monkeypatch,
+):
+    db = TestingSessionLocal()
+    _seed_employee(db, "EMP-IT-LEFT", employment_status="terminated")
+    db.close()
+
+    monkeypatch.setitem(
+        helpdesk_router_module.CATEGORY_RESOLVERS,
+        "Hardware",
+        ["EMP-IT-LEFT"],
+    )
+
+    response = client.post(
+        "/api/helpdesk/tickets",
+        json={**sample_ticket(), "category": "Hardware"},
+    )
+
+    assert response.status_code == 201
+    assert response.json()["assigned_to"] is None
+
+
+def test_ticket_routing_load_balances_across_category_resolvers(monkeypatch):
+    db = TestingSessionLocal()
+    _seed_employee(db, "EMP-IT-01")
+    _seed_employee(db, "EMP-IT-02")
+    db.close()
+
+    monkeypatch.setitem(
+        helpdesk_router_module.CATEGORY_RESOLVERS,
+        "Hardware",
+        ["EMP-IT-01", "EMP-IT-02"],
+    )
+
+    first = client.post(
+        "/api/helpdesk/tickets",
+        json={**sample_ticket(), "category": "Hardware"},
+    )
+    second = client.post(
+        "/api/helpdesk/tickets",
+        json={**sample_ticket(), "category": "Hardware"},
+    )
+
+    # With no prior open tickets, the first pick is the deterministic
+    # tie-breaker (lowest employee_id); the second ticket should route
+    # to the other resolver since the first now has an open ticket.
+    assert first.json()["assigned_to"] == "EMP-IT-01"
+    assert second.json()["assigned_to"] == "EMP-IT-02"
 
 
 # --------------------------------------------------

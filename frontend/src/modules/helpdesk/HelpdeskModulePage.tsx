@@ -5,6 +5,7 @@ import TicketListPage from "./TicketListPage";
 import CreateTicketPage from "./CreateTicketPage";
 import { useAuth } from "../../shared/auth/AuthContext";
 import { isHelpdeskPrivileged } from "./roles";
+import { HelpdeskToast } from "./components/HelpdeskToast";
 
 export default function HelpdeskModulePage() {
   const { employee } = useAuth();
@@ -12,14 +13,24 @@ export default function HelpdeskModulePage() {
 
   const [activeTab, setActiveTab] = useState<"tickets" | "create">("tickets");
   const [refreshKey, setRefreshKey] = useState(0);
+  const [successMessage, setSuccessMessage] = useState("");
 
-  const handleTicketCreated = () => {
+  const handleTicketCreated = (message: string) => {
     setRefreshKey((prev) => prev + 1);
     setActiveTab("tickets");
+    setSuccessMessage(message);
   };
 
   return (
     <div className="helpdesk-page">
+      {successMessage && (
+        <HelpdeskToast
+          message={successMessage}
+          kind="success"
+          onDismiss={() => setSuccessMessage("")}
+        />
+      )}
+
       <div className="helpdesk-header">
         <div>
           <h1>Helpdesk</h1>
