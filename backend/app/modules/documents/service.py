@@ -19,6 +19,10 @@ class NotAuthorized(Exception):
     pass
 
 
+class InvalidDocType(Exception):
+    pass
+
+
 def _get_requester(db: Session, requester_id: str) -> Employee | None:
     return db.query(Employee).filter(Employee.employee_id == requester_id).first()
 
@@ -31,6 +35,12 @@ def create_document(db: Session, doc_in: DocumentCreate) -> EmployeeDocument:
     if not (is_hr or is_self_upload):
         raise NotAuthorized(
             "Only HR-Restricted staff, or the employee themselves, may upload a document."
+        )
+
+    valid_doc_types = {"offer_letter", "payslip", "experience_letter", "id_proof", "address_proof"}
+    if doc_in.doc_type not in valid_doc_types:
+        raise InvalidDocType(
+            f"'{doc_in.doc_type}' is not a valid document type - must be one of: {', '.join(sorted(valid_doc_types))}."
         )
 
     new_document_id = _generate_next_document_id(db)
@@ -116,3 +126,24 @@ def list_visible_documents(db: Session, requester_id: str) -> list[EmployeeDocum
         .filter(EmployeeDocument.employee_id == requester_id)
         .all()
     )
+
+def check_document_exists(db: Session, employee_id: str, doc_type: str, requester_id: str) -> bool:
+
+    requester = _get_requester(db, requester_id)
+    if requester is None or requester.employment_status != "active":
+        raise NotAuthorized("Unknown requester.")
+
+    is_self = requester_id == employee_id
+    is_hr = requester.access_tier == "HR-Restricted"
+    if not (is_self or is_hr):#
+        raise NotAuthorized("Only HR-Restricted staff or the employee themselves may check this.")
+
+    existing = (
+        db.query(EmployeeDocument)
+        .filter(
+            EmployeeDocument.employee_id == employee_id,
+            EmployeeDocument.doc_type == doc_type,
+        )
+        .first()
+    )
+    return existing is not None

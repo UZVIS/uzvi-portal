@@ -24,7 +24,7 @@ def db():
     Session = sessionmaker(bind=engine)
     session = Session()
     # EMP001: the new joiner. EMP002: Admin. EMP003: HR-Restricted. EMP004: Manager. EMP005: plain Employee.
-    session.add(Employee(employee_id="EMP001", name="New Joiner", access_tier="Employee"))
+    session.add(Employee(employee_id="EMP001", name="New Joiner", access_tier="Employee", join_date=datetime.date(2026, 1, 15)))
     session.add(Employee(employee_id="EMP002", name="Admin", access_tier="Admin/Leadership"))
     session.add(Employee(employee_id="EMP003", name="HR Person", access_tier="HR-Restricted"))
     session.add(Employee(employee_id="EMP004", name="Manager", access_tier="Manager"))
@@ -131,12 +131,65 @@ def test_task_ids_auto_generate_in_sequence(db):
     assert a.task_id != b.task_id
 
 
+def test_add_task_with_invalid_role_raises(db):
+    template = service.create_template(
+        db, OnboardingTemplateCreate(name="Standard", requester_id="EMP002")
+    )
+    with pytest.raises(service.InvalidResponsibleRole):
+        service.add_task_to_template(
+            db,
+            OnboardingTaskCreate(
+                template_id=template.template_id, name="Bad task", seq=1,
+                responsible_role="xyz", requester_id="EMP002",
+            ),
+        )
+
+
+def test_add_task_with_negative_expected_days_raises(db):
+    template = service.create_template(
+        db, OnboardingTemplateCreate(name="Standard", requester_id="EMP002")
+    )
+    with pytest.raises(service.InvalidExpectedDays):
+        service.add_task_to_template(
+            db,
+            OnboardingTaskCreate(
+                template_id=template.template_id, name="Bad task", seq=1,
+                responsible_role="hr", expected_days=-3, requester_id="EMP002",
+            ),
+        )
+
+
 # --- instance creation and progress tracking ---
 
 def test_create_instance_requires_valid_template(db):
     with pytest.raises(service.TemplateNotFound):
         service.create_instance(
             db, OnboardingInstanceCreate(employee_id="EMP001", template_id="NOPE", requester_id="EMP002")
+        )
+
+
+def test_create_instance_for_exited_employee_raises(db):
+    ids = _make_template_with_tasks(db)
+    db.query(Employee).filter(Employee.employee_id == "EMP001").update(
+        {"employment_status": "exited"}
+    )
+    db.commit()
+    with pytest.raises(service.EmployeeExitedForOnboarding):
+        service.create_instance(
+            db, OnboardingInstanceCreate(employee_id="EMP001", template_id=ids["template_id"], requester_id="EMP002")
+        )
+
+
+def test_create_instance_without_join_date_raises(db):
+
+    ids = _make_template_with_tasks(db)
+    db.query(Employee).filter(Employee.employee_id == "EMP001").update(
+        {"join_date": None}
+    )
+    db.commit()
+    with pytest.raises(service.MissingJoinDate):
+        service.create_instance(
+            db, OnboardingInstanceCreate(employee_id="EMP001", template_id=ids["template_id"], requester_id="EMP002")
         )
 
 
@@ -162,6 +215,36 @@ def test_create_instance_by_hr_raises(db):
         service.create_instance(
             db, OnboardingInstanceCreate(employee_id="EMP001", template_id=ids["template_id"], requester_id="EMP003")
         )
+
+
+# --- an employee may only ever look up their own instance, never another's ---
+
+def test_get_instance_for_employee_self_succeeds(db):
+    ids = _make_template_with_tasks(db)
+    instance = service.create_instance(
+        db, OnboardingInstanceCreate(employee_id="EMP001", template_id=ids["template_id"], requester_id="EMP002")
+    )
+    found = service.get_instance_for_employee(db, "EMP001", requester_id="EMP001")
+    assert found.instance_id == instance.instance_id
+
+
+def test_get_instance_for_employee_by_unrelated_employee_raises(db):
+    ids = _make_template_with_tasks(db)
+    service.create_instance(
+        db, OnboardingInstanceCreate(employee_id="EMP001", template_id=ids["template_id"], requester_id="EMP002")
+    )
+    # EMP005 is a plain Employee, not EMP001 - must be rejected.
+    with pytest.raises(service.NotAuthorized):
+        service.get_instance_for_employee(db, "EMP001", requester_id="EMP005")
+
+
+def test_get_instance_for_employee_by_admin_succeeds(db):
+    ids = _make_template_with_tasks(db)
+    instance = service.create_instance(
+        db, OnboardingInstanceCreate(employee_id="EMP001", template_id=ids["template_id"], requester_id="EMP002")
+    )
+    found = service.get_instance_for_employee(db, "EMP001", requester_id="EMP002")
+    assert found.instance_id == instance.instance_id
 
 
 # --- only the correct responsible party may complete a task ---

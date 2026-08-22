@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+﻿@import url("https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
 
 .uzvi-portal-theme {
   --color-navy: #2a2622;
@@ -329,21 +329,30 @@
 
 /* ---------- directory table ---------- */
 
+.uzvi-portal-theme .directory-table__scroll {
+  overflow-x: auto;
+}
+
 .uzvi-portal-theme .directory-table {
   width: 100%;
+  min-width: 920px;
   border-collapse: collapse;
   font-size: 13.5px;
   table-layout: fixed;
 }
 
-.uzvi-portal-theme .directory-table col:nth-child(1) { width: 9%; }
-.uzvi-portal-theme .directory-table col:nth-child(2) { width: 15%; }
-.uzvi-portal-theme .directory-table col:nth-child(3) { width: 11%; }
-.uzvi-portal-theme .directory-table col:nth-child(4) { width: 8%; }
+.uzvi-portal-theme .directory-table--compact {
+  min-width: 0;
+}
+
+.uzvi-portal-theme .directory-table col:nth-child(1) { width: 7%; min-width: 70px; }
+.uzvi-portal-theme .directory-table col:nth-child(2) { width: 12%; }
+.uzvi-portal-theme .directory-table col:nth-child(3) { width: 9%; }
+.uzvi-portal-theme .directory-table col:nth-child(4) { width: 11%; }
 .uzvi-portal-theme .directory-table col:nth-child(5) { width: 14%; }
 .uzvi-portal-theme .directory-table col:nth-child(6) { width: 16%; }
-.uzvi-portal-theme .directory-table col:nth-child(7) { width: 12%; }
-.uzvi-portal-theme .directory-table col:nth-child(8) { width: 15%; }
+.uzvi-portal-theme .directory-table col:nth-child(7) { width: 11%; }
+.uzvi-portal-theme .directory-table col:nth-child(8) { width: 20%; }
 
 .uzvi-portal-theme .directory-table td,
 .uzvi-portal-theme .directory-table th {
@@ -355,6 +364,10 @@
 .uzvi-portal-theme .directory-table td:nth-child(2),
 .uzvi-portal-theme .directory-table th:nth-child(2) {
   white-space: normal;
+}
+
+.uzvi-portal-theme .directory-row__truncate {
+  max-width: 0;
 }
 
 .uzvi-portal-theme .directory-table th {
@@ -462,6 +475,74 @@
   margin-bottom: 16px;
 }
 
+.uzvi-portal-theme .instance-tracker__doc-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-amber-soft);
+  color: #9a5a1c;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.uzvi-portal-theme .instance-tracker__doc-icon:hover {
+  background: #f5d9b8;
+}
+
+.uzvi-portal-theme .instance-tracker__doc-popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(42, 38, 34, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.uzvi-portal-theme .instance-tracker__doc-popup {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: 20px 22px;
+  width: 300px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+}
+
+.uzvi-portal-theme .instance-tracker__doc-popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  color: #9a5a1c;
+  margin-bottom: 10px;
+}
+
+.uzvi-portal-theme .instance-tracker__doc-popup-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-slate);
+  padding: 2px;
+  display: flex;
+}
+
+.uzvi-portal-theme .instance-tracker__doc-popup-title {
+  font-weight: 700;
+  color: var(--color-navy);
+  margin: 0 0 4px;
+  font-size: 14px;
+  text-transform: capitalize;
+}
+
+.uzvi-portal-theme .instance-tracker__doc-popup-text {
+  font-size: 13px;
+  color: var(--color-slate);
+  margin: 0 0 16px;
+}
+
 .uzvi-portal-theme .instance-tracker__viewing-header {
   display: flex;
   justify-content: space-between;
@@ -469,8 +550,9 @@
   gap: 12px;
 }
 
-.uzvi-portal-theme .directory-table:has(.directory-row--editing) {
-  table-layout: auto;
+.uzvi-portal-theme .directory-table td .field__input {
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .uzvi-portal-theme .directory-row__exit-btn {
@@ -483,6 +565,12 @@
   flex-direction: column;
   gap: 6px;
   white-space: normal;
+}
+
+.uzvi-portal-theme .directory-row__actions .button-primary,
+.uzvi-portal-theme .directory-row__actions .button-secondary {
+  width: 60%;
+  box-sizing: border-box;
 }
 
 .uzvi-portal-theme .tier-badge {

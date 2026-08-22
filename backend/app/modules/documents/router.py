@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+﻿from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -19,9 +19,33 @@ def register_document_record(doc_in: DocumentCreate, db: Session = Depends(get_d
         return service.create_document(db, doc_in)
     except service.DocumentAlreadyExists:
         raise HTTPException(status_code=400, detail="Document record ID already exists.")
+    except service.InvalidDocType as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except service.NotAuthorized as e:
         raise HTTPException(status_code=403, detail=str(e))
 
+
+# NOTE: must be defined BEFORE GET /{document_id}, otherwise FastAPI
+
+# matches "exists" as a literal document_id value.
+
+@router.get("/exists")
+
+def check_document_exists_route(
+
+    employee_id: str, doc_type: str, requester_id: str, db: Session = Depends(get_db)
+
+):
+
+    try:
+
+        exists = service.check_document_exists(db, employee_id, doc_type, requester_id)
+
+    except service.NotAuthorized as e:
+
+        raise HTTPException(status_code=403, detail=str(e))
+
+    return {"exists": exists}
 @router.get("/expired/list", response_model=List[DocumentResponse])
 def get_expired_documents(requester_id: str, db: Session = Depends(get_db)):
     try:
