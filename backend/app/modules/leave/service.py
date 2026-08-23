@@ -7,6 +7,10 @@ import holidays
 from datetime import datetime, date, timedelta
 from fastapi import HTTPException
 from sqlalchemy.orm import Session, joinedload
+from datetime import date
+import holidays as pyholidays
+from app.modules.attendance.models import AttendanceRecord, AttendanceStatus
+from app.modules.calendar.models import Holiday
 
 from app.modules.leave import crud
 from app.modules.leave.models import (
@@ -329,3 +333,80 @@ def update_leave_status(db: Session, application_id: str, leave_status: LeaveSta
 
 def clean_test_leave_data(db: Session):
     return crud.reset_all_leave_data(db=db)
+
+# ==========================================
+# Comp-Off Automation Logic
+# ==========================================
+def sync_comp_off_balances(db: Session):
+    """
+    అటెండెన్స్ టేబుల్ ని చెక్ చేసి, వీకెండ్ లేదా హాలిడే రోజు పనిచేసిన వాళ్ళకి Comp-Off క్రెడిట్ చేస్తుంది.
+    """
+    # 1. ఇంకా Comp-Off ఇవ్వని, ఆఫీస్/WFH చేసిన రికార్డ్స్ తెచ్చుకుంటాం
+    uncredited_records = db.query(AttendanceRecord).filter(
+        AttendanceRecord.is_comp_off_credited == False,
+        AttendanceRecord.status.in_([AttendanceStatus.IN_OFFICE, AttendanceStatus.WFH])
+    ).all()
+
+    if not uncredited_records:
+        return {"message": "No new weekend/holiday work found to credit."}
+
+    # 2. డేటాబేస్ లో ఉన్న హాలిడేస్ అన్నీ ఒక లిస్ట్ లోకి తెచ్చుకుంటాం
+    holidays_db = db.query(Holiday).all()
+    holiday_dates = {h.date.isoformat() if hasattr(h.date, 'isoformat') else str(h.date) for h in holidays_db}
+
+    current_year = date.today().year
+    
+    # 3. పబ్లిక్ హాలిడేస్ కూడా కలుపుతాం
+    in_holidays = pyholidays.country_holidays('IN', years=current_year)
+    for h_date in in_holidays.keys():
+        holiday_dates.add(h_date.isoformat())
+
+    # 4. Comp-Off లీవ్ ఐడీ కనుక్కుంటాం
+    comp_off_type = db.query(LeaveType).filter(LeaveType.name.ilike("%comp%")).first()
+    if not comp_off_type:
+        return {"error": "Comp-Off leave type not found in the system."}
+
+    leave_type_id = comp_off_type.leave_type_id
+    comp_offs_added = 0
+
+    # 5. ప్రతి అటెండెన్స్ రికార్డ్ ని చెక్ చేసి బ్యాలెన్స్ ఇస్తాం
+    for record in uncredited_records:
+        record_date = record.attendance_date
+        
+        # 5 అంటే Saturday, 6 అంటే Sunday
+        is_weekend = record_date.weekday() >= 5 
+        formatted_date = record_date.isoformat() if hasattr(record_date, 'isoformat') else str(record_date)
+        is_holiday = formatted_date in holiday_dates
+
+        # వాడు వీకెండ్ గానీ, పబ్లిక్ హాలిడే రోజు గానీ పని చేసుంటే..
+        if is_weekend or is_holiday:
+            # బ్యాలెన్స్ చెక్ చేయడం
+            balance_record = db.query(LeaveBalance).filter(
+                LeaveBalance.employee_id == record.employee_id,
+                LeaveBalance.leave_type_id == leave_type_id,
+                LeaveBalance.year == current_year
+            ).first()
+            
+            if not balance_record:
+                # బ్యాలెన్స్ అకౌంట్ లేకపోతే కొత్తది క్రియేట్ చేస్తాం
+                new_id = f"LB_{record.employee_id}_{leave_type_id}_{current_year}"
+                balance_record = LeaveBalance(
+                    id=new_id,
+                    employee_id=record.employee_id,
+                    leave_type_id=leave_type_id,
+                    year=current_year,
+                    balance=0
+                )
+                db.add(balance_record)
+                db.commit()
+                db.refresh(balance_record)
+
+            # అకౌంట్ లో +1 యాడ్ చేస్తాం!
+            balance_record.balance += 1
+
+            # మళ్ళీ క్రెడిట్ అవ్వకుండా ఈ రికార్డ్ ని True చేస్తాం
+            record.is_comp_off_credited = True
+            comp_offs_added += 1
+
+    db.commit()
+    return {"message": f"Successfully credited {comp_offs_added} Comp-Off days!"}

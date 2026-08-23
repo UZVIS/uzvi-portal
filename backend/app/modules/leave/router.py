@@ -104,3 +104,11 @@ def clean_leave_test_data(db: Session = Depends(get_db)):
         "status": "success",
         "message": "All test leave applications and audit logs have been cleaned successfully."
     }
+# --- NEW: COMP-OFF AUTOMATION API ---
+@router.post("/sync-comp-offs", status_code=200)
+def sync_comp_offs(db: Session = Depends(get_db)):
+    """
+    Trigger this API via a Cron Job (or Admin button) to automatically calculate 
+    and credit Comp-Off leaves based on attendance records.
+    """
+    return service.sync_comp_off_balances(db=db)

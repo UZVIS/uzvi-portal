@@ -209,8 +209,8 @@ export default function AdminDashboard() {
                                                 </td>
                                                 <td className="py-4 px-6">
                                                     <span className={`px-2.5 py-1 rounded text-xs font-bold ${currentStatus === 'APPROVED' ? 'bg-green-100 text-green-700' :
-                                                            currentStatus === 'REJECTED' ? 'bg-red-100 text-red-700' :
-                                                                'bg-amber-100 text-amber-700'
+                                                        currentStatus === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                                                            'bg-amber-100 text-amber-700'
                                                         }`}>
                                                         {currentStatus || "PENDING"}
                                                     </span>
@@ -271,4 +271,4 @@ export default function AdminDashboard() {
             )}
         </div>
     );
-}
+} 
