@@ -70,6 +70,24 @@ def _generate_next_employee_id(db: Session) -> str:
     return f"EMP{max_num + 1:03d}"
 
 
+class InvalidManager(Exception):
+    pass
+
+
+def _validate_manager_id(db: Session, manager_id: str | None, employee_id: str | None) -> None:
+    if manager_id is None:
+        return
+    if manager_id == employee_id:
+        raise InvalidManager("An employee cannot be their own reporting manager.")
+    manager = get_employee(db, manager_id)
+    if manager is None:
+        raise InvalidManager(f"Manager '{manager_id}' does not exist.")
+    if manager.access_tier not in ("Manager", "Admin/Leadership"):
+        raise InvalidManager(
+            f"'{manager_id}' has tier '{manager.access_tier}' - only Manager or Admin/Leadership may be set as a reporting manager."
+        )
+
+
 def create_employee(
     db: Session, employee_in: EmployeeCreate, requester_id: str
 ) -> Employee:
@@ -78,10 +96,11 @@ def create_employee(
     data = employee_in.model_dump(exclude={"employee_id"}, exclude_unset=True)
 
     if is_empty:
-        
         data["access_tier"] = "Admin/Leadership"
     else:
         _check_can_manage(db, requester_id)
+
+    _validate_manager_id(db, data.get("manager_id"), employee_id=None)
 
     new_employee_id = _generate_next_employee_id(db)
 
@@ -114,7 +133,11 @@ def update_employee(
     if not employee:
         raise EmployeeNotFound(employee_id)
 
-    for field, value in update_in.model_dump(exclude_unset=True).items():
+    update_data = update_in.model_dump(exclude_unset=True)
+    if "manager_id" in update_data:
+        _validate_manager_id(db, update_data["manager_id"], employee_id=employee_id)
+
+    for field, value in update_data.items():
         setattr(employee, field, value)
 
     db.commit()

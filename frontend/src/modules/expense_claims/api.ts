@@ -174,6 +174,8 @@ export interface ExpenseClaim {
   description?: string | null;
   receipt_file_path?: string | null;
   decided_by_role?: string | null;
+  decided_by?: string | null;
+  decided_by_name?: string | null;
   decided_at?: string | null;
 }
 

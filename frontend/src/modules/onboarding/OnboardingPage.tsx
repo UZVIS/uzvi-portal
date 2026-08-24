@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+﻿import { useCallback, useEffect, useState } from "react";
 
 import { useAuth } from "../../shared/auth/AuthContext";
 import { listActiveEmployees, type Employee } from "../directory/api";
+import { getVisibleDocuments, checkDocumentExists } from "../documents/api";
 import {
   listTemplates,
   listTasksForTemplate,
@@ -9,6 +10,7 @@ import {
   addTask,
   startOnboarding,
   getInstance,
+  getInstanceForEmployee,
   getProgress,
   getCompletedTaskIds,
   getOverdueTaskIds,
@@ -34,10 +36,11 @@ const COHORT_VIEW_TIERS = new Set(["Admin/Leadership", "HR-Restricted"]);
 
 export function OnboardingPage() {
   const { employee } = useAuth();
-  
+
   const canManageTemplates = employee ? TEMPLATE_MANAGE_TIERS.has(employee.access_tier) : false;
   const canStartInstances = employee ? START_INSTANCE_TIERS.has(employee.access_tier) : false;
   const canViewCohort = employee ? COHORT_VIEW_TIERS.has(employee.access_tier) : false;
+  const isPlainEmployee = employee ? employee.access_tier === "Employee" : false;
 
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [templates, setTemplates] = useState<OnboardingTemplate[]>([]);
@@ -52,6 +55,12 @@ export function OnboardingPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [cohortRefreshKey, setCohortRefreshKey] = useState(0);
+  const [ownDocumentTypes, setOwnDocumentTypes] = useState<Set<string>>(new Set());
+
+  const canAssistWithDocuments = employee
+    ? employee.access_tier === "HR-Restricted" || instance?.employee_id === employee.employee_id
+    : false;
+  const isViewingOwnInstance = !!(employee && instance && instance.employee_id === employee.employee_id);
 
   const loadAll = useCallback(async () => {
     setIsLoading(true);
@@ -61,8 +70,6 @@ export function OnboardingPage() {
       setEmployees(emps);
       setTemplates(tpls);
 
-      // Load tasks for every template so the checklist is ready once an
-      // instance is started or looked up.
       const taskEntries = await Promise.all(
         tpls.map(async (t) => [t.template_id, await listTasksForTemplate(t.template_id)] as const)
       );
@@ -77,6 +84,77 @@ export function OnboardingPage() {
   useEffect(() => {
     void loadAll();
   }, [loadAll]);
+
+  useEffect(() => {
+    if (!employee || !isPlainEmployee) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const found = await getInstanceForEmployee(employee.employee_id, employee.employee_id);
+        if (cancelled) return;
+        if (found) {
+          setInstance(found);
+          const [prog, doneIds, overdueIds, details] = await Promise.all([
+            getProgress(found.instance_id),
+            getCompletedTaskIds(found.instance_id),
+            getOverdueTaskIds(found.instance_id),
+            getCompletionDetails(found.instance_id),
+          ]);
+          if (cancelled) return;
+          setProgress(prog);
+          setCompletedTaskIds(new Set(doneIds));
+          setOverdueTaskIds(new Set(overdueIds));
+          setCompletionDetails(Object.fromEntries(details.map((d) => [d.task_id, d])));
+          setIsTaskStateKnown(true);
+        }
+      } catch {
+        // No instance yet - the empty state message covers it.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [employee, isPlainEmployee]);
+
+  useEffect(() => {
+    if (!employee || !instance) {
+      setOwnDocumentTypes(new Set());
+      return;
+    }
+    let cancelled = false;
+
+    if (isViewingOwnInstance) {
+      getVisibleDocuments(employee.employee_id)
+        .then((docs) => {
+          if (!cancelled) setOwnDocumentTypes(new Set(docs.map((d) => d.doc_type)));
+        })
+        .catch(() => {});
+    } else if (employee.access_tier === "HR-Restricted") {
+      const tasksHere = tasksByTemplate[instance.template_id] ?? [];
+      const requiredTypes = Array.from(
+        new Set(tasksHere.map((t) => t.required_doc_type).filter((t): t is string => !!t))
+      );
+      Promise.all(
+        requiredTypes.map((docType) =>
+          checkDocumentExists(instance.employee_id, docType, employee.employee_id).then(
+            (exists) => [docType, exists] as const
+          )
+        )
+      )
+        .then((results) => {
+          if (cancelled) return;
+          const present = new Set(results.filter(([, exists]) => exists).map(([docType]) => docType));
+          setOwnDocumentTypes(present);
+        })
+        .catch(() => {});
+    } else {
+      setOwnDocumentTypes(new Set());
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [employee, instance, isViewingOwnInstance, tasksByTemplate, completedTaskIds]);
 
   async function handleCreateTemplate(name: string) {
     if (!employee) return;
@@ -139,7 +217,6 @@ export function OnboardingPage() {
   }
 
   async function handleCompleteTask(taskId: string) {
-
     if (!instance || !employee) return;
     try {
       await completeTask(instance.instance_id, taskId, employee.employee_id);
@@ -185,7 +262,7 @@ export function OnboardingPage() {
         <div>
           <h1>Onboarding</h1>
           <p className="directory-page__subtitle">
-            Structured checklists for new joiners — build a template once, track every new hire against it.
+            Structured checklists for new joiners - build a template once, track every new hire against it.
           </p>
         </div>
       </header>
@@ -217,21 +294,31 @@ export function OnboardingPage() {
           onCompleteTask={handleCompleteTask}
           onReset={handleReset}
           canManage={canStartInstances}
+          emptyStateMessage={
+            isPlainEmployee
+              ? "Your onboarding hasn't started yet - check with HR or your manager."
+              : undefined
+          }
+          showResetButton={canStartInstances}
+          canAssistWithDocuments={canAssistWithDocuments}
+          ownDocumentTypes={ownDocumentTypes}
         />
       </section>
 
-      <section className="directory-page__list">
-        <h2 className="directory-form__title">
-          Look up an existing instance
-        </h2>
-        <LookupForm onLookup={handleLookupExisting} />
-        {isLoading && <p className="directory-row__muted">Loading…</p>}
-      </section>
+      {!isPlainEmployee && (
+        <section className="directory-page__list">
+          <h2 className="directory-form__title">
+            Look up an existing instance
+          </h2>
+          <LookupForm onLookup={handleLookupExisting} />
+          {isLoading && <p className="directory-row__muted">Loading...</p>}
+        </section>
+      )}
 
       {canViewCohort && employee && (
         <section className="directory-page__list">
           <h2 className="directory-form__title">
-            Cohort view — all current joiners
+            Cohort view - all current joiners
           </h2>
           <CohortView requesterId={employee.employee_id} refreshKey={cohortRefreshKey} />
         </section>

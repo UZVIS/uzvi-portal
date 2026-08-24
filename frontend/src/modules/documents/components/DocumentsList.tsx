@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { getVisibleDocuments, type DocumentRecord } from "../api";
 
 interface DocumentsListProps {
@@ -34,7 +34,13 @@ export function DocumentsList({ requesterId, refreshKey }: DocumentsListProps) {
   if (docs.length === 0) return <p className="directory-row__muted">No documents yet.</p>;
 
   return (
-    <table className="directory-table" style={{ tableLayout: "auto" }}>
+    <table className="directory-table directory-table--compact">
+      <colgroup>
+        <col style={{ width: "20%" }} />
+        <col style={{ width: "25%" }} />
+        <col style={{ width: "20%" }} />
+        <col style={{ width: "35%" }} />
+      </colgroup>
       <thead>
         <tr>
           <th>Document ID</th>

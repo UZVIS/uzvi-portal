@@ -49,6 +49,10 @@ def add_task_to_template(task_in: OnboardingTaskCreate, db: Session = Depends(ge
         raise HTTPException(status_code=404, detail="Parent template not found.")
     except service.TaskAlreadyExists as e:
         raise HTTPException(status_code=400, detail=f"Task ID '{e}' already exists — please choose a different one.")
+    except service.InvalidResponsibleRole as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except service.InvalidExpectedDays as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except service.NotAuthorized as e:
         raise HTTPException(status_code=403, detail=str(e))
 
@@ -65,8 +69,25 @@ def start_onboarding_pipeline(
         raise HTTPException(status_code=404, detail="Referenced template not found.")
     except service.EmployeeNotFoundForOnboarding:
         raise HTTPException(status_code=404, detail="Referenced employee not found.")
+    except service.EmployeeExitedForOnboarding as e:
+        raise HTTPException(status_code=400, detail=f"Cannot start onboarding for '{e}' - this employee has already exited.")
+    except service.MissingJoinDate as e:
+        raise HTTPException(status_code=400, detail=f"Cannot start onboarding for '{e}' - no join date is set. Set one in the Directory first.")
     except service.NotAuthorized as e:
         raise HTTPException(status_code=403, detail=str(e))
+
+
+@router.get("/instances/by-employee/{employee_id}", response_model=OnboardingInstanceResponse)
+def get_onboarding_instance_for_employee(
+    employee_id: str, requester_id: str, db: Session = Depends(get_db)
+):
+    try:
+        instance = service.get_instance_for_employee(db, employee_id, requester_id)
+    except service.NotAuthorized as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    if not instance:
+        raise HTTPException(status_code=404, detail="No onboarding instance found for this employee.")
+    return instance
 
 
 @router.get("/instances/{instance_id}", response_model=OnboardingInstanceResponse)

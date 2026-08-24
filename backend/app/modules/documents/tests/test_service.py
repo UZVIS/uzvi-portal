@@ -63,6 +63,18 @@ def test_create_document_by_unrelated_employee_raises(db):
         )
 
 
+def test_create_document_with_invalid_doc_type_raises(db):
+    with pytest.raises(service.InvalidDocType):
+        service.create_document(
+            db,
+            DocumentCreate(
+                employee_id="EMP001",
+                uploaded_by="EMP001",
+                doc_type="random_garbage",
+            ),
+        )
+
+
 def test_document_ids_auto_generate_in_sequence(db):
     a = service.create_document(
         db, DocumentCreate(employee_id="EMP001", uploaded_by="EMP001", doc_type="id_proof")
@@ -162,3 +174,31 @@ def test_document_with_no_expiry_is_never_flagged(db):
 def test_list_expired_documents_by_non_hr_raises(db):
     with pytest.raises(service.NotAuthorized):
         service.list_expired_documents(db, "EMP001")
+def test_check_document_exists_by_owner_succeeds(db):
+
+    service.create_document(
+
+        db, DocumentCreate(employee_id="EMP001", uploaded_by="EMP001", doc_type="offer_letter")
+
+    )
+
+    assert service.check_document_exists(db, "EMP001", "offer_letter", "EMP001") is True
+
+    assert service.check_document_exists(db, "EMP001", "payslip", "EMP001") is False
+
+def test_check_document_exists_by_hr_succeeds(db):
+
+    service.create_document(
+
+        db, DocumentCreate(employee_id="EMP001", uploaded_by="EMP001", doc_type="offer_letter")
+
+    )
+
+    assert service.check_document_exists(db, "EMP001", "offer_letter", "EMP003") is True
+
+def test_check_document_exists_by_unrelated_employee_raises(db):
+
+    with pytest.raises(service.NotAuthorized):
+
+        service.check_document_exists(db, "EMP001", "offer_letter", "EMP002")
+

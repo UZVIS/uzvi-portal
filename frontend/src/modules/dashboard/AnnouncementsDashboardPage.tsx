@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../shared/auth/AuthContext";
 import { listFeedForEmployee, getAcknowledgmentStatus } from "../announcements/api";
 import type { Announcement } from "../announcements/types";
@@ -26,50 +26,53 @@ export function AnnouncementsDashboardPage() {
 
   const [activeView, setActiveView] = useState<ActiveView>(null);
 
+  // Bumped every time an announcement is posted (or otherwise changes) so
+  // the stat cards and any open inline panel refetch immediately instead
+  // of only updating after a full page reload.
+  const [refreshKey, setRefreshKey] = useState(0);
+
   const [feed, setFeed] = useState<Announcement[]>([]);
   const [pendingAckCount, setPendingAckCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadFeed = useCallback(async () => {
     if (!employee) return;
-    let cancelled = false;
     setIsLoading(true);
     setError(null);
 
-    async function load() {
-      try {
-        const data = await listFeedForEmployee(employee!.employee_id);
-        if (cancelled) return;
-        setFeed(data);
+    try {
+      const data = await listFeedForEmployee(employee.employee_id);
+      setFeed(data);
 
-        const requiringAck = data.filter((a) => a.requires_ack);
-        const withStatus = await Promise.all(
-          requiringAck.map(async (a) => {
-            const rows = await getAcknowledgmentStatus(a.announcement_id);
-            const mine = rows.find((r) => r.employee_id === employee!.employee_id);
-            return mine?.acknowledged ?? false;
-          })
-        );
-        if (!cancelled) {
-          setPendingAckCount(withStatus.filter((acked) => !acked).length);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setFeed([]);
-          setPendingAckCount(0);
-          setError(err instanceof Error ? err.message : "Couldn't load the notice board.");
-        }
-      } finally {
-        if (!cancelled) setIsLoading(false);
-      }
+      const requiringAck = data.filter((a) => a.requires_ack);
+      const withStatus = await Promise.all(
+        requiringAck.map(async (a) => {
+          const rows = await getAcknowledgmentStatus(a.announcement_id);
+          const mine = rows.find((r) => r.employee_id === employee.employee_id);
+          return mine?.acknowledged ?? false;
+        })
+      );
+      setPendingAckCount(withStatus.filter((acked) => !acked).length);
+    } catch (err) {
+      setFeed([]);
+      setPendingAckCount(0);
+      setError(err instanceof Error ? err.message : "Couldn't load the notice board.");
+    } finally {
+      setIsLoading(false);
     }
-
-    void load();
-    return () => {
-      cancelled = true;
-    };
   }, [employee]);
+
+  useEffect(() => {
+    void loadFeed();
+  }, [loadFeed, refreshKey]);
+
+  // Call this after any action that changes announcement/acknowledgment
+  // data (posting a new notice, acknowledging one) so everything on this
+  // page reflects it right away.
+  function refresh() {
+    setRefreshKey((k) => k + 1);
+  }
 
   const stats = useMemo(() => {
     const total = feed.length;
@@ -81,6 +84,11 @@ export function AnnouncementsDashboardPage() {
 
   function closeView() {
     setActiveView(null);
+  }
+
+  function handlePosted() {
+    refresh();
+    closeView();
   }
 
   return (
@@ -216,11 +224,15 @@ export function AnnouncementsDashboardPage() {
       {activeView && (
         <section className="ahub-inline">
           {(activeView === "feed" || activeView === "needsAck" || activeView === "all") && (
-            <AnnouncementsPage key={activeView} initialView={activeView} />
+            <AnnouncementsPage
+              key={`${activeView}-${refreshKey}`}
+              initialView={activeView}
+              onChange={refresh}
+            />
           )}
-          {activeView === "ack" && <AcknowledgmentsOverviewPage key="ack" />}
+          {activeView === "ack" && <AcknowledgmentsOverviewPage key={`ack-${refreshKey}`} />}
           {activeView === "new" && (
-            <ComposeAnnouncementPage key="new" onPosted={closeView} />
+            <ComposeAnnouncementPage key="new" onPosted={handlePosted} />
           )}
         </section>
       )}

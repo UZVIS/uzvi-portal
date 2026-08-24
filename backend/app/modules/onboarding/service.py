@@ -27,6 +27,14 @@ class TaskAlreadyExists(Exception):
     pass
 
 
+class InvalidResponsibleRole(Exception):
+    pass
+
+
+class InvalidExpectedDays(Exception):
+    pass
+
+
 class TemplateNotFound(Exception):
     pass
 
@@ -36,6 +44,14 @@ class InstanceAlreadyExists(Exception):
 
 
 class EmployeeNotFoundForOnboarding(Exception):
+    pass
+
+
+class EmployeeExitedForOnboarding(Exception):
+    pass
+
+
+class MissingJoinDate(Exception):
     pass
 
 
@@ -122,6 +138,15 @@ def add_task_to_template(db: Session, task_in: OnboardingTaskCreate) -> Onboardi
     if not template:
         raise TemplateNotFound(task_in.template_id)
 
+    valid_roles = {"new_joiner", "hr", "it", "manager"}
+    if task_in.responsible_role not in valid_roles:
+        raise InvalidResponsibleRole(
+            f"'{task_in.responsible_role}' is not a valid role - must be one of: {', '.join(sorted(valid_roles))}."
+        )
+
+    if task_in.expected_days is not None and task_in.expected_days < 0:
+        raise InvalidExpectedDays("expected_days cannot be negative.")
+
     new_task_id = _generate_next_task_id(db)
 
     new_task = OnboardingTask(
@@ -160,11 +185,12 @@ def create_instance(db: Session, instance_in: OnboardingInstanceCreate) -> Onboa
     )
     if not employee:
         raise EmployeeNotFoundForOnboarding(instance_in.employee_id)
+    if employee.employment_status != "active":
+        raise EmployeeExitedForOnboarding(instance_in.employee_id)
 
-    # FR-ONB-02: "assigned a checklist instance on their join date" - use
-    # the employee's real Directory join_date, falling back to today only
-    # if it was never set (join_date is optional in Directory).
-    start_date = employee.join_date or datetime.date.today()
+    if employee.join_date is None:
+        raise MissingJoinDate(instance_in.employee_id)
+    start_date = employee.join_date
     new_instance_id = _generate_next_instance_id(db)
 
     new_instance = OnboardingInstance(
@@ -192,6 +218,46 @@ def get_instance(db: Session, instance_id: str) -> OnboardingInstance | None:
     return (
         db.query(OnboardingInstance)
         .filter(OnboardingInstance.instance_id == instance_id)
+        .first()
+    )
+
+
+def get_instance_for_employee(
+    db: Session, employee_id: str, requester_id: str
+) -> OnboardingInstance | None:
+
+    requester = _get_employee(db, requester_id)
+    if requester is None or requester.employment_status != "active":
+        raise NotAuthorized("Unknown requester.")
+
+    is_self = requester_id == employee_id
+    is_admin_or_hr = requester.access_tier in ("Admin/Leadership", "HR-Restricted")
+    if not (is_self or is_admin_or_hr):
+        raise NotAuthorized("You may only view your own onboarding instance.")
+
+    return (
+        db.query(OnboardingInstance)
+        .filter(OnboardingInstance.employee_id == employee_id)
+        .first()
+    )
+
+
+def get_instance_for_employee(
+    db: Session, employee_id: str, requester_id: str
+) -> OnboardingInstance | None:
+   
+    requester = _get_employee(db, requester_id)
+    if requester is None or requester.employment_status != "active":
+        raise NotAuthorized("Unknown requester.")
+
+    is_self = requester_id == employee_id
+    is_admin_or_hr = requester.access_tier in ("Admin/Leadership", "HR-Restricted")
+    if not (is_self or is_admin_or_hr):
+        raise NotAuthorized("You may only view your own onboarding instance.")
+
+    return (
+        db.query(OnboardingInstance)
+        .filter(OnboardingInstance.employee_id == employee_id)
         .first()
     )
 

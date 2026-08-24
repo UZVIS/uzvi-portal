@@ -38,6 +38,8 @@ def register_new_employee(
         return service.create_employee(db, employee_in, requester_id)
     except service.EmployeeAlreadyExists:
         raise HTTPException(status_code=400, detail="Employee code already exists.")
+    except service.InvalidManager as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except service.NotAuthorized as e:
         raise HTTPException(status_code=403, detail=str(e))
 
@@ -74,6 +76,8 @@ def edit_employee_profile(
         return service.update_employee(db, employee_id, update_in, requester_id)
     except service.EmployeeNotFound:
         raise HTTPException(status_code=404, detail="Employee not found.")
+    except service.InvalidManager as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except service.NotAuthorized as e:
         raise HTTPException(status_code=403, detail=str(e))
 

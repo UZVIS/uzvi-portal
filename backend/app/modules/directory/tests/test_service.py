@@ -150,6 +150,41 @@ def test_create_team_and_link_employee(db, admin):
     assert emp.team_id == "T1"
 
 
+def test_create_employee_with_invalid_manager_tier_raises(db, admin):
+    plain_emp = service.create_employee(
+        db, EmployeeCreate(name="Plain Employee", access_tier="Employee"), admin
+    )
+    with pytest.raises(service.InvalidManager):
+        service.create_employee(
+            db, EmployeeCreate(name="Someone", manager_id=plain_emp.employee_id), admin
+        )
+
+
+def test_create_employee_with_nonexistent_manager_raises(db, admin):
+    with pytest.raises(service.InvalidManager):
+        service.create_employee(
+            db, EmployeeCreate(name="Someone", manager_id="GHOST"), admin
+        )
+
+
+def test_update_employee_self_referencing_manager_raises(db, admin):
+    emp = service.create_employee(db, EmployeeCreate(name="Asha Rao"), admin)
+    with pytest.raises(service.InvalidManager):
+        service.update_employee(
+            db, emp.employee_id, EmployeeUpdate(manager_id=emp.employee_id), admin
+        )
+
+
+def test_create_employee_with_valid_manager_succeeds(db, admin):
+    mgr = service.create_employee(
+        db, EmployeeCreate(name="Shaik", access_tier="Manager"), admin
+    )
+    emp = service.create_employee(
+        db, EmployeeCreate(name="Asha Rao", manager_id=mgr.employee_id), admin
+    )
+    assert emp.manager_id == mgr.employee_id
+
+
 def test_team_ids_auto_generate_in_sequence(db):
     a = service.create_team(db, TeamCreate(name="Delivery"))
     b = service.create_team(db, TeamCreate(name="Engineering"))
