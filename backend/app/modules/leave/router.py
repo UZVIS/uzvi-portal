@@ -112,3 +112,10 @@ def sync_comp_offs(db: Session = Depends(get_db)):
     and credit Comp-Off leaves based on attendance records.
     """
     return service.sync_comp_off_balances(db=db)
+# ==========================================
+# Comp-Off Sync API Route
+# ==========================================
+@router.post("/sync-comp-offs")
+def sync_comp_offs_api(db: Session = Depends(get_db)):
+    from app.modules.leave.service import sync_comp_off_balances
+    return sync_comp_off_balances(db)

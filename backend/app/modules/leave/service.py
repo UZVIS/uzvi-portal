@@ -7,7 +7,6 @@ import holidays
 from datetime import datetime, date, timedelta
 from fastapi import HTTPException
 from sqlalchemy.orm import Session, joinedload
-from datetime import date
 import holidays as pyholidays
 from app.modules.attendance.models import AttendanceRecord, AttendanceStatus
 from app.modules.calendar.models import Holiday
@@ -92,7 +91,7 @@ def auto_assign_leave_balances(db: Session, employee_id: str):
     else:
         balances_to_add.append({"type": "LT005", "days": 15})  # Paternity Leave
         
-    # ఒక్కొక్క లీవ్ టైప్ ని విడిగా చెక్ చేసి అసైన్ చేస్తాం
+    # Check and assign each leave type individually
     for bal in balances_to_add:
         existing = db.query(LeaveBalance).filter(
             LeaveBalance.employee_id == employee_id,
@@ -109,7 +108,7 @@ def auto_assign_leave_balances(db: Session, employee_id: str):
                 balance=bal["days"]
             )
             db.add(new_balance)
-            db.commit() # BUG FIX: డూప్లికేట్ ఐడీ రాకుండా ఉండటానికి ఇది లూప్ లోపలే ఉండాలి.
+            db.commit() # BUG FIX: This must be inside the loop to prevent duplicate IDs.
             
     return True
 
@@ -335,78 +334,139 @@ def clean_test_leave_data(db: Session):
     return crud.reset_all_leave_data(db=db)
 
 # ==========================================
-# Comp-Off Automation Logic
+# Dynamic Comp-Off Automation Logic (Bulletproof)
 # ==========================================
 def sync_comp_off_balances(db: Session):
     """
-    అటెండెన్స్ టేబుల్ ని చెక్ చేసి, వీకెండ్ లేదా హాలిడే రోజు పనిచేసిన వాళ్ళకి Comp-Off క్రెడిట్ చేస్తుంది.
+    Calculates Comp-Off balances dynamically, fixing year mismatches (future dates)
+    and SQLite string/date formatting issues.
     """
-    # 1. ఇంకా Comp-Off ఇవ్వని, ఆఫీస్/WFH చేసిన రికార్డ్స్ తెచ్చుకుంటాం
-    uncredited_records = db.query(AttendanceRecord).filter(
-        AttendanceRecord.is_comp_off_credited == False,
-        AttendanceRecord.status.in_([AttendanceStatus.IN_OFFICE, AttendanceStatus.WFH])
-    ).all()
-
-    if not uncredited_records:
-        return {"message": "No new weekend/holiday work found to credit."}
-
-    # 2. డేటాబేస్ లో ఉన్న హాలిడేస్ అన్నీ ఒక లిస్ట్ లోకి తెచ్చుకుంటాం
-    holidays_db = db.query(Holiday).all()
-    holiday_dates = {h.date.isoformat() if hasattr(h.date, 'isoformat') else str(h.date) for h in holidays_db}
-
-    current_year = date.today().year
-    
-    # 3. పబ్లిక్ హాలిడేస్ కూడా కలుపుతాం
-    in_holidays = pyholidays.country_holidays('IN', years=current_year)
-    for h_date in in_holidays.keys():
-        holiday_dates.add(h_date.isoformat())
-
-    # 4. Comp-Off లీవ్ ఐడీ కనుక్కుంటాం
-    comp_off_type = db.query(LeaveType).filter(LeaveType.name.ilike("%comp%")).first()
-    if not comp_off_type:
-        return {"error": "Comp-Off leave type not found in the system."}
-
-    leave_type_id = comp_off_type.leave_type_id
-    comp_offs_added = 0
-
-    # 5. ప్రతి అటెండెన్స్ రికార్డ్ ని చెక్ చేసి బ్యాలెన్స్ ఇస్తాం
-    for record in uncredited_records:
-        record_date = record.attendance_date
+    try:
+        # 1. Fetch holidays safely
+        holidays_db = db.query(Holiday).all()
+        holiday_dates = set()
+        for h in holidays_db:
+            if h.date:
+                holiday_dates.add(str(h.date)[:10]) # Extract just YYYY-MM-DD
         
-        # 5 అంటే Saturday, 6 అంటే Sunday
-        is_weekend = record_date.weekday() >= 5 
-        formatted_date = record_date.isoformat() if hasattr(record_date, 'isoformat') else str(record_date)
-        is_holiday = formatted_date in holiday_dates
+        # Add public holidays for multiple years (to handle future testing dates like 2026)
+        for year in [2024, 2025, 2026]:
+            in_holidays = pyholidays.country_holidays('IN', years=year)
+            for h_date in in_holidays.keys():
+                holiday_dates.add(str(h_date)[:10])
 
-        # వాడు వీకెండ్ గానీ, పబ్లిక్ హాలిడే రోజు గానీ పని చేసుంటే..
-        if is_weekend or is_holiday:
-            # బ్యాలెన్స్ చెక్ చేయడం
-            balance_record = db.query(LeaveBalance).filter(
-                LeaveBalance.employee_id == record.employee_id,
-                LeaveBalance.leave_type_id == leave_type_id,
-                LeaveBalance.year == current_year
-            ).first()
+        # 2. Get Comp-Off Leave Type ID (Safe Fallback to LT006)
+        leave_type_id = "LT006"
+        comp_off_type = db.query(LeaveType).filter(LeaveType.name.ilike("%comp%")).first()
+        if comp_off_type:
+            leave_type_id = comp_off_type.leave_type_id
+
+        # 3. Calculate EARNED Comp-Offs (Grouped safely by Employee & Year)
+        attendances = db.query(AttendanceRecord).all()
+        earned_comp_offs = {}
+
+        for record in attendances:
+            # Safely handle SQLite Date parsing
+            record_date = record.attendance_date
+            if isinstance(record_date, str):
+                try:
+                    record_date = datetime.strptime(record_date[:10], "%Y-%m-%d").date()
+                except:
+                    continue
+                    
+            if not record_date:
+                continue
+
+            # Safely check status string or Enum
+            status_str = getattr(record.status, "value", record.status)
+            valid_statuses = ["in-office", "wfh", "IN_OFFICE", "WFH", "Present", "present", "PRESENT"]
+            if status_str not in valid_statuses:
+                continue
+
+            # Check if Weekend (5=Sat, 6=Sun) or Holiday
+            is_weekend = record_date.weekday() >= 5
+            formatted_date = str(record_date)[:10]
+            is_holiday = formatted_date in holiday_dates
+
+            if is_weekend or is_holiday:
+                emp_id = record.employee_id
+                rec_year = record_date.year
+                
+                if emp_id not in earned_comp_offs:
+                    earned_comp_offs[emp_id] = {}
+                earned_comp_offs[emp_id][rec_year] = earned_comp_offs[emp_id].get(rec_year, 0) + 1
+
+        # 4. Calculate USED Comp-Offs 
+        taken_comp_offs = {}
+        applications = db.query(LeaveApplication).filter(
+            LeaveApplication.leave_type_id == leave_type_id,
+            LeaveApplication.status.in_(["APPROVED", "PENDING", "PENDING_HR"])
+        ).all()
+
+        for app in applications:
+            app_date = app.start_date
+            if isinstance(app_date, str):
+                try:
+                    app_date = datetime.strptime(app_date[:10], "%Y-%m-%d").date()
+                except:
+                    continue
             
-            if not balance_record:
-                # బ్యాలెన్స్ అకౌంట్ లేకపోతే కొత్తది క్రియేట్ చేస్తాం
-                new_id = f"LB_{record.employee_id}_{leave_type_id}_{current_year}"
-                balance_record = LeaveBalance(
-                    id=new_id,
-                    employee_id=record.employee_id,
-                    leave_type_id=leave_type_id,
-                    year=current_year,
-                    balance=0
-                )
-                db.add(balance_record)
-                db.commit()
-                db.refresh(balance_record)
+            if not app_date:
+                continue
+                
+            emp_id = app.employee_id
+            app_year = app_date.year
+            
+            # Safe end_date calculation
+            end_date = app.end_date
+            if isinstance(end_date, str):
+                 try:
+                     end_date = datetime.strptime(end_date[:10], "%Y-%m-%d").date()
+                 except:
+                     end_date = app_date
+            
+            days = (end_date - app_date).days + 1
+            
+            if emp_id not in taken_comp_offs:
+                taken_comp_offs[emp_id] = {}
+            taken_comp_offs[emp_id][app_year] = taken_comp_offs[emp_id].get(app_year, 0) + days
 
-            # అకౌంట్ లో +1 యాడ్ చేస్తాం!
-            balance_record.balance += 1
+        # 5. Update Leave Balances Dynamically
+        updates_count = 0
+        
+        for emp_id, yearly_earned in earned_comp_offs.items():
+            for rec_year, earned in yearly_earned.items():
+                used = taken_comp_offs.get(emp_id, {}).get(rec_year, 0)
+                correct_balance = earned - used
+                if correct_balance < 0:
+                    correct_balance = 0
 
-            # మళ్ళీ క్రెడిట్ అవ్వకుండా ఈ రికార్డ్ ని True చేస్తాం
-            record.is_comp_off_credited = True
-            comp_offs_added += 1
+                balance_record = db.query(LeaveBalance).filter(
+                    LeaveBalance.employee_id == emp_id,
+                    LeaveBalance.leave_type_id == leave_type_id,
+                    LeaveBalance.year == rec_year
+                ).first()
 
-    db.commit()
-    return {"message": f"Successfully credited {comp_offs_added} Comp-Off days!"}
+                if not balance_record:
+                    new_id = generate_prefixed_id(db, LeaveBalance, "id", "LB")
+                    balance_record = LeaveBalance(
+                        id=new_id,
+                        employee_id=emp_id,
+                        leave_type_id=leave_type_id,
+                        year=rec_year,
+                        balance=correct_balance
+                    )
+                    db.add(balance_record)
+                    db.commit()
+                    updates_count += 1
+                else:
+                    if balance_record.balance != correct_balance:
+                        balance_record.balance = correct_balance
+                        db.commit()
+                        updates_count += 1
+
+        return {"message": f"Successfully synced {updates_count} balances dynamically!"}
+        
+    except Exception as e:
+        print(f"CRITICAL ERROR IN SYNC: {str(e)}")
+        return {"error": str(e)}

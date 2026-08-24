@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { apiPost, apiGet } from "../../../api/client";
 import { useAuth } from "../../../shared/auth/AuthContext";
-import { CalendarPlus, Paperclip, Lock, Check, X, Clock, AlertCircle, CheckCircle } from "lucide-react";
+import { CalendarPlus, Paperclip, Lock, Check, X, Clock, AlertCircle, CheckCircle, RefreshCw } from "lucide-react"; // Added RefreshCw
 
 export default function LeaveDashboard() {
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -16,6 +16,8 @@ export default function LeaveDashboard() {
     const [attachment, setAttachment] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const [isSyncing, setIsSyncing] = useState(false); // NEW STATE FOR SYNC
+
     // --- NEW: MODAL STATE FOR SUCCESS/ERROR POPUPS ---
     const [modalState, setModalState] = useState({
         isOpen: false,
@@ -27,54 +29,83 @@ export default function LeaveDashboard() {
     const { employee } = useAuth();
     const employeeId = employee?.employee_id;
 
-    useEffect(() => {
-        async function fetchDashboardData() {
-            if (!employeeId) return;
+    const fetchDashboardData = async () => {
+        if (!employeeId) return;
 
-            try {
-                // 1. Fetch Balances First
-                const balancesData = await apiGet(`/v1/leave/leave-balances/${employeeId}`);
-                const balances = Array.isArray(balancesData) ? balancesData : [balancesData];
-                setLeaveBalances(balances);
+        try {
+            // 1. Fetch Balances First
+            const balancesData = await apiGet(`/v1/leave/leave-balances/${employeeId}`);
+            const balances = Array.isArray(balancesData) ? balancesData : [balancesData];
+            setLeaveBalances(balances);
 
-                // 2. Fetch Leave Types
-                const typesData = await apiGet('/v1/leave/leave-types');
-                const validTypes = Array.isArray(typesData) ? typesData : [];
-                setLeaveTypes(validTypes);
+            // 2. Fetch Leave Types
+            const typesData = await apiGet('/v1/leave/leave-types');
+            const validTypes = Array.isArray(typesData) ? typesData : [];
+            setLeaveTypes(validTypes);
 
-                // 3. Set Default Dropdown Value (Only from eligible leaves!)
-                if (validTypes.length > 0 && balances.length > 0) {
-                    const filteredTypes = validTypes.filter(type =>
-                        balances.some(b => b.leave_type_id === type.leave_type_id)
-                    );
-                    if (filteredTypes.length > 0) {
-                        setLeaveTypeId(filteredTypes[0].leave_type_id);
-                    }
+            // 3. Set Default Dropdown Value (Only from eligible leaves!)
+            if (validTypes.length > 0 && balances.length > 0) {
+                const filteredTypes = validTypes.filter(type =>
+                    balances.some(b => b.leave_type_id === type.leave_type_id)
+                );
+                if (filteredTypes.length > 0) {
+                    setLeaveTypeId(filteredTypes[0].leave_type_id);
                 }
-
-                // 4. Fetch Leave History
-                const myApplications = await apiGet(`/v1/leave/applications?employee_id=${employeeId}&role=Employee`);
-                setLeaveHistory(Array.isArray(myApplications) ? myApplications : []);
-
-                // 5. Fetch Holidays
-                try {
-                    const holidaysData = await apiGet('/v1/calendar/holidays');
-                    if (Array.isArray(holidaysData)) {
-                        const hDates = holidaysData.map((h: any) => {
-                            if (typeof h.date === 'string') return h.date.split('T')[0];
-                            return new Date(h.date).toISOString().split('T')[0];
-                        });
-                        setHolidays(hDates);
-                    }
-                } catch (calErr) {
-                    console.error("Error fetching calendar holidays:", calErr);
-                }
-            } catch (error) {
-                console.error("Error fetching dashboard data:", error);
             }
+
+            // 4. Fetch Leave History
+            const myApplications = await apiGet(`/v1/leave/applications?employee_id=${employeeId}&role=Employee`);
+            setLeaveHistory(Array.isArray(myApplications) ? myApplications : []);
+
+            // 5. Fetch Holidays
+            try {
+                const holidaysData = await apiGet('/v1/calendar/holidays');
+                if (Array.isArray(holidaysData)) {
+                    const hDates = holidaysData.map((h: any) => {
+                        if (typeof h.date === 'string') return h.date.split('T')[0];
+                        return new Date(h.date).toISOString().split('T')[0];
+                    });
+                    setHolidays(hDates);
+                }
+            } catch (calErr) {
+                console.error("Error fetching calendar holidays:", calErr);
+            }
+        } catch (error) {
+            console.error("Error fetching dashboard data:", error);
         }
+    };
+
+    useEffect(() => {
         fetchDashboardData();
     }, [employeeId]);
+
+    // --- NEW: MANUAL SYNC FUNCTION ---
+    const handleSyncBalances = async () => {
+        setIsSyncing(true);
+        try {
+            // Force backend to calculate comp-offs dynamically
+            await apiPost('/v1/leave/sync-comp-offs', {});
+            // Re-fetch latest balances after calculation
+            await fetchDashboardData();
+
+            setModalState({
+                isOpen: true,
+                title: "Synced Successfully",
+                message: "Your leave balances have been refreshed with the latest data.",
+                isError: false
+            });
+        } catch (error) {
+            console.error("Error syncing balances:", error);
+            setModalState({
+                isOpen: true,
+                title: "Sync Failed",
+                message: "Unable to refresh balances. Please try again later.",
+                isError: true
+            });
+        } finally {
+            setIsSyncing(false);
+        }
+    };
 
     // --- PURE BACKEND DRIVEN LOGIC ---
     // Only display leave types for which the backend has provided a balance. Independent of gender.
@@ -247,6 +278,8 @@ export default function LeaveDashboard() {
             const updatedMyApps = await apiGet(`/v1/leave/applications?employee_id=${employeeId}&role=Employee`);
             setLeaveHistory(Array.isArray(updatedMyApps) ? updatedMyApps : []);
 
+            await fetchDashboardData(); // Refresh balances after applying leave
+
             resetForm();
 
             // --- SUCCESS MODAL TRIGGER ---
@@ -291,10 +324,23 @@ export default function LeaveDashboard() {
                     <h2 className="text-2xl font-extrabold text-gray-800">My Leave Wallet</h2>
                     <p className="text-sm text-gray-500 mt-1">Manage your balances and track upcoming time off.</p>
                 </div>
-                <button onClick={() => setIsFormOpen(true)} className="mt-4 md:mt-0 bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition flex items-center space-x-2 shadow-md">
-                    <CalendarPlus size={18} />
-                    <span>Request Leave</span>
-                </button>
+
+                {/* --- NEW BUTTONS SECTION --- */}
+                <div className="flex items-center space-x-3 mt-4 md:mt-0">
+                    <button
+                        onClick={handleSyncBalances}
+                        disabled={isSyncing}
+                        className="bg-white border border-gray-300 text-gray-700 px-4 py-2.5 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center space-x-2 shadow-sm disabled:opacity-50"
+                    >
+                        <RefreshCw size={18} className={isSyncing ? "animate-spin text-blue-600" : ""} />
+                        <span>{isSyncing ? "Syncing..." : "Sync Balances"}</span>
+                    </button>
+
+                    <button onClick={() => setIsFormOpen(true)} className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition flex items-center space-x-2 shadow-md">
+                        <CalendarPlus size={18} />
+                        <span>Request Leave</span>
+                    </button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
