@@ -32,6 +32,9 @@ export function EmployeeRow({
   onUpdate,
   canManage,
 }: EmployeeRowProps) {
+  const isLastActiveAdmin =
+    employee.access_tier === "Admin/Leadership" &&
+    employees.filter((e) => e.access_tier === "Admin/Leadership").length <= 1;
   const [isEditing, setIsEditing] = useState(false);
   const [designation, setDesignation] = useState(employee.designation ?? "");
   const [teamId, setTeamId] = useState(employee.team_id ?? "");
@@ -187,6 +190,8 @@ export function EmployeeRow({
           <button
             className="button-secondary directory-row__exit-btn"
             onClick={() => onExit(employee.employee_id)}
+            disabled={isLastActiveAdmin}
+            title={isLastActiveAdmin ? "Cannot exit the last active Admin - promote another employee to Admin/Leadership first." : undefined}
           >
             Mark exited
           </button>

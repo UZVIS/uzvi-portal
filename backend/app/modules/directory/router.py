@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+﻿from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -76,6 +76,8 @@ def edit_employee_profile(
         return service.update_employee(db, employee_id, update_in, requester_id)
     except service.EmployeeNotFound:
         raise HTTPException(status_code=404, detail="Employee not found.")
+    except service.LastAdminError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except service.InvalidManager as e:
         raise HTTPException(status_code=400, detail=str(e))
     except service.NotAuthorized as e:
@@ -90,5 +92,7 @@ def mark_employee_as_exited(
         return service.mark_employee_exited(db, employee_id, requester_id)
     except service.EmployeeNotFound:
         raise HTTPException(status_code=404, detail="Employee not found.")
+    except service.LastAdminError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except service.NotAuthorized as e:
         raise HTTPException(status_code=403, detail=str(e))
