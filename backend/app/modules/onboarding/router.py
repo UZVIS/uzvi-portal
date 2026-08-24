@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+﻿from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -8,6 +8,7 @@ from app.modules.onboarding.schemas import (
     OnboardingTemplateCreate,
     OnboardingTemplateResponse,
     OnboardingTaskCreate,
+    OnboardingTaskUpdate,
     OnboardingTaskResponse,
     OnboardingInstanceCreate,
     OnboardingInstanceResponse,
@@ -48,7 +49,7 @@ def add_task_to_template(task_in: OnboardingTaskCreate, db: Session = Depends(ge
     except service.TemplateNotFound:
         raise HTTPException(status_code=404, detail="Parent template not found.")
     except service.TaskAlreadyExists as e:
-        raise HTTPException(status_code=400, detail=f"Task ID '{e}' already exists — please choose a different one.")
+        raise HTTPException(status_code=400, detail=f"Task ID '{e}' already exists â€” please choose a different one.")
     except service.InvalidResponsibleRole as e:
         raise HTTPException(status_code=400, detail=str(e))
     except service.InvalidExpectedDays as e:
@@ -73,6 +74,8 @@ def start_onboarding_pipeline(
         raise HTTPException(status_code=400, detail=f"Cannot start onboarding for '{e}' - this employee has already exited.")
     except service.MissingJoinDate as e:
         raise HTTPException(status_code=400, detail=f"Cannot start onboarding for '{e}' - no join date is set. Set one in the Directory first.")
+    except service.DuplicateInstance as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except service.NotAuthorized as e:
         raise HTTPException(status_code=403, detail=str(e))
 
@@ -154,5 +157,31 @@ def complete_onboarding_task(task_in: TaskCompletionCreate, db: Session = Depend
             status_code=400,
             detail=f"Cannot complete this task: no {e.doc_type} document found for this employee. Please upload it first.",
         )
+    except service.NotAuthorized as e:
+        raise HTTPException(status_code=403, detail=str(e))
+
+
+@router.patch("/tasks/{task_id}", response_model=OnboardingTaskResponse)
+def edit_task(task_id: str, task_in: OnboardingTaskUpdate, requester_id: str, db: Session = Depends(get_db)):
+    try:
+        return service.update_task(db, task_id, task_in, requester_id)
+    except service.TaskNotFound:
+        raise HTTPException(status_code=404, detail="Task not found.")
+    except service.InvalidResponsibleRole as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except service.InvalidExpectedDays as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except service.NotAuthorized as e:
+        raise HTTPException(status_code=403, detail=str(e))
+
+
+@router.delete("/tasks/{task_id}", status_code=204)
+def remove_task(task_id: str, requester_id: str, db: Session = Depends(get_db)):
+    try:
+        service.delete_task(db, task_id, requester_id)
+    except service.TaskNotFound:
+        raise HTTPException(status_code=404, detail="Task not found.")
+    except service.TaskHasCompletions as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except service.NotAuthorized as e:
         raise HTTPException(status_code=403, detail=str(e))

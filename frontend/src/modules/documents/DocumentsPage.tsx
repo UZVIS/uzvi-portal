@@ -6,6 +6,7 @@ import { DocumentUploadForm } from "./components/DocumentUploadForm";
 import { DocumentLookup } from "./components/DocumentLookup";
 import { ExpiredDocumentsList } from "./components/ExpiredDocumentsList";
 import { DocumentsList } from "./components/DocumentsList";
+import { AllDocumentsList } from "./components/AllDocumentsList";
 import "../shared-theme.css";
 import "./DocumentsPage.css";
 
@@ -39,6 +40,7 @@ export function DocumentsPage() {
           <DocumentUploadForm
             uploaderId={employee.employee_id}
             restrictToSelf={!canUpload}
+            employees={employees}
             onSubmit={(input) =>
               registerDocument(input).then(() => {
                 setDocsRefreshKey((k) => k + 1);
@@ -60,7 +62,16 @@ export function DocumentsPage() {
           <h2 className="directory-form__title">
             Your documents
           </h2>
-          <DocumentsList requesterId={employee.employee_id} refreshKey={docsRefreshKey} />
+          <DocumentsList requesterId={employee.employee_id} employees={employees} refreshKey={docsRefreshKey} />
+        </section>
+      )}
+
+      {canUpload && employee && (
+        <section className="directory-page__list">
+          <h2 className="directory-form__title">
+            All documents
+          </h2>
+          <AllDocumentsList requesterId={employee.employee_id} employees={employees} refreshKey={docsRefreshKey} />
         </section>
       )}
 
@@ -69,7 +80,7 @@ export function DocumentsPage() {
           <h2 className="directory-form__title">
             Expired documents
           </h2>
-          <ExpiredDocumentsList requesterId={employee.employee_id} refreshKey={docsRefreshKey} />
+          <ExpiredDocumentsList requesterId={employee.employee_id} employees={employees} refreshKey={docsRefreshKey} />
         </section>
       )}
     </div>

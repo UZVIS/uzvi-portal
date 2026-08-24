@@ -46,6 +46,14 @@ def check_document_exists_route(
         raise HTTPException(status_code=403, detail=str(e))
 
     return {"exists": exists}
+@router.get("/all", response_model=List[DocumentResponse])
+def get_all_documents_for_hr(requester_id: str, db: Session = Depends(get_db)):
+    try:
+        return service.list_all_documents_for_hr(db, requester_id)
+    except service.NotAuthorized as e:
+        raise HTTPException(status_code=403, detail=str(e))
+
+
 @router.get("/expired/list", response_model=List[DocumentResponse])
 def get_expired_documents(requester_id: str, db: Session = Depends(get_db)):
     try:

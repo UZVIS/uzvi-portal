@@ -198,3 +198,32 @@ export function completeTask(
     }),
   }).then((r) => handle(r, "Could not mark the task complete."));
 }
+
+/** PATCH /api/v1/onboarding/tasks/{id}?requester_id=... - Admin/Leadership only */
+export function updateTask(
+  taskId: string,
+  input: {
+    name?: string;
+    seq?: number;
+    responsible_role?: string;
+    expected_days?: number;
+    required_doc_type?: string;
+  },
+  requesterId: string
+): Promise<OnboardingTask> {
+  return fetch(`${BASE_PATH}/tasks/${encodeURIComponent(taskId)}?requester_id=${encodeURIComponent(requesterId)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  }).then((r) => handle(r, "Could not update the task."));
+}
+
+/** DELETE /api/v1/onboarding/tasks/{id}?requester_id=... - Admin/Leadership only, blocked if the task has completions */
+export function deleteTask(taskId: string, requesterId: string): Promise<void> {
+  return fetch(`${BASE_PATH}/tasks/${encodeURIComponent(taskId)}?requester_id=${encodeURIComponent(requesterId)}`, {
+    method: "DELETE",
+  }).then((r) => {
+    if (r.status === 204) return;
+    return handle(r, "Could not delete the task.");
+  });
+}

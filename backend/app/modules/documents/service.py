@@ -147,3 +147,12 @@ def check_document_exists(db: Session, employee_id: str, doc_type: str, requeste
         .first()
     )
     return existing is not None
+
+
+def list_all_documents_for_hr(db: Session, requester_id: str) -> list[EmployeeDocument]:
+
+    requester = _get_requester(db, requester_id)
+    if requester is None or requester.employment_status != "active" or requester.access_tier != "HR-Restricted":
+        raise NotAuthorized("Only HR-Restricted staff may browse all documents.")
+
+    return db.query(EmployeeDocument).all()

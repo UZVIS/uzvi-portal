@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+﻿﻿﻿import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { FileWarning, X } from "lucide-react";
 import type { OnboardingInstance, OnboardingProgress, OnboardingTask, OnboardingTemplate, TaskCompletionDetail } from "../api";
@@ -56,6 +56,10 @@ export function InstanceTracker({
   const [openDocTaskId, setOpenDocTaskId] = useState<string | null>(null);
   const [showJoinDatePopup, setShowJoinDatePopup] = useState(false);
   const navigate = useNavigate();
+
+  function nameFor(employeeId: string): string {
+    return employees.find((e) => e.employee_id === employeeId)?.name ?? employeeId;
+  }
 
   async function handleStart(e: FormEvent) {
     e.preventDefault();
@@ -203,7 +207,7 @@ export function InstanceTracker({
                         {done && completionDetails[task.task_id]?.completed_at && (
                           <div className="instance-tracker__task-meta">
                             Completed {new Date(completionDetails[task.task_id].completed_at! + "Z").toLocaleString()}
-                            {completionDetails[task.task_id]?.completed_by && ` by ${completionDetails[task.task_id].completed_by}`}
+                            {completionDetails[task.task_id]?.completed_by && ` by ${nameFor(completionDetails[task.task_id].completed_by!)}`}
                           </div>
                         )}
                       </label>
