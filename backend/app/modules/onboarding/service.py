@@ -1,4 +1,4 @@
-
+﻿
 import datetime
 
 from sqlalchemy.orm import Session
@@ -52,6 +52,10 @@ class EmployeeExitedForOnboarding(Exception):
 
 
 class MissingJoinDate(Exception):
+    pass
+
+
+class DuplicateInstance(Exception):
     pass
 
 
@@ -190,6 +194,17 @@ def create_instance(db: Session, instance_in: OnboardingInstanceCreate) -> Onboa
 
     if employee.join_date is None:
         raise MissingJoinDate(instance_in.employee_id)
+
+    existing_instance = (
+        db.query(OnboardingInstance)
+        .filter(OnboardingInstance.employee_id == instance_in.employee_id)
+        .first()
+    )
+    if existing_instance:
+        raise DuplicateInstance(
+            f"'{instance_in.employee_id}' already has an onboarding instance ('{existing_instance.instance_id}') - an employee may only have one at a time."
+        )
+
     start_date = employee.join_date
     new_instance_id = _generate_next_instance_id(db)
 

@@ -490,3 +490,13 @@ def test_task_requiring_document_succeeds_once_uploaded(db):
         db, TaskCompletionCreate(instance_id=instance.instance_id, task_id=task.task_id, completed_by="EMP001")
     )
     assert completion.task_id == task.task_id
+
+def test_create_second_instance_for_same_employee_raises(db):
+    ids = _make_template_with_tasks(db)
+    service.create_instance(
+        db, OnboardingInstanceCreate(employee_id="EMP001", template_id=ids["template_id"], requester_id="EMP002")
+    )
+    with pytest.raises(service.DuplicateInstance):
+        service.create_instance(
+            db, OnboardingInstanceCreate(employee_id="EMP001", template_id=ids["template_id"], requester_id="EMP002")
+        )

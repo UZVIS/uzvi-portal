@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+﻿from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -48,7 +48,7 @@ def add_task_to_template(task_in: OnboardingTaskCreate, db: Session = Depends(ge
     except service.TemplateNotFound:
         raise HTTPException(status_code=404, detail="Parent template not found.")
     except service.TaskAlreadyExists as e:
-        raise HTTPException(status_code=400, detail=f"Task ID '{e}' already exists — please choose a different one.")
+        raise HTTPException(status_code=400, detail=f"Task ID '{e}' already exists â€” please choose a different one.")
     except service.InvalidResponsibleRole as e:
         raise HTTPException(status_code=400, detail=str(e))
     except service.InvalidExpectedDays as e:
@@ -73,6 +73,8 @@ def start_onboarding_pipeline(
         raise HTTPException(status_code=400, detail=f"Cannot start onboarding for '{e}' - this employee has already exited.")
     except service.MissingJoinDate as e:
         raise HTTPException(status_code=400, detail=f"Cannot start onboarding for '{e}' - no join date is set. Set one in the Directory first.")
+    except service.DuplicateInstance as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except service.NotAuthorized as e:
         raise HTTPException(status_code=403, detail=str(e))
 
