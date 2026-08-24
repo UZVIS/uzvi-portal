@@ -1,4 +1,4 @@
-import datetime
+﻿import datetime
 
 import pytest
 from sqlalchemy import create_engine
@@ -7,13 +7,14 @@ from sqlalchemy.orm import sessionmaker
 from app.database import Base
 from app.modules.directory.models import Employee
 from app.modules.onboarding import service
-from app.modules.onboarding.models import OnboardingInstance
+from app.modules.onboarding.models import OnboardingInstance, OnboardingTask
 from app.modules.documents.models import EmployeeDocument
 from app.modules.onboarding.schemas import (
     OnboardingTemplateCreate,
     OnboardingTaskCreate,
     OnboardingInstanceCreate,
     TaskCompletionCreate,
+    OnboardingTaskUpdate,
 )
 
 
@@ -500,3 +501,47 @@ def test_create_second_instance_for_same_employee_raises(db):
         service.create_instance(
             db, OnboardingInstanceCreate(employee_id="EMP001", template_id=ids["template_id"], requester_id="EMP002")
         )
+
+
+def test_update_task_succeeds(db):
+    ids = _make_template_with_tasks(db)
+    updated = service.update_task(
+        db, ids["hr"], OnboardingTaskUpdate(name="HR verifies documents"), "EMP002"
+    )
+    assert updated.name == "HR verifies documents"
+
+
+def test_update_task_invalid_role_raises(db):
+    ids = _make_template_with_tasks(db)
+    with pytest.raises(service.InvalidResponsibleRole):
+        service.update_task(db, ids["hr"], OnboardingTaskUpdate(responsible_role="xyz"), "EMP002")
+
+
+def test_update_task_by_non_admin_raises(db):
+    ids = _make_template_with_tasks(db)
+    with pytest.raises(service.NotAuthorized):
+        service.update_task(db, ids["hr"], OnboardingTaskUpdate(name="X"), "EMP005")
+
+
+def test_delete_task_without_completions_succeeds(db):
+    ids = _make_template_with_tasks(db)
+    service.delete_task(db, ids["manager"], "EMP002")
+    assert db.query(OnboardingTask).filter(OnboardingTask.task_id == ids["manager"]).first() is None
+
+
+def test_delete_task_with_completions_raises(db):
+    ids = _make_template_with_tasks(db)
+    instance = service.create_instance(
+        db, OnboardingInstanceCreate(employee_id="EMP001", template_id=ids["template_id"], requester_id="EMP002")
+    )
+    service.complete_task(
+        db, TaskCompletionCreate(instance_id=instance.instance_id, task_id=ids["hr"], completed_by="EMP003")
+    )
+    with pytest.raises(service.TaskHasCompletions):
+        service.delete_task(db, ids["hr"], "EMP002")
+
+
+def test_delete_task_by_non_admin_raises(db):
+    ids = _make_template_with_tasks(db)
+    with pytest.raises(service.NotAuthorized):
+        service.delete_task(db, ids["hr"], "EMP005")

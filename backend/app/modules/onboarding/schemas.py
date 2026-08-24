@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field
+﻿from pydantic import BaseModel, ConfigDict, Field
 from datetime import date, datetime
 from typing import Optional
 
@@ -40,6 +40,14 @@ class OnboardingTaskCreate(OnboardingTaskBase):
     requester_id: str = Field(
         ..., description="Employee ID of whoever is adding this task"
     )
+
+
+class OnboardingTaskUpdate(BaseModel):
+    name: Optional[str] = None
+    seq: Optional[int] = None
+    responsible_role: Optional[str] = None
+    expected_days: Optional[int] = None
+    required_doc_type: Optional[str] = None
 
 
 class OnboardingTaskResponse(OnboardingTaskBase):

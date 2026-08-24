@@ -14,6 +14,7 @@ from app.modules.onboarding.models import (
 from app.modules.onboarding.schemas import (
     OnboardingTemplateCreate,
     OnboardingTaskCreate,
+    OnboardingTaskUpdate,
     OnboardingInstanceCreate,
     TaskCompletionCreate,
 )
@@ -36,6 +37,10 @@ class InvalidExpectedDays(Exception):
 
 
 class TemplateNotFound(Exception):
+    pass
+
+
+class TaskHasCompletions(Exception):
     pass
 
 
@@ -446,3 +451,55 @@ def list_instances_for_cohort(db: Session, requester_id: str) -> list[dict]:
             "has_overdue_tasks": len(get_overdue_task_ids(db, instance.instance_id)) > 0,
         })
     return result
+
+
+def update_task(db: Session, task_id: str, task_in: OnboardingTaskUpdate, requester_id: str) -> OnboardingTask:
+    requester = _get_employee(db, requester_id)
+    if requester is None or requester.employment_status != "active" or requester.access_tier != "Admin/Leadership":
+        raise NotAuthorized("Only Admin/Leadership may edit a task.")
+
+    task = db.query(OnboardingTask).filter(OnboardingTask.task_id == task_id).first()
+    if not task:
+        raise TaskNotFound(task_id)
+
+    update_data = task_in.model_dump(exclude_unset=True)
+
+    if "responsible_role" in update_data:
+        valid_roles = {"new_joiner", "hr", "it", "manager"}
+        if update_data["responsible_role"] not in valid_roles:
+            raise InvalidResponsibleRole(
+                f"'{update_data['responsible_role']}' is not a valid role - must be one of: {', '.join(sorted(valid_roles))}."
+            )
+
+    if "expected_days" in update_data and update_data["expected_days"] is not None and update_data["expected_days"] < 0:
+        raise InvalidExpectedDays("expected_days cannot be negative.")
+
+    for field, value in update_data.items():
+        setattr(task, field, value)
+
+    db.commit()
+    db.refresh(task)
+    return task
+
+
+def delete_task(db: Session, task_id: str, requester_id: str) -> None:
+    requester = _get_employee(db, requester_id)
+    if requester is None or requester.employment_status != "active" or requester.access_tier != "Admin/Leadership":
+        raise NotAuthorized("Only Admin/Leadership may delete a task.")
+
+    task = db.query(OnboardingTask).filter(OnboardingTask.task_id == task_id).first()
+    if not task:
+        raise TaskNotFound(task_id)
+
+    # Protect audit history - if anyone has already completed this task
+    # on any instance, deleting it would orphan that completion record.
+    has_completions = (
+        db.query(TaskCompletion).filter(TaskCompletion.task_id == task_id).first()
+    )
+    if has_completions:
+        raise TaskHasCompletions(
+            f"Cannot delete task '{task_id}' - it has already been completed on at least one instance."
+        )
+
+    db.delete(task)
+    db.commit()
