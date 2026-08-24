@@ -5,6 +5,7 @@ import { helpdeskApi } from "./api";
 import type { Ticket } from "./types";
 import { useAuth } from "../../shared/auth/AuthContext";
 import { isHelpdeskPrivileged } from "./roles";
+import { HelpdeskToast } from "./components/HelpdeskToast";
 
 import "./TicketDetailsPage.css";
 
@@ -27,6 +28,10 @@ export default function TicketDetailsPage() {
 
   const [comment, setComment] =
     useState("");
+
+  const [toast, setToast] = useState<
+    { message: string; kind: "success" | "error" } | null
+  >(null);
 
   // Mirrors the backend rule in change_ticket_status: only a privileged
   // tier or the ticket's assigned owner may update status/assignment
@@ -91,15 +96,18 @@ export default function TicketDetailsPage() {
         updatedTicket.assigned_to ?? ""
       );
 
-      alert(
-        "Ticket updated successfully."
-      );
+      setToast({
+        message: "Ticket updated successfully.",
+        kind: "success",
+      });
     } catch (err) {
-      alert(
-        err instanceof Error
-          ? err.message
-          : "Failed to update ticket."
-      );
+      setToast({
+        message:
+          err instanceof Error
+            ? err.message
+            : "Failed to update ticket.",
+        kind: "error",
+      });
     } finally {
       setSaving(false);
     }
@@ -109,12 +117,18 @@ export default function TicketDetailsPage() {
     if (!ticket) return;
 
     if (!employee?.employee_id) {
-      alert("You need to be signed in to comment.");
+      setToast({
+        message: "You need to be signed in to comment.",
+        kind: "error",
+      });
       return;
     }
 
     if (!comment.trim()) {
-      alert("Please enter a comment.");
+      setToast({
+        message: "Please enter a comment.",
+        kind: "error",
+      });
       return;
     }
 
@@ -136,15 +150,18 @@ export default function TicketDetailsPage() {
 
       setTicket(updatedTicket);
 
-      alert(
-        "Comment added successfully."
-      );
+      setToast({
+        message: "Comment added successfully.",
+        kind: "success",
+      });
     } catch (err) {
-      alert(
-        err instanceof Error
-          ? err.message
-          : "Failed to add comment."
-      );
+      setToast({
+        message:
+          err instanceof Error
+            ? err.message
+            : "Failed to add comment.",
+        kind: "error",
+      });
     }
   }
 
@@ -174,6 +191,14 @@ export default function TicketDetailsPage() {
 
   return (
     <div className="ticket-details-page">
+
+      {toast && (
+        <HelpdeskToast
+          message={toast.message}
+          kind={toast.kind}
+          onDismiss={() => setToast(null)}
+        />
+      )}
 
       <button
         className="back-button"

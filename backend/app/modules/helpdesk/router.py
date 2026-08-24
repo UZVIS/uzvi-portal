@@ -19,10 +19,12 @@ from app.modules.helpdesk.schemas import (
     TicketUpdate,
 )
 from app.modules.helpdesk.service import (
+    OPEN_STATUSES,
     add_comment,
     create_ticket,
     get_all_tickets,
     get_ticket,
+    pick_resolver,
     update_ticket,
 )
 
@@ -31,18 +33,21 @@ router = APIRouter(
     tags=["Helpdesk"],
 )
 
-# FR-HLP-02: default owner to auto-assign per category when the caller
-# doesn't already specify one. Categories currently offered by the
-# frontend (CreateTicketPage.tsx) are used as keys here; fill in real
-# employee_ids as HR/IT/Facilities ownership is decided. A value of None
-# leaves the ticket unassigned, same as today's behavior.
-CATEGORY_DEFAULT_OWNERS: dict[str, Optional[str]] = {
-    "Hardware": None,
-    "Software": None,
-    "Network": None,
-    "Access": None,
-    "Email": None,
-    "Other": None,
+# FR-HLP-02: pool of resolver employee_ids to auto-assign per category
+# when the caller doesn't already specify one. Categories currently
+# offered by the frontend (CreateTicketPage.tsx) are used as keys here;
+# fill in real employee_ids as HR/IT/Facilities ownership is decided.
+# create_helpdesk_ticket() picks the least-loaded *active* employee from
+# the list (see service.pick_resolver); an empty list, or a list with no
+# active employees left in it, leaves the ticket unassigned for manual
+# triage - same as today's behavior.
+CATEGORY_RESOLVERS: dict[str, list[str]] = {
+    "Hardware": ["EMP004", "EMP005"],
+    "Software": [],
+    "Network": [],
+    "Access": [],
+    "Email": [],
+    "Other": [],
 }
 
 # FR-HLP-06: SLA breach threshold in hours per priority. A priority not
@@ -53,9 +58,6 @@ SLA_THRESHOLD_HOURS: dict[str, float] = {
     "Low": 72,
 }
 DEFAULT_SLA_THRESHOLD_HOURS = 24
-
-# Statuses still considered "open" for SLA-breach purposes.
-OPEN_STATUSES = {"Open", "In Progress"}
 
 
 def _serialize_ticket(ticket: Ticket) -> TicketResponse:
@@ -104,9 +106,8 @@ def create_helpdesk_ticket(
     ticket_data = ticket_in.model_dump()
 
     if not ticket_data.get("assigned_to"):
-        ticket_data["assigned_to"] = CATEGORY_DEFAULT_OWNERS.get(
-            ticket_data["category"]
-        )
+        candidates = CATEGORY_RESOLVERS.get(ticket_data["category"], [])
+        ticket_data["assigned_to"] = pick_resolver(db, candidates)
 
     ticket = Ticket(**ticket_data)
     ticket = create_ticket(db, ticket)

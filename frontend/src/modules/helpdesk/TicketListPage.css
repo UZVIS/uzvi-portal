@@ -69,7 +69,13 @@
   font-size: 14px;
 }
 
+.search-container {
+  display: flex;
+  gap: 12px;
+}
+
 .search-container input {
+  flex: 1;
   width: 100%;
   padding: 12px 16px;
   border: 1px solid #d1d5db;
@@ -82,6 +88,34 @@
 .search-container input:focus {
   border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.status-filter {
+  flex-shrink: 0;
+  padding: 12px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #374151;
+  background: #ffffff;
+  outline: none;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.status-filter:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+@media (max-width: 640px) {
+  .search-container {
+    flex-direction: column;
+  }
+
+  .status-filter {
+    width: 100%;
+  }
 }
 
 .ticket-card {
@@ -209,12 +243,19 @@
   background: #fee2e2;
   color: #b91c1c;
   border: 1px solid #fca5a5;
+  white-space: nowrap;
 }
 
 .ticket-status {
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: nowrap;
+}
+
+.ticket-status .status-badge,
+.ticket-status .sla-badge {
+  flex-shrink: 0;
 }
 
 .arrow {

@@ -7,7 +7,7 @@ import { useAuth } from "../../shared/auth/AuthContext";
 import { isHelpdeskPrivileged } from "./roles";
 
 interface CreateTicketPageProps {
-  onTicketCreated: () => void;
+  onTicketCreated: (message: string) => void;
   onCancel: () => void;
 }
 
@@ -95,8 +95,6 @@ export default function CreateTicketPage({
           form.assigned_to?.trim() || null,
       });
 
-      alert("Ticket created successfully!");
-
       setForm({
         raised_by: "",
         category: "",
@@ -105,7 +103,7 @@ export default function CreateTicketPage({
         assigned_to: "",
       });
 
-      onTicketCreated();
+      onTicketCreated("Ticket created successfully!");
     } catch (err) {
       setError(
         err instanceof Error

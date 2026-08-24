@@ -3,7 +3,50 @@ from typing import Optional
 
 from sqlalchemy.orm import Session, joinedload
 
+from app.modules.directory.models import Employee
 from app.modules.helpdesk.models import Ticket, TicketComment
+
+# Statuses that still count as an active workload for load-balancing
+# purposes (FR-HLP-02) and for SLA-breach checks (FR-HLP-06).
+OPEN_STATUSES = {"Open", "In Progress"}
+
+
+def pick_resolver(db: Session, candidate_ids: list[str]) -> Optional[str]:
+    """
+    Auto-assign a new ticket to the best available resolver from a pool
+    of candidate employee_ids for its category (FR-HLP-02).
+
+    Only active employees are eligible. Among those, the candidate with
+    the fewest currently-open tickets already assigned to them is
+    chosen, so load spreads across the team instead of always hitting
+    the first person in the list. employee_id is used as a
+    deterministic tie-breaker.
+
+    Returns None - leaving the ticket unassigned for manual triage -
+    when the category has no configured resolvers, or none of the
+    configured resolvers are currently active employees.
+    """
+    if not candidate_ids:
+        return None
+
+    active_ids = {
+        row[0]
+        for row in db.query(Employee.employee_id).filter(
+            Employee.employee_id.in_(candidate_ids),
+            Employee.employment_status == "active",
+        )
+    }
+    if not active_ids:
+        return None
+
+    open_counts = dict.fromkeys(active_ids, 0)
+    for (assignee,) in db.query(Ticket.assigned_to).filter(
+        Ticket.assigned_to.in_(active_ids),
+        Ticket.status.in_(OPEN_STATUSES),
+    ):
+        open_counts[assignee] += 1
+
+    return min(open_counts, key=lambda emp_id: (open_counts[emp_id], emp_id))
 
 
 def create_ticket(db: Session, ticket: Ticket):

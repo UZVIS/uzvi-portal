@@ -12,6 +12,9 @@ export default function TicketListPage() {
 
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<
+    "active" | "all" | "Open" | "In Progress" | "Resolved"
+  >("active");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -54,15 +57,22 @@ export default function TicketListPage() {
   const filteredTickets = useMemo(() => {
     const value = search.toLowerCase();
 
-    return tickets.filter(
-      (ticket) =>
-        ticket.ticket_id.toString().includes(value) ||
-        ticket.category.toLowerCase().includes(value) ||
-        ticket.priority.toLowerCase().includes(value) ||
-        ticket.status.toLowerCase().includes(value) ||
-        ticket.raised_by.toLowerCase().includes(value)
-    );
-  }, [tickets, search]);
+    return tickets
+      .filter((ticket) => {
+        if (statusFilter === "all") return true;
+        if (statusFilter === "active")
+          return ticket.status.toLowerCase() !== "resolved";
+        return ticket.status === statusFilter;
+      })
+      .filter(
+        (ticket) =>
+          ticket.ticket_id.toString().includes(value) ||
+          ticket.category.toLowerCase().includes(value) ||
+          ticket.priority.toLowerCase().includes(value) ||
+          ticket.status.toLowerCase().includes(value) ||
+          ticket.raised_by.toLowerCase().includes(value)
+      );
+  }, [tickets, search, statusFilter]);
 
   const getPriorityClass = (priority: string) => {
     switch (priority.toLowerCase()) {
@@ -170,6 +180,21 @@ export default function TicketListPage() {
             setSearch(e.target.value)
           }
         />
+
+        <select
+          className="status-filter"
+          value={statusFilter}
+          onChange={(e) =>
+            setStatusFilter(e.target.value as typeof statusFilter)
+          }
+          aria-label="Filter by status"
+        >
+          <option value="active">Open + In Progress</option>
+          <option value="Open">Open only</option>
+          <option value="In Progress">In Progress only</option>
+          <option value="Resolved">Resolved only</option>
+          <option value="all">All statuses</option>
+        </select>
       </div>
 
       <div className="ticket-card">
@@ -204,8 +229,8 @@ export default function TicketListPage() {
             <h4>No tickets found</h4>
             <p>
               {privileged
-                ? "Try a different search or filter."
-                : "Try a different search or create a new ticket."}
+                ? "Try a different search or status filter."
+                : "Try a different search, status filter, or create a new ticket."}
             </p>
           </div>
 
