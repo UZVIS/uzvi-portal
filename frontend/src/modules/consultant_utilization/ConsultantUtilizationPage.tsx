@@ -1,6 +1,5 @@
-
-
 import { useEffect, useState } from "react";
+
 import {
   utilizationApi,
   type Project,
@@ -70,7 +69,6 @@ function isoDateNDaysAgo(n: number): string {
 ========================================================= */
 
 export function ConsultantUtilizationPage() {
-
   const { employee } = useAuth();
 
   const currentEmployeeId =
@@ -90,14 +88,12 @@ export function ConsultantUtilizationPage() {
   const [recentEntries, setRecentEntries] =
     useState<TimeEntry[]>([]);
 
-
   /*
    * Employees that the logged-in user
    * is allowed to log hours for.
    */
   const [timeEntryEmployees, setTimeEntryEmployees] =
     useState<TimeEntryEmployee[]>([]);
-
 
   const [loading, setLoading] =
     useState(true);
@@ -110,20 +106,35 @@ export function ConsultantUtilizationPage() {
 
 
   /* =======================================================
-     DATE RANGE
+     AUTO-HIDE OT NOTICE
 
-     IMPORTANT:
+     The overtime message remains visible
+     for only 4 seconds.
+  ======================================================= */
+
+  useEffect(() => {
+    if (!otNotice) {
+      return;
+    }
+
+    const timer =
+      window.setTimeout(() => {
+        setOtNotice(null);
+      }, 4000);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [otNotice]);
+
+
+  /* =======================================================
+     DATE RANGE
 
      "Last 7 days INCLUDING TODAY"
 
-     Today = 19 Aug 2026
-
-     Start = 12 Aug 2026
-     End   = 19 Aug 2026
-
-     Therefore:
-     start = 6 days ago
-     end   = today
+     Start = 6 days ago
+     End   = today
   ======================================================= */
 
   const periodStart =
@@ -138,11 +149,9 @@ export function ConsultantUtilizationPage() {
   ======================================================= */
 
   async function loadDashboard() {
-
     if (!currentEmployeeId) {
       return;
     }
-
 
     const [
       projectList,
@@ -154,7 +163,6 @@ export function ConsultantUtilizationPage() {
       /* Projects */
       utilizationApi.listProjects(),
 
-
       /* Personal dashboard */
       utilizationApi.getPersonalDashboard(
         currentEmployeeId,
@@ -162,14 +170,12 @@ export function ConsultantUtilizationPage() {
         periodEnd
       ),
 
-
       /* Recent entries */
       utilizationApi.listTimeEntries(
         currentEmployeeId,
         periodStart,
         periodEnd
       ),
-
 
       /* Employees allowed for time entry */
       utilizationApi.listTimeEntryEmployees(),
@@ -210,33 +216,25 @@ export function ConsultantUtilizationPage() {
   ======================================================= */
 
   useEffect(() => {
-
     if (!currentEmployeeId) {
       return;
     }
-
 
     setLoading(true);
 
     setLoadError(null);
 
-
     loadDashboard()
       .catch((err) => {
-
         setLoadError(
           err instanceof Error
             ? err.message
             : "Couldn't load your dashboard."
         );
-
       })
       .finally(() => {
-
         setLoading(false);
-
       });
-
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentEmployeeId]);
@@ -255,6 +253,10 @@ export function ConsultantUtilizationPage() {
     notes?: string;
   }) {
 
+    /*
+     * Clear any old OT notice before creating
+     * a new entry.
+     */
     setOtNotice(null);
 
 
@@ -293,14 +295,6 @@ export function ConsultantUtilizationPage() {
 
     /* =====================================================
        OT MESSAGE
-
-       IMPORTANT:
-       Approval routing is based on the employee's manager_id
-       chain (Employee.manager_id), NOT on the submitter's own
-       access_tier. A Manager can themselves report to another
-       Manager (not just Admin/Leadership), so the message must
-       stay generic - "your manager" is accurate regardless of
-       what tier that manager happens to be.
     ===================================================== */
 
     if (
@@ -316,21 +310,15 @@ export function ConsultantUtilizationPage() {
     } else {
 
       /*
-       * Top-of-chain Admin/Leadership (no manager_id) has
-       * OT auto-approved, so ot_status won't be "Pending"
-       * and no notice is shown.
+       * Top-of-chain Admin/Leadership has
+       * OT auto-approved, so no notice is shown.
        */
       setOtNotice(null);
     }
 
 
     /* =====================================================
-       IMPORTANT
-
-       Reload dashboard after successful save.
-
-       Since periodEnd is TODAY, a new entry for today
-       will now appear in the dashboard.
+       RELOAD DASHBOARD AFTER SUCCESSFUL SAVE
     ===================================================== */
 
     await loadDashboard();
@@ -345,12 +333,9 @@ export function ConsultantUtilizationPage() {
     !currentEmployeeId ||
     loading
   ) {
-
     return (
       <div className="cu-page cu-page--status">
-
         Loading your utilization…
-
       </div>
     );
   }
@@ -361,14 +346,11 @@ export function ConsultantUtilizationPage() {
   ======================================================= */
 
   if (loadError) {
-
     return (
       <div className="cu-page cu-page--status cu-page--error">
-
         Couldn't load this page:
         {" "}
         {loadError}
-
       </div>
     );
   }
@@ -422,11 +404,54 @@ export function ConsultantUtilizationPage() {
 
 
   /* =======================================================
+     DECISION DISPLAY HELPER
+
+     IMPORTANT:
+     Backend field is:
+
+       ot_decided_by_name
+
+     and:
+
+       ot_decided_by_role
+
+     So we MUST use those exact fields.
+  ======================================================= */
+
+  function getDecisionDisplay(
+    entry: TimeEntry
+  ): string {
+
+    const decidedByName =
+      entry.ot_decided_by_name ||
+      "";
+
+    if (!decidedByName) {
+      return "—";
+    }
+
+    const status =
+      (entry.ot_status || "")
+        .trim()
+        .toLowerCase();
+
+    if (status === "approved") {
+      return `Approved by ${decidedByName}`;
+    }
+
+    if (status === "rejected") {
+      return `Rejected by ${decidedByName}`;
+    }
+
+    return "—";
+  }
+
+
+  /* =======================================================
      RENDER
   ======================================================= */
 
   return (
-
     <div className="cu-page">
 
 
@@ -441,16 +466,10 @@ export function ConsultantUtilizationPage() {
 
       {/* ===================================================
           DATE RANGE
-
-          Example:
-
-          Last 7 days · 2026-08-12 to 2026-08-19
       =================================================== */}
 
       <p className="cu-page__subtitle">
-
         Last 7 days · {periodStart} to {periodEnd}
-
       </p>
 
 
@@ -518,7 +537,6 @@ export function ConsultantUtilizationPage() {
                     >
 
                       <td>
-
                         {
                           projects.find(
                             (p: Project) =>
@@ -527,14 +545,11 @@ export function ConsultantUtilizationPage() {
                           )?.name ??
                           projectId
                         }
-
                       </td>
 
 
                       <td>
-
                         {hours.toFixed(1)}h
-
                       </td>
 
                     </tr>
@@ -634,14 +649,14 @@ export function ConsultantUtilizationPage() {
 
       {/* ===================================================
           OT NOTICE
+
+          Automatically disappears after 4 seconds.
       =================================================== */}
 
       {otNotice && (
 
         <p className="cu-ot-notice">
-
           {otNotice}
-
         </p>
 
       )}
@@ -697,6 +712,10 @@ export function ConsultantUtilizationPage() {
                 </th>
 
                 <th>
+                  Decided by
+                </th>
+
+                <th>
                   Billable
                 </th>
 
@@ -738,16 +757,12 @@ export function ConsultantUtilizationPage() {
 
 
                     <td>
-
                       {entry.hours.toFixed(1)}h
-
                     </td>
 
 
                     <td>
-
                       {entry.normal_hours.toFixed(1)}h
-
                     </td>
 
 
@@ -775,9 +790,7 @@ export function ConsultantUtilizationPage() {
                             `cu-ot-badge cu-ot-badge--${entry.ot_status.toLowerCase()}`
                           }
                         >
-
                           {entry.ot_status}
-
                         </span>
 
                       ) : (
@@ -786,6 +799,21 @@ export function ConsultantUtilizationPage() {
 
                       )}
 
+                    </td>
+
+
+                    {/* =================================================
+                        DECIDED BY
+
+                        Uses:
+                          ot_decided_by_name
+
+                        Example:
+                          Approved by Yeswanth
+                    ================================================= */}
+
+                    <td>
+                      {getDecisionDisplay(entry)}
                     </td>
 
 

@@ -1,76 +1,6 @@
-# """
-# M1 - Consultant Utilization Tracker
-# backend/app/modules/consultant_utilization/schemas.py
-# """
-# from datetime import date
-# from typing import Optional, List, Dict
-
-# from pydantic import BaseModel, Field
 
 
-# class ProjectCreate(BaseModel):
-#     project_id: str
-#     name: str
-#     project_type: str  # real project | Bench | Training | Internal | BD/Presales | Leave
-#     billing_rate: Optional[float] = None
-#     cost_rate: Optional[float] = None
-
-
-# class ProjectRead(ProjectCreate):
-#     model_config = {"from_attributes": True}
-
-
-# class TimeEntryCreate(BaseModel):
-#     entry_id: str
-#     employee_id: str
-#     project_id: str
-#     date: date
-#     hours: float = Field(gt=0,le=24)
-#     billable_flag: bool = False
-#     source: str = "manual"  # manual | import
-#     notes: Optional[str] = None
-
-
-# class TimeEntryRead(TimeEntryCreate):
-#     model_config = {"from_attributes": True}
-
-
-# class UtilizationSummary(BaseModel):
-#     employee_id: str
-#     period_start: date
-#     period_end: date
-#     billable_hours: float
-#     available_hours: float
-#     utilization_pct: float
-#     flag: Optional[str] = None  # "under_utilized" | "over_allocated" | None
-
-
-# class ProjectMargin(BaseModel):
-#     project_id: str
-#     project_name: str
-#     revenue: float
-#     cost: float
-#     margin: float
-#     margin_pct: Optional[float] = None
-
-
-# class OrgUtilizationDashboard(BaseModel):
-#     period_start: date
-#     period_end: date
-#     utilization_by_employee: List[UtilizationSummary]
-#     bench_risk: List[str]        # employee_ids under 60%
-#     over_allocated: List[str]    # employee_ids over 105%
-#     project_margins: List[ProjectMargin]
-
-
-# class PersonalUtilizationDashboard(BaseModel):
-#     summary: UtilizationSummary
-#     hours_by_project: Dict[str, float]
-#     weekly_trend: Dict[str, float]  # "YYYY-Www" -> hours
-
-
-
-# from datetime import date
+# from datetime import date, datetime
 # from typing import Optional, List, Dict
 
 # from pydantic import BaseModel, Field
@@ -97,12 +27,23 @@
 #     billable_flag: bool = False
 #     source: str = "manual"  # manual | import
 #     notes: Optional[str] = None
-#     confirm_overtime: bool = False
 
 
 # class TimeEntryRead(TimeEntryCreate):
 #     normal_hours: float
 #     overtime_hours: float
+#     ot_status: Optional[str] = None  # None | "Pending" | "Approved" | "Rejected"
+#     ot_decided_by_role: Optional[str] = None
+#     ot_decided_at: Optional[datetime] = None
+
+#     model_config = {"from_attributes": True}
+
+# class EmployeeRead(BaseModel):
+#     employee_id: str
+#     name: str
+#     designation: Optional[str] = None
+#     manager_id: Optional[str] = None
+#     access_tier: str
 
 #     model_config = {"from_attributes": True}
 
@@ -140,6 +81,7 @@
 #     hours_by_project: Dict[str, float]
 #     weekly_trend: Dict[str, float]  # "YYYY-Www" -> hours
 
+
 from datetime import date, datetime
 from typing import Optional, List, Dict
 
@@ -149,13 +91,15 @@ from pydantic import BaseModel, Field
 class ProjectCreate(BaseModel):
     project_id: str
     name: str
-    project_type: str  # real project | Bench | Training | Internal | BD/Presales | Leave
+    project_type: str
     billing_rate: Optional[float] = None
     cost_rate: Optional[float] = None
 
 
 class ProjectRead(ProjectCreate):
-    model_config = {"from_attributes": True}
+    model_config = {
+        "from_attributes": True
+    }
 
 
 class TimeEntryCreate(BaseModel):
@@ -165,18 +109,27 @@ class TimeEntryCreate(BaseModel):
     date: date
     hours: float = Field(gt=0, le=16)
     billable_flag: bool = False
-    source: str = "manual"  # manual | import
+    source: str = "manual"
     notes: Optional[str] = None
 
 
 class TimeEntryRead(TimeEntryCreate):
     normal_hours: float
     overtime_hours: float
-    ot_status: Optional[str] = None  # None | "Pending" | "Approved" | "Rejected"
+
+    ot_status: Optional[str] = None
+
+    # Who approved/rejected the overtime
     ot_decided_by_role: Optional[str] = None
+    ot_decided_by_name: Optional[str] = None
+
+    # When approved/rejected
     ot_decided_at: Optional[datetime] = None
 
-    model_config = {"from_attributes": True}
+    model_config = {
+        "from_attributes": True
+    }
+
 
 class EmployeeRead(BaseModel):
     employee_id: str
@@ -185,7 +138,9 @@ class EmployeeRead(BaseModel):
     manager_id: Optional[str] = None
     access_tier: str
 
-    model_config = {"from_attributes": True}
+    model_config = {
+        "from_attributes": True
+    }
 
 
 class UtilizationSummary(BaseModel):
@@ -195,7 +150,7 @@ class UtilizationSummary(BaseModel):
     billable_hours: float
     available_hours: float
     utilization_pct: float
-    flag: Optional[str] = None  # "under_utilized" | "over_allocated" | None
+    flag: Optional[str] = None
 
 
 class ProjectMargin(BaseModel):
@@ -210,13 +165,23 @@ class ProjectMargin(BaseModel):
 class OrgUtilizationDashboard(BaseModel):
     period_start: date
     period_end: date
-    utilization_by_employee: List[UtilizationSummary]
-    bench_risk: List[str]        # employee_ids under 60%
-    over_allocated: List[str]    # employee_ids over 105%
-    project_margins: List[ProjectMargin]
+
+    utilization_by_employee: List[
+        UtilizationSummary
+    ]
+
+    bench_risk: List[str]
+
+    over_allocated: List[str]
+
+    project_margins: List[
+        ProjectMargin
+    ]
 
 
 class PersonalUtilizationDashboard(BaseModel):
     summary: UtilizationSummary
+
     hours_by_project: Dict[str, float]
-    weekly_trend: Dict[str, float]  # "YYYY-Www" -> hours
+
+    weekly_trend: Dict[str, float]

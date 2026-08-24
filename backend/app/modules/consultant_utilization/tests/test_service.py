@@ -490,6 +490,9 @@ def test_overtime_saves_immediately_as_pending(db):
     assert entry.normal_hours == 8
     assert entry.overtime_hours == 2
     assert entry.ot_status == "Pending"
+    assert entry.ot_decided_by_role is None
+    assert entry.ot_decided_by_name is None
+    assert entry.ot_decided_at is None
 
 
 def test_cumulative_overtime_across_two_entries_same_day(db):
@@ -543,6 +546,8 @@ def test_top_of_chain_admin_with_no_manager_auto_approves_own_ot(db):
 
     assert entry.ot_status == "Approved"
     assert entry.ot_decided_by_role == "No approval required"
+    assert entry.ot_decided_by_name == "Test"
+    assert entry.ot_decided_at is not None
 
 
 def test_admin_with_a_manager_still_goes_pending(db):
@@ -665,6 +670,8 @@ def test_manager_can_approve_direct_reports_ot(db):
 
     assert approved.ot_status == "Approved"
     assert approved.ot_decided_by_role == "Manager"
+    assert approved.ot_decided_by_name == "Test"
+    assert approved.ot_decided_at is not None
 
 
 def test_manager_cannot_approve_ot_for_non_report(db):
@@ -763,7 +770,75 @@ def test_reject_ot_caps_entry_back_to_normal_hours(db):
 
     assert rejected.ot_status == "Rejected"
     assert rejected.hours == 8
+    assert rejected.normal_hours == 8
     assert rejected.overtime_hours == 0
+    assert rejected.ot_decided_by_role == "Manager"
+    assert rejected.ot_decided_by_name == "Test"
+    assert rejected.ot_decided_at is not None
+
+
+def test_approval_name_comes_from_current_manager(db):
+    manager = _make_employee(
+        db,
+        "MGR1",
+        name="Bharath",
+        access_tier="Manager",
+    )
+    _make_employee(
+        db,
+        "E1",
+        name="Employee One",
+        access_tier="Employee",
+        manager_id="MGR1",
+    )
+    _make_project(db)
+
+    entry = _log_hours(db, "E1", "P1", date(2026, 1, 5), 10)
+
+    approved = service.approve_ot(db, entry.entry_id, manager)
+
+    assert approved.ot_status == "Approved"
+    assert approved.ot_decided_by_role == "Manager"
+    assert approved.ot_decided_by_name == "Bharath"
+    assert approved.ot_decided_at is not None
+
+
+def test_rejection_name_comes_from_current_manager(db):
+    manager = _make_employee(
+        db,
+        "MGR1",
+        name="Yeswanth",
+        access_tier="Manager",
+    )
+    _make_employee(
+        db,
+        "E1",
+        name="Employee One",
+        access_tier="Employee",
+        manager_id="MGR1",
+    )
+    _make_project(db)
+
+    entry = _log_hours(db, "E1", "P1", date(2026, 1, 5), 10)
+
+    rejected = service.reject_ot(db, entry.entry_id, manager)
+
+    assert rejected.ot_status == "Rejected"
+    assert rejected.ot_decided_by_role == "Manager"
+    assert rejected.ot_decided_by_name == "Yeswanth"
+    assert rejected.ot_decided_at is not None
+
+
+def test_normal_time_entry_has_no_ot_decision_info(db):
+    _make_employee(db, "E1", name="Employee One")
+    _make_project(db)
+
+    entry = _log_hours(db, "E1", "P1", date(2026, 1, 5), 8)
+
+    assert entry.ot_status is None
+    assert entry.ot_decided_by_role is None
+    assert entry.ot_decided_by_name is None
+    assert entry.ot_decided_at is None
 
 
 def test_cannot_approve_ot_twice(db):
