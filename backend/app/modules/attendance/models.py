@@ -38,8 +38,8 @@ class AttendanceRecord(Base):
 
     source = Column(String(20), default="manual")
 
-    # --- NEW FIELD FOR COMP-OFF AUTOMATION ---
-    is_comp_off_credited = Column(Boolean, default=False)
+    # # --- NEW FIELD FOR COMP-OFF AUTOMATION ---
+    # is_comp_off_credited = Column(Boolean, default=False)
 
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

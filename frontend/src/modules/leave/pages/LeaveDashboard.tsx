@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { apiPost, apiGet } from "../../../api/client";
 import { useAuth } from "../../../shared/auth/AuthContext";
-import { CalendarPlus, Paperclip, Lock, Check, X, Clock, AlertCircle } from "lucide-react";
+import { CalendarPlus, Paperclip, Lock, Check, X, Clock, AlertCircle, CheckCircle, RefreshCw } from "lucide-react"; // Added RefreshCw
 
 export default function LeaveDashboard() {
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -16,45 +16,102 @@ export default function LeaveDashboard() {
     const [attachment, setAttachment] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const [isSyncing, setIsSyncing] = useState(false); // NEW STATE FOR SYNC
+
+    // --- NEW: MODAL STATE FOR SUCCESS/ERROR POPUPS ---
+    const [modalState, setModalState] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        isError: false
+    });
+
     const { employee } = useAuth();
     const employeeId = employee?.employee_id;
 
-    useEffect(() => {
-        async function fetchDashboardData() {
-            if (!employeeId) return;
+    const fetchDashboardData = async () => {
+        if (!employeeId) return;
 
-            try {
-                const typesData = await apiGet('/v1/leave/leave-types');
-                const validTypes = Array.isArray(typesData) ? typesData : [];
-                setLeaveTypes(validTypes);
-                if (validTypes.length > 0) {
-                    setLeaveTypeId(validTypes[0].leave_type_id);
+        try {
+            // 1. Fetch Balances First
+            const balancesData = await apiGet(`/v1/leave/leave-balances/${employeeId}`);
+            const balances = Array.isArray(balancesData) ? balancesData : [balancesData];
+            setLeaveBalances(balances);
+
+            // 2. Fetch Leave Types
+            const typesData = await apiGet('/v1/leave/leave-types');
+            const validTypes = Array.isArray(typesData) ? typesData : [];
+            setLeaveTypes(validTypes);
+
+            // 3. Set Default Dropdown Value (Only from eligible leaves!)
+            if (validTypes.length > 0 && balances.length > 0) {
+                const filteredTypes = validTypes.filter(type =>
+                    balances.some(b => b.leave_type_id === type.leave_type_id)
+                );
+                if (filteredTypes.length > 0) {
+                    setLeaveTypeId(filteredTypes[0].leave_type_id);
                 }
-
-                const balancesData = await apiGet(`/v1/leave/leave-balances/${employeeId}`);
-                setLeaveBalances(Array.isArray(balancesData) ? balancesData : [balancesData]);
-
-                const myApplications = await apiGet(`/v1/leave/applications?employee_id=${employeeId}&role=Employee`);
-                setLeaveHistory(Array.isArray(myApplications) ? myApplications : []);
-
-                try {
-                    const holidaysData = await apiGet('/v1/calendar/holidays');
-                    if (Array.isArray(holidaysData)) {
-                        const hDates = holidaysData.map((h: any) => {
-                            if (typeof h.date === 'string') return h.date.split('T')[0];
-                            return new Date(h.date).toISOString().split('T')[0];
-                        });
-                        setHolidays(hDates);
-                    }
-                } catch (calErr) {
-                    console.error("Error fetching calendar holidays:", calErr);
-                }
-            } catch (error) {
-                console.error("Error fetching dashboard data:", error);
             }
+
+            // 4. Fetch Leave History
+            const myApplications = await apiGet(`/v1/leave/applications?employee_id=${employeeId}&role=Employee`);
+            setLeaveHistory(Array.isArray(myApplications) ? myApplications : []);
+
+            // 5. Fetch Holidays
+            try {
+                const holidaysData = await apiGet('/v1/calendar/holidays');
+                if (Array.isArray(holidaysData)) {
+                    const hDates = holidaysData.map((h: any) => {
+                        if (typeof h.date === 'string') return h.date.split('T')[0];
+                        return new Date(h.date).toISOString().split('T')[0];
+                    });
+                    setHolidays(hDates);
+                }
+            } catch (calErr) {
+                console.error("Error fetching calendar holidays:", calErr);
+            }
+        } catch (error) {
+            console.error("Error fetching dashboard data:", error);
         }
+    };
+
+    useEffect(() => {
         fetchDashboardData();
     }, [employeeId]);
+
+    // --- NEW: MANUAL SYNC FUNCTION ---
+    const handleSyncBalances = async () => {
+        setIsSyncing(true);
+        try {
+            // Force backend to calculate comp-offs dynamically
+            await apiPost('/v1/leave/sync-comp-offs', {});
+            // Re-fetch latest balances after calculation
+            await fetchDashboardData();
+
+            setModalState({
+                isOpen: true,
+                title: "Synced Successfully",
+                message: "Your leave balances have been refreshed with the latest data.",
+                isError: false
+            });
+        } catch (error) {
+            console.error("Error syncing balances:", error);
+            setModalState({
+                isOpen: true,
+                title: "Sync Failed",
+                message: "Unable to refresh balances. Please try again later.",
+                isError: true
+            });
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
+    // --- PURE BACKEND DRIVEN LOGIC ---
+    // Only display leave types for which the backend has provided a balance. Independent of gender.
+    const eligibleLeaveTypes = leaveTypes.filter(type =>
+        leaveBalances.some(balance => balance.leave_type_id === type.leave_type_id)
+    );
 
     const getBalanceFor = (leaveName: string) => {
         if (!leaveTypes.length || !leaveBalances.length) return "0";
@@ -155,7 +212,41 @@ export default function LeaveDashboard() {
         if (new Date(startDate) < today) return;
         if (new Date(startDate) > new Date(endDate)) return;
 
-        if (isDocumentMandatory && !attachment) return;
+        // --- FIX: FRONTEND OVERLAPPING DATES CHECK ---
+        const isOverlapping = leaveHistory.some((leave) => {
+            // Ignore rejected leaves in the overlap check
+            if (leave.status?.toUpperCase() === "REJECTED") return false;
+
+            const existingStart = new Date(leave.start_date).setHours(0, 0, 0, 0);
+            const existingEnd = new Date(leave.end_date).setHours(23, 59, 59, 999);
+            const newStart = new Date(startDate).setHours(0, 0, 0, 0);
+            const newEnd = new Date(endDate).setHours(23, 59, 59, 999);
+
+            // Logic to check if the new dates overlap with any existing active leave
+            return (newStart <= existingEnd && newEnd >= existingStart);
+        });
+
+        if (isOverlapping) {
+            setModalState({
+                isOpen: true,
+                title: "Duplicate Leave Request",
+                message: "You already have an active leave request applied for these dates. Please choose different dates.",
+                isError: true
+            });
+            return; // Stop execution here, no API call is made
+        }
+        // ---------------------------------------------
+
+        if (isDocumentMandatory && !attachment) {
+            setModalState({
+                isOpen: true,
+                title: "Document Required",
+                message: "Please attach a supporting document to proceed with this leave application.",
+                isError: true
+            });
+            return;
+        }
+
         if (!employeeId) return;
 
         setIsSubmitting(true);
@@ -187,9 +278,33 @@ export default function LeaveDashboard() {
             const updatedMyApps = await apiGet(`/v1/leave/applications?employee_id=${employeeId}&role=Employee`);
             setLeaveHistory(Array.isArray(updatedMyApps) ? updatedMyApps : []);
 
+            await fetchDashboardData(); // Refresh balances after applying leave
+
             resetForm();
+
+            // --- SUCCESS MODAL TRIGGER ---
+            setModalState({
+                isOpen: true,
+                title: "Leave Applied",
+                message: "Your leave request has been submitted successfully and is pending review.",
+                isError: false
+            });
+
         } catch (error: any) {
             console.error("Error submitting leave:", error);
+
+            // Extra safety to catch and display backend error messages clearly
+            const errorMsg = error?.response?.data?.detail
+                || error?.message
+                || (typeof error === 'string' ? error : "An error occurred while submitting your leave request. Please try again.");
+
+            // --- ERROR MODAL TRIGGER ---
+            setModalState({
+                isOpen: true,
+                title: "Submission Failed",
+                message: errorMsg,
+                isError: true
+            });
         } finally {
             setIsSubmitting(false);
         }
@@ -209,10 +324,23 @@ export default function LeaveDashboard() {
                     <h2 className="text-2xl font-extrabold text-gray-800">My Leave Wallet</h2>
                     <p className="text-sm text-gray-500 mt-1">Manage your balances and track upcoming time off.</p>
                 </div>
-                <button onClick={() => setIsFormOpen(true)} className="mt-4 md:mt-0 bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition flex items-center space-x-2 shadow-md">
-                    <CalendarPlus size={18} />
-                    <span>Request Leave</span>
-                </button>
+
+                {/* --- NEW BUTTONS SECTION --- */}
+                <div className="flex items-center space-x-3 mt-4 md:mt-0">
+                    <button
+                        onClick={handleSyncBalances}
+                        disabled={isSyncing}
+                        className="bg-white border border-gray-300 text-gray-700 px-4 py-2.5 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center space-x-2 shadow-sm disabled:opacity-50"
+                    >
+                        <RefreshCw size={18} className={isSyncing ? "animate-spin text-blue-600" : ""} />
+                        <span>{isSyncing ? "Syncing..." : "Sync Balances"}</span>
+                    </button>
+
+                    <button onClick={() => setIsFormOpen(true)} className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition flex items-center space-x-2 shadow-md">
+                        <CalendarPlus size={18} />
+                        <span>Request Leave</span>
+                    </button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -398,12 +526,12 @@ export default function LeaveDashboard() {
                             <div>
                                 <label className="block text-xs font-semibold text-gray-700 mb-1">Leave type</label>
                                 <select className="w-full border border-gray-200 rounded-xl px-3.5 py-2.5 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-gray-900/20 focus:border-gray-900 bg-white" value={leaveTypeId} onChange={(e) => setLeaveTypeId(e.target.value)}>
-                                    {(leaveTypes || []).map((type) => (
+                                    {eligibleLeaveTypes.map((type) => (
                                         <option key={type?.leave_type_id} value={type?.leave_type_id}>
                                             {type?.name} {type?.doc_required_threshold > 0 ? `(Doc > ${type.doc_required_threshold}d)` : ''}
                                         </option>
                                     ))}
-                                    {(!leaveTypes || leaveTypes.length === 0) && <option value="">Loading types...</option>}
+                                    {eligibleLeaveTypes.length === 0 && <option value="">No eligible leaves available</option>}
                                 </select>
                             </div>
 
@@ -418,7 +546,6 @@ export default function LeaveDashboard() {
                                 </div>
                             </div>
 
-                            {/* --- DYNAMIC LEAVE BREAKDOWN BOX --- */}
                             {breakdown && breakdown.totalDays > 0 && (
                                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 animate-in fade-in duration-200">
                                     <h4 className="text-xs font-bold text-slate-700 mb-3 flex items-center space-x-1.5">
@@ -483,6 +610,31 @@ export default function LeaveDashboard() {
                                 className="px-4 py-2 bg-gray-900 text-white text-xs font-semibold rounded-xl hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
                             >
                                 {isSubmitting ? 'Submitting...' : 'Submit request'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* --- NEW: MODAL POPUP FOR SUCCESS & ERRORS --- */}
+            {modalState.isOpen && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-[2px] px-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className={`p-5 flex items-start space-x-4 border-b ${modalState.isError ? 'bg-red-50 border-red-100' : 'bg-emerald-50 border-emerald-100'}`}>
+                            <div className={`p-2 rounded-full ${modalState.isError ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                                {modalState.isError ? <AlertCircle size={24} /> : <CheckCircle size={24} />}
+                            </div>
+                            <div>
+                                <h3 className={`text-lg font-bold ${modalState.isError ? 'text-red-900' : 'text-emerald-900'}`}>{modalState.title}</h3>
+                                <p className={`text-sm mt-1 ${modalState.isError ? 'text-red-800' : 'text-emerald-800'}`}>{modalState.message}</p>
+                            </div>
+                        </div>
+                        <div className="px-6 py-4 bg-gray-50 flex justify-end border-t border-gray-100">
+                            <button
+                                onClick={() => setModalState({ isOpen: false, title: "", message: "", isError: false })}
+                                className={`px-5 py-2 text-white rounded-xl text-sm font-bold shadow-sm transition ${modalState.isError ? 'bg-red-600 hover:bg-red-700' : 'bg-slate-900 hover:bg-black'}`}
+                            >
+                                OK
                             </button>
                         </div>
                     </div>

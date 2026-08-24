@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useCalendar } from "../hooks/useCalendar";
-import type { HolidayForm, EventForm } from "../types";
-import { Palmtree, CalendarDays, User, MapPin, Search, X, Plus } from "lucide-react";
+import { Palmtree, CalendarDays, User, MapPin, Search, X, Upload, CheckCircle, AlertCircle } from "lucide-react";
 
 export default function CalendarPage({ role = "Admin" }: { role?: string }) {
     const {
@@ -10,10 +9,17 @@ export default function CalendarPage({ role = "Admin" }: { role?: string }) {
         selectedType, setSelectedType, searchQuery, setSearchQuery, refresh
     } = useCalendar(role);
 
+    // --- HOLIDAY IMPORT STATES ---
     const [showHolidayModal, setShowHolidayModal] = useState(false);
+    const [holidayFile, setHolidayFile] = useState<File | null>(null);
+    const [isHolidayImporting, setIsHolidayImporting] = useState(false);
+    const [holidayStatus, setHolidayStatus] = useState<{ success: boolean; message: string } | null>(null);
+
+    // --- EVENT IMPORT STATES ---
     const [showEventModal, setShowEventModal] = useState(false);
-    const [holidayForm, setHolidayForm] = useState<HolidayForm>({ name: "", date: "", state: "" });
-    const [eventForm, setEventForm] = useState<EventForm>({ title: "", date: "", location: "" });
+    const [eventFile, setEventFile] = useState<File | null>(null);
+    const [isEventImporting, setIsEventImporting] = useState(false);
+    const [eventStatus, setEventStatus] = useState<{ success: boolean; message: string } | null>(null);
 
     const teams = ["All", "Engineering", "HR", "QA", "Design"];
     const states = ["All", "National", "AP", "TS", "MH"];
@@ -67,47 +73,71 @@ export default function CalendarPage({ role = "Admin" }: { role?: string }) {
     const daysArray = Array.from({ length: totalDays }, (_, i) => i + 1);
     const monthName = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
 
-    const handleHolidaySubmit = async (e: React.FormEvent) => {
+    // --- HANDLE HOLIDAY IMPORT ---
+    const handleHolidayImport = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!holidayFile) return;
+
+        setIsHolidayImporting(true);
+        setHolidayStatus(null);
+
+        const formData = new FormData();
+        formData.append("file", holidayFile);
+
         try {
-            const response = await fetch("http://127.0.0.1:8000/api/v1/calendar/holidays", {
+            const response = await fetch("http://127.0.0.1:8000/api/v1/calendar/holidays/import", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(holidayForm)
+                body: formData,
             });
 
             if (response.ok) {
-                setShowHolidayModal(false);
-                setHolidayForm({ name: "", date: "", state: "" });
+                const data = await response.json();
+                setHolidayStatus({ success: true, message: data.message || "Holidays imported successfully!" });
+                setHolidayFile(null);
                 refresh();
             } else {
                 const err = await response.json();
-                console.error("Failed to add holiday:", err.detail || err);
+                setHolidayStatus({ success: false, message: err.detail || "Failed to import holidays." });
             }
         } catch (error) {
-            console.error("Network error while adding holiday:", error);
+            console.error("Network error while importing holidays:", error);
+            setHolidayStatus({ success: false, message: "Network error occurred." });
+        } finally {
+            setIsHolidayImporting(false);
         }
     };
 
-    const handleEventSubmit = async (e: React.FormEvent) => {
+    // --- HANDLE EVENT IMPORT ---
+    const handleEventImport = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!eventFile) return;
+
+        setIsEventImporting(true);
+        setEventStatus(null);
+
+        const formData = new FormData();
+        formData.append("file", eventFile);
+
         try {
-            const response = await fetch("http://127.0.0.1:8000/api/v1/calendar/events", {
+            const response = await fetch("http://127.0.0.1:8000/api/v1/calendar/events/import", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(eventForm)
+                body: formData,
             });
 
             if (response.ok) {
-                setShowEventModal(false);
-                setEventForm({ title: "", date: "", location: "" });
+                const data = await response.json();
+                setEventStatus({ success: true, message: data.message || "Events imported successfully!" });
+                setEventFile(null);
                 refresh();
             } else {
                 const err = await response.json();
-                console.error("Failed to add event:", err.detail || err);
+                setEventStatus({ success: false, message: err.detail || "Failed to import events." });
             }
         } catch (error) {
-            console.error("Network error while adding event:", error);
+            console.error("Network error while importing events:", error);
+            setEventStatus({ success: false, message: "Network error occurred." });
+        } finally {
+            setIsEventImporting(false);
         }
     };
 
@@ -159,11 +189,11 @@ export default function CalendarPage({ role = "Admin" }: { role?: string }) {
                 <div className="flex items-center space-x-3 w-full md:w-auto">
                     {role === "Admin" && (
                         <div className="flex space-x-2">
-                            <button onClick={() => setShowHolidayModal(true)} className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-sm font-bold shadow-sm transition whitespace-nowrap flex items-center space-x-1.5">
-                                <Plus size={16} /> <span>Add Holiday</span>
+                            <button onClick={() => { setShowHolidayModal(true); setHolidayStatus(null); }} className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg text-sm font-bold shadow-sm transition whitespace-nowrap flex items-center space-x-1.5">
+                                <Upload size={16} /> <span>Import Holidays</span>
                             </button>
-                            <button onClick={() => setShowEventModal(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm font-bold shadow-sm transition whitespace-nowrap flex items-center space-x-1.5">
-                                <Plus size={16} /> <span>Add Event</span>
+                            <button onClick={() => { setShowEventModal(true); setEventStatus(null); }} className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-2 rounded-lg text-sm font-bold shadow-sm transition whitespace-nowrap flex items-center space-x-1.5">
+                                <Upload size={16} /> <span>Import Events</span>
                             </button>
                         </div>
                     )}
@@ -287,72 +317,104 @@ export default function CalendarPage({ role = "Admin" }: { role?: string }) {
                 </div>
             </div>
 
-            {/* Holiday Creation Modal */}
+            {/* --- HOLIDAYS IMPORT MODAL --- */}
             {showHolidayModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
                     <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
                         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-                            <h3 className="text-lg font-black text-gray-900">Add New Holiday</h3>
+                            <div>
+                                <h3 className="text-lg font-black text-gray-900">Import Holidays</h3>
+                                <p className="text-xs text-gray-500 mt-0.5">Upload an Excel (.xlsx, .xls) or CSV file</p>
+                            </div>
                             <button onClick={() => setShowHolidayModal(false)} className="text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 p-1.5 rounded-full transition">
                                 <X size={18} />
                             </button>
                         </div>
-                        <form onSubmit={handleHolidaySubmit}>
+                        <form onSubmit={handleHolidayImport}>
                             <div className="p-6 space-y-4">
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-700 mb-1">Holiday Name *</label>
-                                    <input required type="text" value={holidayForm.name} onChange={e => setHolidayForm({ ...holidayForm, name: e.target.value })} className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-600" />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-700 mb-1">Date *</label>
-                                        <input required type="date" value={holidayForm.date} onChange={e => setHolidayForm({ ...holidayForm, date: e.target.value })} className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-600" />
+
+                                {holidayStatus && (
+                                    <div className={`p-3 rounded-xl border flex items-start space-x-2 ${holidayStatus.success ? 'bg-emerald-50 border-emerald-100 text-emerald-700' : 'bg-red-50 border-red-100 text-red-700'}`}>
+                                        {holidayStatus.success ? <CheckCircle size={16} className="shrink-0 mt-0.5" /> : <AlertCircle size={16} className="shrink-0 mt-0.5" />}
+                                        <p className="text-xs font-semibold">{holidayStatus.message}</p>
                                     </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-700 mb-1">State</label>
-                                        <input type="text" placeholder="e.g. All, TS, AP" value={holidayForm.state} onChange={e => setHolidayForm({ ...holidayForm, state: e.target.value })} className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-emerald-600" />
-                                    </div>
+                                )}
+
+                                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 flex flex-col items-center justify-center text-center bg-gray-50/50 hover:bg-gray-50 transition relative">
+                                    <Upload className="text-emerald-500 mb-2" size={24} />
+                                    <p className="text-sm font-bold text-gray-700 mb-1">Click to upload file</p>
+                                    <p className="text-xs text-gray-400 mb-3">Ensure columns: Name, Date, State</p>
+                                    <input
+                                        required
+                                        type="file"
+                                        accept=".xlsx, .xls, .csv"
+                                        onChange={(e) => setHolidayFile(e.target.files ? e.target.files[0] : null)}
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                    />
+                                    {holidayFile && (
+                                        <div className="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1.5 rounded-lg w-full truncate">
+                                            {holidayFile.name}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             <div className="p-5 bg-gray-50 border-t border-gray-100 flex justify-end space-x-3">
                                 <button type="button" onClick={() => setShowHolidayModal(false)} className="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-bold rounded-xl hover:bg-gray-100">Cancel</button>
-                                <button type="submit" className="px-5 py-2 bg-emerald-600 text-white text-sm font-bold rounded-xl hover:bg-emerald-700">Save Holiday</button>
+                                <button type="submit" disabled={!holidayFile || isHolidayImporting} className="px-5 py-2 bg-emerald-600 text-white text-sm font-bold rounded-xl hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2">
+                                    {isHolidayImporting ? <span>Importing...</span> : <span>Upload & Save</span>}
+                                </button>
                             </div>
                         </form>
                     </div>
                 </div>
             )}
 
-            {/* Event Creation Modal */}
+            {/* --- EVENTS IMPORT MODAL --- */}
             {showEventModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
                     <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden">
                         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-                            <h3 className="text-lg font-black text-gray-900">Add Company Event</h3>
+                            <div>
+                                <h3 className="text-lg font-black text-gray-900">Import Events</h3>
+                                <p className="text-xs text-gray-500 mt-0.5">Upload an Excel (.xlsx, .xls) or CSV file</p>
+                            </div>
                             <button onClick={() => setShowEventModal(false)} className="text-gray-400 hover:text-gray-600 bg-gray-50 hover:bg-gray-100 p-1.5 rounded-full transition">
                                 <X size={18} />
                             </button>
                         </div>
-                        <form onSubmit={handleEventSubmit}>
+                        <form onSubmit={handleEventImport}>
                             <div className="p-6 space-y-4">
-                                <div>
-                                    <label className="block text-xs font-bold text-gray-700 mb-1">Event Title *</label>
-                                    <input required type="text" value={eventForm.title} onChange={e => setEventForm({ ...eventForm, title: e.target.value })} className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-indigo-600" />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-700 mb-1">Date *</label>
-                                        <input required type="date" value={eventForm.date} onChange={e => setEventForm({ ...eventForm, date: e.target.value })} className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-indigo-600" />
+
+                                {eventStatus && (
+                                    <div className={`p-3 rounded-xl border flex items-start space-x-2 ${eventStatus.success ? 'bg-indigo-50 border-indigo-100 text-indigo-700' : 'bg-red-50 border-red-100 text-red-700'}`}>
+                                        {eventStatus.success ? <CheckCircle size={16} className="shrink-0 mt-0.5" /> : <AlertCircle size={16} className="shrink-0 mt-0.5" />}
+                                        <p className="text-xs font-semibold">{eventStatus.message}</p>
                                     </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-700 mb-1">Location</label>
-                                        <input type="text" placeholder="e.g. Cafeteria, Online" value={eventForm.location} onChange={e => setEventForm({ ...eventForm, location: e.target.value })} className="w-full border border-gray-200 rounded-xl px-4 py-2 text-sm outline-none focus:border-indigo-600" />
-                                    </div>
+                                )}
+
+                                <div className="border-2 border-dashed border-gray-300 rounded-xl p-6 flex flex-col items-center justify-center text-center bg-gray-50/50 hover:bg-gray-50 transition relative">
+                                    <Upload className="text-indigo-500 mb-2" size={24} />
+                                    <p className="text-sm font-bold text-gray-700 mb-1">Click to upload file</p>
+                                    <p className="text-xs text-gray-400 mb-3">Ensure columns: Title, Date, Location</p>
+                                    <input
+                                        required
+                                        type="file"
+                                        accept=".xlsx, .xls, .csv"
+                                        onChange={(e) => setEventFile(e.target.files ? e.target.files[0] : null)}
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                    />
+                                    {eventFile && (
+                                        <div className="bg-indigo-100 text-indigo-800 text-xs font-bold px-3 py-1.5 rounded-lg w-full truncate">
+                                            {eventFile.name}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             <div className="p-5 bg-gray-50 border-t border-gray-100 flex justify-end space-x-3">
                                 <button type="button" onClick={() => setShowEventModal(false)} className="px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-bold rounded-xl hover:bg-gray-100">Cancel</button>
-                                <button type="submit" className="px-5 py-2 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-700">Save Event</button>
+                                <button type="submit" disabled={!eventFile || isEventImporting} className="px-5 py-2 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2">
+                                    {isEventImporting ? <span>Importing...</span> : <span>Upload & Save</span>}
+                                </button>
                             </div>
                         </form>
                     </div>
