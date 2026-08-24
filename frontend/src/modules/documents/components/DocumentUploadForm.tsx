@@ -1,9 +1,11 @@
-import { useState, type FormEvent } from "react";
+﻿import { useState, type FormEvent } from "react";
 import { Toast } from "../../../shared/components/Toast";
+import type { Employee } from "../../directory/api";
 
 interface DocumentUploadFormProps {
   uploaderId: string;
   restrictToSelf?: boolean;
+  employees: Employee[];
   onSubmit: (input: {
     employee_id: string;
     uploaded_by: string;
@@ -14,7 +16,7 @@ interface DocumentUploadFormProps {
 
 const DOC_TYPES = ["offer_letter", "payslip", "experience_letter", "id_proof", "address_proof"];
 
-export function DocumentUploadForm({ uploaderId, restrictToSelf, onSubmit }: DocumentUploadFormProps) {
+export function DocumentUploadForm({ uploaderId, restrictToSelf, employees, onSubmit }: DocumentUploadFormProps) {
   const [employeeId, setEmployeeId] = useState(restrictToSelf ? uploaderId : "");
   const [docType, setDocType] = useState(DOC_TYPES[0]);
   const [retentionExpiry, setRetentionExpiry] = useState("");
@@ -24,7 +26,7 @@ export function DocumentUploadForm({ uploaderId, restrictToSelf, onSubmit }: Doc
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    const ownerId = restrictToSelf ? uploaderId : employeeId.trim();
+    const ownerId = restrictToSelf ? uploaderId : employeeId;
     if (!ownerId) return;
     setIsSubmitting(true);
     setError(null);
@@ -56,14 +58,20 @@ export function DocumentUploadForm({ uploaderId, restrictToSelf, onSubmit }: Doc
       <div className="field-row">
         {!restrictToSelf && (
           <label className="field">
-            <span className="field__label">Employee ID (owner)</span>
-            <input
+            <span className="field__label">Employee (owner)</span>
+            <select
               className="field__input"
               value={employeeId}
               onChange={(e) => setEmployeeId(e.target.value)}
-              placeholder="EMP001"
               required
-            />
+            >
+              <option value="">Choose employee...</option>
+              {employees.map((e) => (
+                <option key={e.employee_id} value={e.employee_id}>
+                  {e.name} ({e.employee_id})
+                </option>
+              ))}
+            </select>
           </label>
         )}
         <label className="field">
@@ -89,7 +97,7 @@ export function DocumentUploadForm({ uploaderId, restrictToSelf, onSubmit }: Doc
         </label>
       </div>
       <button className="button-primary" type="submit" disabled={isSubmitting}>
-        {isSubmitting ? "Registering…" : "Register document"}
+        {isSubmitting ? "Registering..." : "Register document"}
       </button>
     </form>
   );

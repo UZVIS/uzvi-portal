@@ -3,7 +3,6 @@ import type { DocumentAccessLog, DocumentRecord } from "../api";
 import type { Employee } from "../../directory/api";
 import { Toast } from "../../../shared/components/Toast";
 
-
 function parseUtc(timestamp: string): Date {
   const hasOffset = /Z$|[+-]\d{2}:?\d{2}$/.test(timestamp);
   return new Date(hasOffset ? timestamp : `${timestamp}Z`);
@@ -23,8 +22,9 @@ export function DocumentLookup({ requesterId, employees, onLookup, onGetLogs }: 
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  function nameFor(employeeId: string): string {
-    return employees.find((e) => e.employee_id === employeeId)?.name ?? employeeId;
+  function nameWithId(employeeId: string): string {
+    const name = employees.find((e) => e.employee_id === employeeId)?.name;
+    return name ? `${name} (${employeeId})` : employeeId;
   }
 
   async function handleView() {
@@ -57,7 +57,7 @@ export function DocumentLookup({ requesterId, employees, onLookup, onGetLogs }: 
           placeholder="Document ID (D1)"
         />
         <button className="button-secondary" onClick={handleView} disabled={isLoading || !requesterId}>
-          {isLoading ? "Loading…" : "View"}
+          {isLoading ? "Loading..." : "View"}
         </button>
       </div>
       {!requesterId && (
@@ -70,18 +70,18 @@ export function DocumentLookup({ requesterId, employees, onLookup, onGetLogs }: 
             <dt>Type</dt>
             <dd>{record.doc_type.replace(/_/g, " ")}</dd>
             <dt>Owner</dt>
-            <dd>{nameFor(record.employee_id)}</dd>
+            <dd>{nameWithId(record.employee_id)}</dd>
             <dt>Uploaded by</dt>
-            <dd>{nameFor(record.uploaded_by)}</dd>
+            <dd>{nameWithId(record.uploaded_by)}</dd>
             <dt>Retention expiry</dt>
-            <dd>{record.retention_expiry ?? "—"}</dd>
+            <dd>{record.retention_expiry ?? "-"}</dd>
           </dl>
 
           <h4 className="document-record__logs-title">Access log</h4>
           <ul className="document-record__logs">
             {logs.map((log) => (
               <li key={log.log_id}>
-                <span className="team-manager__id">{log.action}</span> by {nameFor(log.accessed_by)} ·{" "}
+                <span className="team-manager__id">{log.action}</span> by {nameWithId(log.accessed_by)} -{" "}
                 {parseUtc(log.timestamp).toLocaleString()}
               </li>
             ))}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿﻿import { useState } from "react";
 import type { Employee, Team } from "../api";
 
 interface EmployeeRowProps {
@@ -206,5 +206,5 @@ export function managerNameFor(
   employees: { employee_id: string; name: string }[]
 ): string | null {
   if (!managerId) return null;
-  return employees.find((e) => e.employee_id === managerId)?.name ?? managerId;
+  return employees.find((e) => e.employee_id === managerId)?.name ?? null;
 }
