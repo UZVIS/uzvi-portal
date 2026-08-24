@@ -42,6 +42,196 @@ interface AttendanceModulePageProps {
   role: string;
 }
 
+const HOURS = Array.from(
+  { length: 12 },
+  (_, index) => String(index + 1).padStart(2, "0")
+);
+
+const MINUTES = Array.from(
+  { length: 60 },
+  (_, index) => String(index).padStart(2, "0")
+);
+
+const PERIODS = ["AM", "PM"] as const;
+
+type Period = (typeof PERIODS)[number];
+
+const convertTo24Hour = (
+  hour: string,
+  minute: string,
+  period: Period
+) => {
+  let hour24 = Number(hour);
+
+  if (period === "AM") {
+    if (hour24 === 12) {
+      hour24 = 0;
+    }
+  } else if (hour24 !== 12) {
+    hour24 += 12;
+  }
+
+  return `${String(hour24).padStart(2, "0")}:${minute}`;
+};
+
+const parseTime = (time: string) => {
+  if (!time) {
+    return {
+      hour: "09",
+      minute: "00",
+      period: "AM" as Period,
+    };
+  }
+
+  const [hourPart, minutePart] = time.split(":");
+  const hour24 = Number(hourPart);
+
+  if (
+    Number.isNaN(hour24) ||
+    !minutePart ||
+    hour24 < 0 ||
+    hour24 > 23
+  ) {
+    return {
+      hour: "09",
+      minute: "00",
+      period: "AM" as Period,
+    };
+  }
+
+  const period: Period = hour24 >= 12 ? "PM" : "AM";
+
+  let hour12 = hour24 % 12;
+
+  if (hour12 === 0) {
+    hour12 = 12;
+  }
+
+  return {
+    hour: String(hour12).padStart(2, "0"),
+    minute: minutePart.padStart(2, "0"),
+    period,
+  };
+};
+
+interface TimePickerProps {
+  value: string;
+  onChange: (value: string) => void;
+}
+
+const TimePicker: React.FC<TimePickerProps> = ({
+  value,
+  onChange,
+}) => {
+  const parsed = parseTime(value);
+
+  const handleChange = (
+    hour: string,
+    minute: string,
+    period: Period
+  ) => {
+    onChange(convertTo24Hour(hour, minute, period));
+  };
+
+  const selectStyle: React.CSSProperties = {
+    padding: "12px 10px",
+    border: "1px solid #d9e2ec",
+    borderRadius: "10px",
+    fontSize: "14px",
+    background: "#ffffff",
+    height: "46px",
+    boxSizing: "border-box",
+  };
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: "8px",
+        width: "100%",
+      }}
+    >
+      <select
+        aria-label="Hour"
+        value={parsed.hour}
+        onChange={(event) =>
+          handleChange(
+            event.target.value,
+            parsed.minute,
+            parsed.period
+          )
+        }
+        style={{
+          ...selectStyle,
+          flex: 1,
+        }}
+      >
+        {HOURS.map((hour) => (
+          <option key={hour} value={hour}>
+            {hour}
+          </option>
+        ))}
+      </select>
+
+      <span
+        aria-hidden="true"
+        style={{
+          fontWeight: 700,
+          fontSize: "18px",
+        }}
+      >
+        :
+      </span>
+
+      <select
+        aria-label="Minute"
+        value={parsed.minute}
+        onChange={(event) =>
+          handleChange(
+            parsed.hour,
+            event.target.value,
+            parsed.period
+          )
+        }
+        style={{
+          ...selectStyle,
+          flex: 1,
+        }}
+      >
+        {MINUTES.map((minute) => (
+          <option key={minute} value={minute}>
+            {minute}
+          </option>
+        ))}
+      </select>
+
+      <select
+        aria-label="AM or PM"
+        value={parsed.period}
+        onChange={(event) =>
+          handleChange(
+            parsed.hour,
+            parsed.minute,
+            event.target.value as Period
+          )
+        }
+        style={{
+          ...selectStyle,
+          width: "82px",
+          fontWeight: 600,
+        }}
+      >
+        {PERIODS.map((period) => (
+          <option key={period} value={period}>
+            {period}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+};
+
 
 const AttendanceModulePage: React.FC<
   AttendanceModulePageProps
@@ -1254,20 +1444,9 @@ adminTab === "records" && (
                 Check In
               </label>
 
-              <input
-                id="employee-check-in"
-                type="time"
+              <TimePicker
                 value={employeeCheckIn}
-                onChange={(e) => setEmployeeCheckIn(e.target.value)}
-                style={{
-                  width: "100%",
-                  boxSizing: "border-box",
-                  padding: "12px 14px",
-                  border: "1px solid #d9e2ec",
-                  borderRadius: "10px",
-                  fontSize: "14px",
-                  background: "#ffffff",
-                }}
+                onChange={setEmployeeCheckIn}
               />
             </div>
 
@@ -1284,20 +1463,9 @@ adminTab === "records" && (
                 Check Out
               </label>
 
-              <input
-                id="employee-check-out"
-                type="time"
+              <TimePicker
                 value={employeeCheckOut}
-                onChange={(e) => setEmployeeCheckOut(e.target.value)}
-                style={{
-                  width: "100%",
-                  boxSizing: "border-box",
-                  padding: "12px 14px",
-                  border: "1px solid #d9e2ec",
-                  borderRadius: "10px",
-                  fontSize: "14px",
-                  background: "#ffffff",
-                }}
+                onChange={setEmployeeCheckOut}
               />
             </div>
           </div>

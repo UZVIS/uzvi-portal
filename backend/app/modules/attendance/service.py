@@ -1,3 +1,5 @@
+from datetime import date
+
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, status
 
@@ -14,10 +16,51 @@ from app.modules.attendance.schemas import (
 )
 
 
+# ==========================================================
+# M2 LEAVE MANAGEMENT INTEGRATION
+# ==========================================================
+
+# M2 Leave Management is part of this same backend.
+# The actual module path is app.modules.leave.
+from app.modules.leave.models import LeaveApplication, LeaveStatus
+
+M2_AVAILABLE = True
+
+
 class AttendanceService:
 
     def __init__(self, db: Session):
         self.db = db
+
+    # ==========================================================
+    # M2 - CHECK APPROVED LEAVE
+    # ==========================================================
+
+    def _check_employee_on_leave(
+        self,
+        employee_id: str,
+        target_date: date,
+    ) -> bool:
+        """
+        Check whether the employee has an approved leave
+        in M2 for the given attendance date.
+        """
+
+        if not M2_AVAILABLE:
+            return False
+
+        leave = (
+            self.db.query(LeaveApplication)
+            .filter(
+                LeaveApplication.employee_id == employee_id,
+                LeaveApplication.status == LeaveStatus.APPROVED,
+                LeaveApplication.start_date <= target_date,
+                LeaveApplication.end_date >= target_date,
+            )
+            .first()
+        )
+
+        return leave is not None
 
     # ==========================================================
     # CREATE ATTENDANCE
@@ -48,13 +91,35 @@ class AttendanceService:
                 ),
             )
 
+        # ======================================================
+        # M2 LEAVE MANAGEMENT CHECK
+        # ======================================================
+
+        is_on_leave = self._check_employee_on_leave(
+            attendance.employee_id,
+            attendance.attendance_date,
+        )
+
+        attendance_status = attendance.status
+        check_in = attendance.check_in
+        check_out = attendance.check_out
+        source = attendance.source
+
+        # If M2 has an approved leave for this employee/date,
+        # Attendance must automatically become ON_LEAVE.
+        if is_on_leave:
+            attendance_status = AttendanceStatus.ON_LEAVE
+            check_in = None
+            check_out = None
+            source = "m2-leave"
+
         record = AttendanceRecord(
             employee_id=attendance.employee_id,
             attendance_date=attendance.attendance_date,
-            status=attendance.status,
-            check_in=attendance.check_in,
-            check_out=attendance.check_out,
-            source=attendance.source,
+            status=attendance_status,
+            check_in=check_in,
+            check_out=check_out,
+            source=source,
         )
 
         self.db.add(record)
@@ -159,6 +224,21 @@ class AttendanceService:
                 key,
                 value,
             )
+
+        # ======================================================
+        # M2 CHECK DURING UPDATE
+        # ======================================================
+
+        is_on_leave = self._check_employee_on_leave(
+            attendance.employee_id,
+            attendance.attendance_date,
+        )
+
+        if is_on_leave:
+            attendance.status = AttendanceStatus.ON_LEAVE
+            attendance.check_in = None
+            attendance.check_out = None
+            attendance.source = "m2-leave"
 
         self.db.commit()
         self.db.refresh(attendance)
@@ -280,6 +360,15 @@ class AttendanceService:
         result = []
 
         for record in absent_records:
+
+            # If M2 has an approved leave for the same
+            # employee/date, it should not be treated as
+            # an unexplained absence.
+            if self._check_employee_on_leave(
+                record.employee_id,
+                record.attendance_date,
+            ):
+                continue
 
             employee = (
                 self.db.query(Employee)

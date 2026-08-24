@@ -1,3 +1,5 @@
+// src/modules/attendance/components/AttendanceModal.tsx
+
 import React, { useEffect, useState } from "react";
 import "./AttendanceModal.css";
 
@@ -41,20 +43,12 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
   const [date, setDate] =
     useState(attendanceDate);
 
-  const [checkIn, setCheckIn] =
-    useState("");
-
-  const [checkOut, setCheckOut] =
-    useState("");
-
   const [source, setSource] =
     useState("manual");
 
-  /*
-   * ======================================
-   * Selected Employee Details
-   * ======================================
-   */
+  // ==========================================
+  // Selected Employee Details
+  // ==========================================
 
   const selectedEmployeeData = employees.find(
     (employee) =>
@@ -67,11 +61,9 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
     defaultEmployeeName ??
     "";
 
-  /*
-   * ======================================
-   * Load / Reset Employee Details
-   * ======================================
-   */
+  // ==========================================
+  // Load / Reset Form
+  // ==========================================
 
   useEffect(() => {
     if (record) {
@@ -81,10 +73,6 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
       setDate(record.attendance_date);
 
       setStatus(record.status);
-
-      setCheckIn(record.check_in ?? "");
-
-      setCheckOut(record.check_out ?? "");
 
       setSource(record.source ?? "manual");
 
@@ -96,20 +84,15 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
 
     setStatus("in-office");
 
-    setCheckIn("");
-
-    setCheckOut("");
-
     setSource("manual");
 
-    // If default employee exists in Directory,
-    // use it. Otherwise use the first employee
-    // received from Directory.
-    const defaultEmployeeExists = employees.some(
-      (employee) =>
-        String(employee.employee_id) ===
-        String(employeeId)
-    );
+    // Select default employee if available
+    const defaultEmployeeExists =
+      employees.some(
+        (employee) =>
+          String(employee.employee_id) ===
+          String(employeeId)
+      );
 
     if (defaultEmployeeExists) {
       setSelectedEmployee(employeeId);
@@ -127,11 +110,9 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
     employees,
   ]);
 
-  /*
-   * ======================================
-   * Employee Change
-   * ======================================
-   */
+  // ==========================================
+  // Employee Change
+  // ==========================================
 
   const handleEmployeeChange = (
     value: string
@@ -139,11 +120,9 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
     setSelectedEmployee(value);
   };
 
-  /*
-   * ======================================
-   * Submit
-   * ======================================
-   */
+  // ==========================================
+  // Submit
+  // ==========================================
 
   const handleSubmit = (
     e: React.FormEvent
@@ -154,33 +133,33 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
       return;
     }
 
+    /*
+     * Admin Attendance:
+     * Check In and Check Out are intentionally
+     * NOT included here.
+     */
+
     const formData: AttendanceFormData = {
       employee_id: selectedEmployee,
       attendance_date: date,
       status,
-      check_in: checkIn || undefined,
-      check_out: checkOut || undefined,
       source,
     };
 
     onSave(formData);
   };
 
-  /*
-   * ======================================
-   * Modal Closed
-   * ======================================
-   */
+  // ==========================================
+  // Modal Closed
+  // ==========================================
 
   if (!isOpen) {
     return null;
   }
 
-  /*
-   * ======================================
-   * UI
-   * ======================================
-   */
+  // ==========================================
+  // UI
+  // ==========================================
 
   return (
     <div
@@ -194,9 +173,9 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
         }
       >
 
-        {/* ================================
+        {/* =====================================
             Header
-        ================================= */}
+        ====================================== */}
 
         <div className="modal-header">
 
@@ -216,17 +195,17 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
 
         </div>
 
-        {/* ================================
+        {/* =====================================
             Form
-        ================================= */}
+        ====================================== */}
 
         <form onSubmit={handleSubmit}>
 
           <div className="modal-body">
 
-            {/* ==============================
+            {/* ==================================
                 Employee
-            =============================== */}
+            =================================== */}
 
             <div className="form-row">
 
@@ -302,9 +281,9 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
 
             </div>
 
-            {/* ==============================
+            {/* ==================================
                 Date & Status
-            =============================== */}
+            =================================== */}
 
             <div className="form-row">
 
@@ -375,57 +354,18 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
 
             </div>
 
-            {/* ==============================
-                Check In & Check Out
-            =============================== */}
+            {/* ==================================
+                NO CHECK-IN / CHECK-OUT HERE
+                ==================================
 
-            <div className="form-row">
+                Admin Add Attendance does not
+                contain Check In or Check Out.
 
-              {/* Check In */}
+            =================================== */}
 
-              <div className="form-group">
-
-                <label>
-                  Check In
-                </label>
-
-                <input
-                  type="time"
-                  value={checkIn}
-                  onChange={(e) =>
-                    setCheckIn(
-                      e.target.value
-                    )
-                  }
-                />
-
-              </div>
-
-              {/* Check Out */}
-
-              <div className="form-group">
-
-                <label>
-                  Check Out
-                </label>
-
-                <input
-                  type="time"
-                  value={checkOut}
-                  onChange={(e) =>
-                    setCheckOut(
-                      e.target.value
-                    )
-                  }
-                />
-
-              </div>
-
-            </div>
-
-            {/* ==============================
+            {/* ==================================
                 Source
-            =============================== */}
+            =================================== */}
 
             <div className="form-group">
 
@@ -460,9 +400,9 @@ const AttendanceModal: React.FC<AttendanceModalProps> = ({
 
           </div>
 
-          {/* ================================
+          {/* =====================================
               Footer
-          ================================= */}
+          ====================================== */}
 
           <div className="modal-footer">
 
