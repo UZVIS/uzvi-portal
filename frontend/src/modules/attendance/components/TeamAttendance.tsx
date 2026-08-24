@@ -19,11 +19,19 @@ const TeamAttendance: React.FC<TeamAttendanceProps> = ({
     fetchTeamAttendance,
   } = useTeamAttendance();
 
+  // ==========================================
+  // Fetch Team Attendance
+  // ==========================================
+
   useEffect(() => {
     if (teamId) {
       fetchTeamAttendance(teamId);
     }
   }, [teamId, fetchTeamAttendance]);
+
+  // ==========================================
+  // Status Label
+  // ==========================================
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -44,6 +52,10 @@ const TeamAttendance: React.FC<TeamAttendanceProps> = ({
     }
   };
 
+  // ==========================================
+  // Status CSS Class
+  // ==========================================
+
   const getStatusClass = (status: string) => {
     switch (status) {
       case "in-office":
@@ -63,6 +75,37 @@ const TeamAttendance: React.FC<TeamAttendanceProps> = ({
     }
   };
 
+  // ==========================================
+  // Format Date
+  // ==========================================
+
+  const formatDate = (date: string) => {
+    if (!date) {
+      return "-";
+    }
+
+    const formattedDate = new Date(
+      `${date}T00:00:00`
+    );
+
+    if (Number.isNaN(formattedDate.getTime())) {
+      return date;
+    }
+
+    return formattedDate.toLocaleDateString(
+      "en-IN",
+      {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }
+    );
+  };
+
+  // ==========================================
+  // Loading
+  // ==========================================
+
   if (loading) {
     return (
       <div className="loading-state">
@@ -70,6 +113,10 @@ const TeamAttendance: React.FC<TeamAttendanceProps> = ({
       </div>
     );
   }
+
+  // ==========================================
+  // UI
+  // ==========================================
 
   return (
     <div className="team-attendance">
@@ -85,67 +132,119 @@ const TeamAttendance: React.FC<TeamAttendanceProps> = ({
       ) : (
         <table className="attendance-table">
 
+          {/* ================================
+              Table Header
+              ================================ */}
+
           <thead>
             <tr>
-              <th>Employee ID</th>
-              <th>Employee Name</th>
-              <th>Designation</th>
-              <th>Department</th>
-              <th>Status</th>
-              <th>Check In</th>
-              <th>Check Out</th>
+
+              <th>
+                Employee ID
+              </th>
+
+              <th>
+                Employee Name
+              </th>
+
+              <th>
+                Designation
+              </th>
+
+              <th>
+                Date
+              </th>
+
+              <th>
+                Status
+              </th>
+
+              <th>
+                Check In
+              </th>
+
+              <th>
+                Check Out
+              </th>
+
             </tr>
           </thead>
 
+          {/* ================================
+              Table Body
+              ================================ */}
+
           <tbody>
-            {teamRecords.map((record, index) => (
-              <tr
-                key={`${record.employee_id}-${index}`}
-                onClick={() =>
-                  onEmployeeClick?.(
-                    record.employee_id
-                  )
-                }
-              >
 
-                <td>
-                  {record.employee_id}
-                </td>
+            {teamRecords.map(
+              (record, index) => (
 
-                <td>
-                  {record.employee_name}
-                </td>
+                <tr
+                  key={`${record.employee_id}-${record.attendance_date}-${index}`}
+                  onClick={() =>
+                    onEmployeeClick?.(
+                      record.employee_id
+                    )
+                  }
+                >
 
-                <td>
-                  {record.designation ?? "-"}
-                </td>
+                  {/* Employee ID */}
 
-                <td>
-                  {record.department ?? "-"}
-                </td>
+                  <td>
+                    {record.employee_id}
+                  </td>
 
-                <td>
-                  <span
-                    className={getStatusClass(
-                      record.status
+                  {/* Employee Name */}
+
+                  <td>
+                    {record.employee_name}
+                  </td>
+
+                  {/* Designation */}
+
+                  <td>
+                    {record.designation ?? "-"}
+                  </td>
+
+                  {/* Date */}
+
+                  <td>
+                    {formatDate(
+                      record.attendance_date
                     )}
-                  >
-                    {getStatusLabel(
-                      record.status
-                    )}
-                  </span>
-                </td>
+                  </td>
 
-                <td>
-                  {record.check_in ?? "-"}
-                </td>
+                  {/* Status */}
 
-                <td>
-                  {record.check_out ?? "-"}
-                </td>
+                  <td>
+                    <span
+                      className={getStatusClass(
+                        record.status
+                      )}
+                    >
+                      {getStatusLabel(
+                        record.status
+                      )}
+                    </span>
+                  </td>
 
-              </tr>
-            ))}
+                  {/* Check In */}
+
+                  <td>
+                    {record.check_in ?? "-"}
+                  </td>
+
+                  {/* Check Out */}
+
+                  <td>
+                    {record.check_out ?? "-"}
+                  </td>
+
+                </tr>
+
+              )
+            )}
+
           </tbody>
 
         </table>
