@@ -146,6 +146,180 @@ const UnexplainedAbsences: React.FC = () => {
   };
 
   // ==========================================
+  // CSV value formatter
+  // ==========================================
+
+  const escapeCsvValue = (
+    value: string
+  ): string => {
+    const safeValue =
+      value ?? "";
+
+    return `"${safeValue
+      .replace(/"/g, '""')
+      .replace(/\r?\n/g, " ")}"`;
+  };
+
+  // ==========================================
+  // EXPORT UNEXPLAINED ABSENCES
+  // ==========================================
+
+  const handleExportAttendance = () => {
+    // No records available
+    if (
+      !unexplainedAbsences ||
+      unexplainedAbsences.length === 0
+    ) {
+      window.alert(
+        "No unexplained absence records available to export."
+      );
+
+      return;
+    }
+
+    // CSV Header
+    const headers = [
+      "Employee ID",
+      "Employee Name",
+      "Date",
+      "Attendance Status",
+      "Leave Status",
+    ];
+
+    // CSV Rows
+    const rows =
+      unexplainedAbsences.map(
+        (item) => {
+          const employeeId =
+            getEmployeeValue(
+              item,
+              [
+                "employee_id",
+                "employeeId",
+                "emp_id",
+                "empId",
+                "id",
+              ]
+            );
+
+          const employeeName =
+            getEmployeeValue(
+              item,
+              [
+                "employee_name",
+                "employeeName",
+                "name",
+                "full_name",
+                "fullName",
+              ]
+            );
+
+          const date =
+            getValue(
+              item,
+              [
+                "date",
+                "attendance_date",
+                "attendanceDate",
+                "absence_date",
+                "absenceDate",
+                "start_date",
+                "startDate",
+              ]
+            );
+
+          const rawAttendanceStatus =
+            getValue(
+              item,
+              [
+                "attendance_status",
+                "attendanceStatus",
+                "status",
+              ]
+            );
+
+          const attendanceStatus =
+            rawAttendanceStatus === "-" ||
+            rawAttendanceStatus.toLowerCase() ===
+              "absent"
+              ? "Not Marked"
+              : rawAttendanceStatus;
+
+          const rawLeaveStatus =
+            getValue(
+              item,
+              [
+                "leave_status",
+                "leaveStatus",
+              ]
+            );
+
+          const leaveStatus =
+            rawLeaveStatus === "-"
+              ? "No Approved Leave"
+              : rawLeaveStatus;
+
+          return [
+            employeeId,
+            employeeName,
+            formatDate(date),
+            attendanceStatus,
+            leaveStatus,
+          ];
+        }
+      );
+
+    // Create CSV content
+    const csvContent = [
+      headers.map(escapeCsvValue).join(","),
+      ...rows.map((row) =>
+        row
+          .map(escapeCsvValue)
+          .join(",")
+      ),
+    ].join("\r\n");
+
+    // Add BOM so Excel displays correctly
+    const blob = new Blob(
+      [
+        "\uFEFF" +
+          csvContent,
+      ],
+      {
+        type:
+          "text/csv;charset=utf-8;",
+      }
+    );
+
+    // Create download URL
+    const url =
+      URL.createObjectURL(blob);
+
+    // Create temporary download link
+    const link =
+      document.createElement("a");
+
+    link.href = url;
+
+    link.setAttribute(
+      "download",
+      `unexplained-absences-${new Date()
+        .toISOString()
+        .slice(0, 10)}.csv`
+    );
+
+    document.body.appendChild(link);
+
+    // Start download
+    link.click();
+
+    // Cleanup
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+  };
+
+  // ==========================================
   // Open Follow-up modal
   // ==========================================
 
@@ -221,7 +395,6 @@ const UnexplainedAbsences: React.FC = () => {
         ? "No Approved Leave"
         : rawLeaveStatus;
 
-    // Store only strings
     setSelectedAbsence({
       employeeId,
       employeeName,
@@ -259,9 +432,16 @@ const UnexplainedAbsences: React.FC = () => {
           </p>
         </div>
 
+        {/* ====================================
+            Export Button
+            ==================================== */}
+
         <button
           type="button"
           className="export-btn"
+          onClick={
+            handleExportAttendance
+          }
         >
           Export Attendance
         </button>
@@ -278,7 +458,8 @@ const UnexplainedAbsences: React.FC = () => {
             padding: "14px 18px",
             marginBottom: "16px",
             borderRadius: "8px",
-            backgroundColor: "#fff1f0",
+            backgroundColor:
+              "#fff1f0",
             color: "#d32f2f",
             border:
               "1px solid #ffcdd2",
@@ -517,9 +698,11 @@ const UnexplainedAbsences: React.FC = () => {
 
                           <button
                             type="button"
-                            className="export-btn"
+                            className="export-btn follow-up-table-btn"
                             onClick={() =>
-                              handleFollowUp(item)
+                              handleFollowUp(
+                                item
+                              )
                             }
                             style={{
                               padding:
@@ -557,7 +740,10 @@ const UnexplainedAbsences: React.FC = () => {
 
       {selectedAbsence && (
         <div
-          onClick={closeFollowUp}
+          className="follow-up-overlay"
+          onClick={
+            closeFollowUp
+          }
           style={{
             position: "fixed",
             inset: 0,
@@ -574,6 +760,7 @@ const UnexplainedAbsences: React.FC = () => {
         >
 
           <div
+            className="follow-up-modal"
             onClick={(event) =>
               event.stopPropagation()
             }
@@ -594,6 +781,7 @@ const UnexplainedAbsences: React.FC = () => {
             {/* Modal Header */}
 
             <div
+              className="follow-up-modal-header"
               style={{
                 display:
                   "flex",
@@ -657,9 +845,7 @@ const UnexplainedAbsences: React.FC = () => {
 
             </div>
 
-            {/* ==================================
-                Employee ID
-            ================================== */}
+            {/* Employee ID */}
 
             <div
               style={{
@@ -695,9 +881,7 @@ const UnexplainedAbsences: React.FC = () => {
 
             </div>
 
-            {/* ==================================
-                Employee Name
-            ================================== */}
+            {/* Employee Name */}
 
             <div
               style={{
@@ -733,9 +917,7 @@ const UnexplainedAbsences: React.FC = () => {
 
             </div>
 
-            {/* ==================================
-                Date
-            ================================== */}
+            {/* Date */}
 
             <div
               style={{
@@ -771,9 +953,7 @@ const UnexplainedAbsences: React.FC = () => {
 
             </div>
 
-            {/* ==================================
-                Attendance Status
-            ================================== */}
+            {/* Attendance Status */}
 
             <div
               style={{
@@ -814,9 +994,7 @@ const UnexplainedAbsences: React.FC = () => {
 
             </div>
 
-            {/* ==================================
-                Leave Status
-            ================================== */}
+            {/* Leave Status */}
 
             <div
               style={{
@@ -852,11 +1030,10 @@ const UnexplainedAbsences: React.FC = () => {
 
             </div>
 
-            {/* ==================================
-                Modal Footer
-            ================================== */}
+            {/* Modal Footer */}
 
             <div
+              className="follow-up-modal-footer"
               style={{
                 display:
                   "flex",

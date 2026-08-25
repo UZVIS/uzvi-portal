@@ -62,6 +62,108 @@ class AttendanceService:
 
         return leave is not None
 
+
+    # ==========================================================
+    # AUTOMATIC ABSENT CREATION
+    # ==========================================================
+
+    def _create_automatic_absent_for_date(
+        self,
+        target_date: date,
+        employee_id: str | None = None,
+        team_id: str | None = None,
+    ) -> None:
+        """
+        Create a system-generated ABSENT record for employees who:
+        1. have no attendance record for target_date, and
+        2. do not have an approved M2 leave for target_date.
+
+        The current day is never auto-marked absent. This helper is intended
+        for completed/past attendance dates.
+        """
+
+        # Never create Absent for today or a future date.
+        if target_date >= date.today():
+            return
+
+        query = self.db.query(Employee)
+
+        if employee_id:
+            query = query.filter(
+                Employee.employee_id == employee_id
+            )
+
+        if team_id:
+            query = query.filter(
+                Employee.team_id == team_id
+            )
+
+        employees = query.all()
+
+        if not employees:
+            return
+
+        created = False
+
+        for employee in employees:
+            current_employee_id = employee.employee_id
+
+            existing = (
+                self.db.query(AttendanceRecord)
+                .filter(
+                    AttendanceRecord.employee_id
+                    == current_employee_id,
+                    AttendanceRecord.attendance_date
+                    == target_date,
+                )
+                .first()
+            )
+
+            # Attendance already exists. Do not overwrite it.
+            if existing:
+                continue
+
+            # Approved M2 leave takes priority over Absent.
+            if self._check_employee_on_leave(
+                current_employee_id,
+                target_date,
+            ):
+                continue
+
+            absent_record = AttendanceRecord(
+                employee_id=current_employee_id,
+                attendance_date=target_date,
+                status=AttendanceStatus.ABSENT,
+                check_in=None,
+                check_out=None,
+                source="system",
+            )
+
+            self.db.add(absent_record)
+            created = True
+
+        if created:
+            self.db.commit()
+
+    def _finalize_previous_day_absence(
+        self,
+        employee_id: str | None = None,
+        team_id: str | None = None,
+    ) -> None:
+        """
+        Finalize yesterday as Absent when the attendance API is accessed.
+        """
+        yesterday = date.today()
+        from datetime import timedelta
+
+        yesterday = yesterday - timedelta(days=1)
+
+        self._create_automatic_absent_for_date(
+            target_date=yesterday,
+            employee_id=employee_id,
+            team_id=team_id,
+        )
+
     # ==========================================================
     # CREATE ATTENDANCE
     # ==========================================================
@@ -160,6 +262,9 @@ class AttendanceService:
 
     def get_all_attendance(self):
 
+        # Automatically finalize the previous day before returning records.
+        self._finalize_previous_day_absence()
+
         return (
             self.db.query(AttendanceRecord)
             .order_by(
@@ -176,6 +281,11 @@ class AttendanceService:
         self,
         employee_id: str,
     ):
+
+        # Automatically finalize this employee's previous day.
+        self._finalize_previous_day_absence(
+            employee_id=employee_id
+        )
 
         return (
             self.db.query(AttendanceRecord)
@@ -289,6 +399,11 @@ class AttendanceService:
         month: int,
     ):
 
+        # Ensure the previous day is finalized before calculating the summary.
+        self._finalize_previous_day_absence(
+            employee_id=employee_id
+        )
+
         records = (
             self.db.query(AttendanceRecord)
             .filter(
@@ -344,6 +459,9 @@ class AttendanceService:
     # ==========================================================
 
     def get_unexplained_absences(self):
+
+        # Finalize yesterday for all employees before checking absences.
+        self._finalize_previous_day_absence()
 
         absent_records = (
             self.db.query(AttendanceRecord)
@@ -451,6 +569,11 @@ class AttendanceService:
         self,
         team_id: str,
     ):
+
+        # Finalize yesterday for this team before returning team attendance.
+        self._finalize_previous_day_absence(
+            team_id=team_id
+        )
         """
         Return team attendance together with
         employee details.
