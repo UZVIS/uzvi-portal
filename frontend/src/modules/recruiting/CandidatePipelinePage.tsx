@@ -34,7 +34,13 @@ function avatarColorFor(id: string): string {
   return colorForIndex(hash);
 }
 
-export function CandidatePipelinePage() {
+interface CandidatePipelinePageProps {
+  /** Called after a successful create, update, delete, or stage move, so a
+   * parent page (like the recruiting hub) can refresh its own summary data. */
+  onChange?: () => void;
+}
+
+export function CandidatePipelinePage({ onChange }: CandidatePipelinePageProps = {}) {
   const navigate = useNavigate();
   function openCandidate(id: string) {
     navigate(`/recruiting/candidates/${id}`);
@@ -83,16 +89,19 @@ export function CandidatePipelinePage() {
   async function handleCreate(input: CandidateInput) {
     await recruitingApi.createCandidate(input);
     await load();
+    onChange?.();
   }
 
   async function handleUpdate(candidateId: string, input: CandidateUpdateInput) {
     await recruitingApi.updateCandidate(candidateId, input);
     await load();
+    onChange?.();
   }
 
   async function handleDelete(candidateId: string) {
     await recruitingApi.deleteCandidate(candidateId);
     setCandidates((prev) => prev.filter((c) => c.candidate_id !== candidateId));
+    onChange?.();
   }
 
   async function moveCandidate(candidateId: string, stage: CandidateStage) {
@@ -104,6 +113,7 @@ export function CandidatePipelinePage() {
     );
     try {
       await recruitingApi.updateStage(candidateId, stage);
+      onChange?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't move candidate.");
       await load();

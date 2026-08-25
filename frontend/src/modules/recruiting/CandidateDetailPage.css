@@ -227,6 +227,12 @@
   padding: 16px;
 }
 
+.detail__convert-hint {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--color-text-muted, #6b7280);
+}
+
 /* ---------- Timeline ---------- */
 
 .detail__timeline-head {

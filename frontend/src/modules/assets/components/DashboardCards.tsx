@@ -10,7 +10,11 @@ import {
 import { getInventorySummary } from "../services/assetService";
 import type { InventorySummary } from "../types/asset";
 
-export default function DashboardCards() {
+interface DashboardCardsProps {
+    reload: boolean;
+}
+
+export default function DashboardCards({ reload }: DashboardCardsProps) {
   const [summary, setSummary] = useState<InventorySummary>({
     total_assets: 0,
     in_stock_assets: 0,
@@ -21,7 +25,7 @@ export default function DashboardCards() {
 
   useEffect(() => {
     loadSummary();
-  }, []);
+  }, [reload]);
 
   async function loadSummary() {
     try {

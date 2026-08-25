@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field
+﻿from pydantic import BaseModel, ConfigDict, Field
 from datetime import date, datetime
 from typing import Optional
 
@@ -8,7 +8,7 @@ class OnboardingTemplateBase(BaseModel):
 
 
 class OnboardingTemplateCreate(OnboardingTemplateBase):
-    template_id: str = Field(..., description="Primary unique template identifier")
+    template_id: Optional[str] = Field(None, description="Ignored - the server always auto-generates a TPL### ID")
     requester_id: str = Field(
         ..., description="Employee ID of whoever is creating this template"
     )
@@ -36,10 +36,18 @@ class OnboardingTaskBase(BaseModel):
 
 
 class OnboardingTaskCreate(OnboardingTaskBase):
-    task_id: str = Field(..., description="Primary unique task identifier")
+    task_id: Optional[str] = Field(None, description="Ignored - the server always auto-generates a TSK### ID")
     requester_id: str = Field(
         ..., description="Employee ID of whoever is adding this task"
     )
+
+
+class OnboardingTaskUpdate(BaseModel):
+    name: Optional[str] = None
+    seq: Optional[int] = None
+    responsible_role: Optional[str] = None
+    expected_days: Optional[int] = None
+    required_doc_type: Optional[str] = None
 
 
 class OnboardingTaskResponse(OnboardingTaskBase):
@@ -54,7 +62,7 @@ class OnboardingInstanceBase(BaseModel):
 
 
 class OnboardingInstanceCreate(OnboardingInstanceBase):
-    instance_id: str = Field(..., description="Primary unique instance identifier")
+    instance_id: Optional[str] = Field(None, description="Ignored - the server always auto-generates an OI### ID")
     requester_id: str = Field(..., description="Employee ID of whoever is starting this instance")
 
 

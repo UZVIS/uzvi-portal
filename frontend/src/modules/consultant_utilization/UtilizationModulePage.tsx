@@ -1,74 +1,475 @@
-import { useNavigate } from 'react-router-dom'
-import { useState, type CSSProperties } from 'react'
-import { useAuth } from '../../shared/auth/AuthContext'
-import { ConsultantUtilizationPage } from './ConsultantUtilizationPage'
-import { ProjectMarginsPage } from './ProjectMarginsPage'
-import { OrgDashboardPage } from './OrgDashboardPage'
+// import { useNavigate } from 'react-router-dom'
+// import { useState, type CSSProperties } from 'react'
+// import { useAuth } from '../../shared/auth/AuthContext'
+// import { ConsultantUtilizationPage } from './ConsultantUtilizationPage'
+// import { ProjectMarginsPage } from './ProjectMarginsPage'
+// import { OrgDashboardPage } from './OrgDashboardPage'
 
-type Tab = 'my' | 'margins' | 'org'
+// type Tab = 'my' | 'margins' | 'org'
+
+// function isAdminTier(accessTier: string): boolean {
+//   return (accessTier || '').trim().toLowerCase().startsWith('admin')
+// }
+
+// function tabButtonStyle(active: boolean): CSSProperties {
+//   return {
+//     background: active ? '#F37021' : '#ffffff',
+//     color: active ? '#ffffff' : '#1f2430',
+//     border: '1px solid ' + (active ? '#F37021' : '#d0d0d0'),
+//     borderRadius: 6,
+//     padding: '6px 14px',
+//     cursor: 'pointer',
+//     fontWeight: 600,
+//     fontSize: 14,
+//   }
+// }
+
+// export default function UtilizationModulePage() {
+//   const navigate = useNavigate()
+//   const { employee } = useAuth()
+//   const [tab, setTab] = useState<Tab>('my')
+
+//   const isAdmin = employee ? isAdminTier(employee.access_tier) : false
+
+//   return (
+//     <div style={{ background: '#f7f5f2', minHeight: '100vh' }}>
+//       <div
+//         style={{
+//           padding: '12px 24px',
+//           borderBottom: '1px solid #e3e6ea',
+//         }}
+//       >
+//         <button
+//           onClick={() => navigate(-1)}
+//           style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}
+//         >
+//           ← Back
+//         </button>
+//       </div>
+//       <nav style={{ display: 'flex', gap: 8, padding: '12px 24px', borderBottom: '1px solid #e3e6ea' }}>
+//         <button onClick={() => setTab('my')} style={tabButtonStyle(tab === 'my')}>
+//           My Dashboard
+//         </button>
+//         {isAdmin && (
+//           <button onClick={() => setTab('margins')} style={tabButtonStyle(tab === 'margins')}>
+//             Project Margins
+//           </button>
+//         )}
+//         {isAdmin && (
+//           <button onClick={() => setTab('org')} style={tabButtonStyle(tab === 'org')}>
+//             Org Dashboard
+//           </button>
+//         )}
+//       </nav>
+//       {tab === 'my' && <ConsultantUtilizationPage />}
+//       {tab === 'margins' && isAdmin && <ProjectMarginsPage />}
+//       {tab === 'org' && isAdmin && <OrgDashboardPage />}
+//       {(tab === 'margins' || tab === 'org') && !isAdmin && (
+//         <div style={{ padding: 24, color: '#6b7280' }}>
+//           This area is limited to Admin/Leadership accounts.
+//         </div>
+//       )}
+//     </div>
+//   )
+// }
+
+
+// import { useState, type CSSProperties } from 'react'
+// import { useAuth } from '../../shared/auth/AuthContext'
+// import { ConsultantUtilizationPage } from './ConsultantUtilizationPage'
+// import { ProjectMarginsPage } from './ProjectMarginsPage'
+// import { OrgDashboardPage } from './OrgDashboardPage'
+
+// type Tab = 'my' | 'margins' | 'org'
+
+// function isAdminTier(accessTier: string): boolean {
+//   return (accessTier || '').trim().toLowerCase().startsWith('admin')
+// }
+
+// function tabButtonStyle(active: boolean): CSSProperties {
+//   return {
+//     background: active ? '#F37021' : '#ffffff',
+//     color: active ? '#ffffff' : '#1f2430',
+//     border: '1px solid ' + (active ? '#F37021' : '#d0d0d0'),
+//     borderRadius: 6,
+//     padding: '6px 14px',
+//     cursor: 'pointer',
+//     fontWeight: 600,
+//     fontSize: 14,
+//   }
+// }
+
+// export default function UtilizationModulePage() {
+//   const { employee } = useAuth()
+//   const [tab, setTab] = useState<Tab>('my')
+
+//   const isAdmin = employee ? isAdminTier(employee.access_tier) : false
+
+//   return (
+//     <div>
+//       <nav style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+//         <button onClick={() => setTab('my')} style={tabButtonStyle(tab === 'my')}>
+//           My Dashboard
+//         </button>
+//         {isAdmin && (
+//           <button onClick={() => setTab('margins')} style={tabButtonStyle(tab === 'margins')}>
+//             Project Margins
+//           </button>
+//         )}
+//         {isAdmin && (
+//           <button onClick={() => setTab('org')} style={tabButtonStyle(tab === 'org')}>
+//             Org Dashboard
+//           </button>
+//         )}
+//       </nav>
+//       {tab === 'my' && <ConsultantUtilizationPage />}
+//       {tab === 'margins' && isAdmin && <ProjectMarginsPage />}
+//       {tab === 'org' && isAdmin && <OrgDashboardPage />}
+//       {(tab === 'margins' || tab === 'org') && !isAdmin && (
+//         <div style={{ padding: 24, color: '#6b7280' }}>
+//           This area is limited to Admin/Leadership accounts.
+//         </div>
+//       )}
+//     </div>
+//   )
+// }
+
+import { useState, type CSSProperties } from "react";
+
+import { useAuth } from "../../shared/auth/AuthContext";
+
+import { ConsultantUtilizationPage } from "./ConsultantUtilizationPage";
+import { ProjectMarginsPage } from "./ProjectMarginsPage";
+import { OrgDashboardPage } from "./OrgDashboardPage";
+import { OTApprovalsPage } from "./OTApprovalsPage";
+import { ManagerDashboardPage } from "./components/ManagerOrgDashboard";
+
+type Tab =
+  | "my"
+  | "margins"
+  | "org"
+  | "ot";
+
+/* =========================================================
+   ROLE CHECKS
+========================================================= */
 
 function isAdminTier(accessTier: string): boolean {
-  return (accessTier || '').trim().toLowerCase().startsWith('admin')
+  return (
+    (accessTier || "")
+      .trim()
+      .toLowerCase()
+      .startsWith("admin")
+  );
 }
 
-function tabButtonStyle(active: boolean): CSSProperties {
-  return {
-    background: active ? '#F37021' : '#ffffff',
-    color: active ? '#ffffff' : '#1f2430',
-    border: '1px solid ' + (active ? '#F37021' : '#d0d0d0'),
-    borderRadius: 6,
-    padding: '6px 14px',
-    cursor: 'pointer',
-    fontWeight: 600,
-    fontSize: 14,
-  }
+function isManagerTier(accessTier: string): boolean {
+  return (
+    (accessTier || "")
+      .trim()
+      .toLowerCase() === "manager"
+  );
 }
 
-export default function UtilizationModulePage() {
-  const navigate = useNavigate()
-  const { employee } = useAuth()
-  const [tab, setTab] = useState<Tab>('my')
-
-  const isAdmin = employee ? isAdminTier(employee.access_tier) : false
+function canApproveOT(accessTier: string): boolean {
+  const tier = (accessTier || "")
+    .trim()
+    .toLowerCase();
 
   return (
-    <div style={{ background: '#f7f5f2', minHeight: '100vh' }}>
-      <div
+    tier === "admin/leadership" ||
+    tier === "hr-restricted" ||
+    tier === "manager"
+  );
+}
+
+/* =========================================================
+   TAB BUTTON STYLE
+========================================================= */
+
+function tabButtonStyle(
+  active: boolean
+): CSSProperties {
+  return {
+    background: active
+      ? "#F37021"
+      : "#ffffff",
+
+    color: active
+      ? "#ffffff"
+      : "#1f2430",
+
+    border:
+      "1px solid " +
+      (active
+        ? "#F37021"
+        : "#d0d0d0"),
+
+    borderRadius: 6,
+
+    padding: "6px 14px",
+
+    cursor: "pointer",
+
+    fontWeight: 600,
+
+    fontSize: 14,
+  };
+}
+
+/* =========================================================
+   PAGE
+========================================================= */
+
+export default function UtilizationModulePage() {
+  const { employee } = useAuth();
+
+  const [tab, setTab] =
+    useState<Tab>("my");
+
+  /* -------------------------------------------------------
+     ROLE
+  ------------------------------------------------------- */
+
+  const isAdmin = employee
+    ? isAdminTier(employee.access_tier)
+    : false;
+
+  const isManager = employee
+    ? isManagerTier(employee.access_tier)
+    : false;
+
+  const canOT = employee
+    ? canApproveOT(employee.access_tier)
+    : false;
+
+  /* =======================================================
+     RENDER
+  ======================================================= */
+
+  return (
+    <div>
+
+      {/* ===================================================
+          NAVIGATION
+      =================================================== */}
+
+      <nav
         style={{
-          padding: '12px 24px',
-          borderBottom: '1px solid #e3e6ea',
+          display: "flex",
+          gap: 8,
+          marginBottom: 16,
+          flexWrap: "wrap",
         }}
       >
+
+        {/* -----------------------------------------------
+            MY DASHBOARD
+        ----------------------------------------------- */}
+
         <button
-          onClick={() => navigate(-1)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280' }}
+          type="button"
+          onClick={() =>
+            setTab("my")
+          }
+          style={tabButtonStyle(
+            tab === "my"
+          )}
         >
-          ← Back
-        </button>
-      </div>
-      <nav style={{ display: 'flex', gap: 8, padding: '12px 24px', borderBottom: '1px solid #e3e6ea' }}>
-        <button onClick={() => setTab('my')} style={tabButtonStyle(tab === 'my')}>
           My Dashboard
         </button>
+
+
+        {/* -----------------------------------------------
+            PROJECT MARGINS
+            ADMIN ONLY
+        ----------------------------------------------- */}
+
         {isAdmin && (
-          <button onClick={() => setTab('margins')} style={tabButtonStyle(tab === 'margins')}>
+          <button
+            type="button"
+            onClick={() =>
+              setTab("margins")
+            }
+            style={tabButtonStyle(
+              tab === "margins"
+            )}
+          >
             Project Margins
           </button>
         )}
-        {isAdmin && (
-          <button onClick={() => setTab('org')} style={tabButtonStyle(tab === 'org')}>
+
+
+        {/* -----------------------------------------------
+            ORG / MANAGER DASHBOARD
+
+            ADMIN:
+              OrgDashboardPage
+
+            MANAGER:
+              ManagerDashboardPage
+        ----------------------------------------------- */}
+
+        {(isAdmin || isManager) && (
+          <button
+            type="button"
+            onClick={() =>
+              setTab("org")
+            }
+            style={tabButtonStyle(
+              tab === "org"
+            )}
+          >
             Org Dashboard
           </button>
         )}
+
+
+        {/* -----------------------------------------------
+            OT APPROVALS
+        ----------------------------------------------- */}
+
+        {canOT && (
+          <button
+            type="button"
+            onClick={() =>
+              setTab("ot")
+            }
+            style={tabButtonStyle(
+              tab === "ot"
+            )}
+          >
+            OT Approvals
+          </button>
+        )}
+
       </nav>
-      {tab === 'my' && <ConsultantUtilizationPage />}
-      {tab === 'margins' && isAdmin && <ProjectMarginsPage />}
-      {tab === 'org' && isAdmin && <OrgDashboardPage />}
-      {(tab === 'margins' || tab === 'org') && !isAdmin && (
-        <div style={{ padding: 24, color: '#6b7280' }}>
-          This area is limited to Admin/Leadership accounts.
-        </div>
+
+
+      {/* ===================================================
+          MY DASHBOARD
+      =================================================== */}
+
+      {tab === "my" && (
+        <ConsultantUtilizationPage />
       )}
+
+
+      {/* ===================================================
+          PROJECT MARGINS
+          ADMIN ONLY
+      =================================================== */}
+
+      {tab === "margins" &&
+        isAdmin && (
+          <ProjectMarginsPage />
+        )}
+
+
+      {/* ===================================================
+          ADMIN ORG DASHBOARD
+
+          Admin sees:
+          - Add Project
+          - Log hours
+          - Org utilization
+          - Project margins
+      =================================================== */}
+
+      {tab === "org" &&
+        isAdmin && (
+          <OrgDashboardPage />
+        )}
+
+
+      {/* ===================================================
+          MANAGER DASHBOARD
+
+          Manager sees:
+          - Only linked employees
+          - Log hours
+          - Employee utilization
+
+          Manager does NOT see:
+          - Add Project
+          - Org-wide employees
+          - Project margins
+      =================================================== */}
+
+      {tab === "org" &&
+        isManager && (
+          <ManagerDashboardPage />
+        )}
+
+
+      {/* ===================================================
+          OT APPROVALS
+      =================================================== */}
+
+      {tab === "ot" &&
+        canOT && (
+          <OTApprovalsPage />
+        )}
+
+
+      {/* ===================================================
+          UNAUTHORIZED PROJECT MARGINS
+      =================================================== */}
+
+      {tab === "margins" &&
+        !isAdmin && (
+          <div
+            style={{
+              padding: 24,
+              color: "#6b7280",
+            }}
+          >
+            This area is limited to
+            Admin/Leadership accounts.
+          </div>
+        )}
+
+
+      {/* ===================================================
+          UNAUTHORIZED ORG DASHBOARD
+
+          Only show this if the user is neither
+          Admin nor Manager.
+      =================================================== */}
+
+      {tab === "org" &&
+        !isAdmin &&
+        !isManager && (
+          <div
+            style={{
+              padding: 24,
+              color: "#6b7280",
+            }}
+          >
+            This area is limited to
+            Manager or Admin/Leadership accounts.
+          </div>
+        )}
+
+
+      {/* ===================================================
+          UNAUTHORIZED OT
+      =================================================== */}
+
+      {tab === "ot" &&
+        !canOT && (
+          <div
+            style={{
+              padding: 24,
+              color: "#6b7280",
+            }}
+          >
+            This area is limited to
+            Manager, HR-Restricted, or
+            Admin/Leadership accounts.
+          </div>
+        )}
+
     </div>
-  )
+  );
 }

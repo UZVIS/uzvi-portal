@@ -12,6 +12,8 @@ class Candidate(Base):
     candidate_id = Column(String, primary_key=True, index=True, nullable=False)
     name = Column(String, nullable=False)
     resume_details = Column(Text, nullable=True)
+    # FR-REC-04: used for duplicate-candidate detection (exact match on Aadhar number)
+    aadhar_number = Column(String, nullable=True, index=True)
     applied_role = Column(String, nullable=False)
     source = Column(String, nullable=True)
     stage = Column(String, default="Applied", nullable=False)

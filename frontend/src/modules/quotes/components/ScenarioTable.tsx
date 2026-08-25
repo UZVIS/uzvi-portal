@@ -7,6 +7,8 @@ import {
   FileText,
   ClipboardList,
   FolderPlus,
+  SearchX,
+  Search,
 } from "lucide-react";
 
 import { useNavigate } from "react-router-dom";
@@ -50,7 +52,7 @@ export default function ScenarioTable({
   scenarios,
   onNewScenario,
   onDeleteScenario,
-   onEditScenario,
+  onEditScenario,
 }: ScenarioTableProps) {
 
   const navigate = useNavigate();
@@ -60,26 +62,28 @@ export default function ScenarioTable({
     scenario.name.toLowerCase().includes(search.toLowerCase())
   );
 
+  const hasScenarios = scenarios.length > 0;
+  const hasSearch = search.trim().length > 0;
+  const noResults = filteredScenarios.length === 0;
+
   return (
     <div className="table-card">
 
-      <div className="table-toolbar">
+     <div className="table-toolbar">
 
-        <div className="search-wrap">
-          <input
-            type="text"
-            placeholder="Search scenarios..."
-            className="search-input"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
+  <div className="search-wrap">
+    <Search size={17} className="search-icon" />
 
-        
+    <input
+      type="text"
+      placeholder="Search scenarios..."
+      className="search-input"
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+    />
+  </div>
 
-        <div className="toolbar-spacer" />
-
-      </div>
+</div>
 
       <table className="data-table">
 
@@ -95,22 +99,31 @@ export default function ScenarioTable({
 
         <tbody>
 
-          {filteredScenarios.length === 0 ? (
+          {noResults ? (
 
             <tr>
               <td colSpan={5}>
-                <div className="empty-state">
-                  <div className="empty-icon">
-                    <FolderPlus size={28} />
+                {hasScenarios && hasSearch ? (
+                  <div className="empty-state">
+                    <div className="empty-icon">
+                      <SearchX size={28} />
+                    </div>
+                    <h3>No scenarios match "{search}".</h3>
                   </div>
-                  <h3>No scenarios have been created for this opportunity.</h3>
-                  {onNewScenario && (
-                    <button className="add-btn" onClick={onNewScenario}>
-                      <FolderPlus size={16} />
-                      Create First Scenario
-                    </button>
-                  )}
-                </div>
+                ) : (
+                  <div className="empty-state">
+                    <div className="empty-icon">
+                      <FolderPlus size={28} />
+                    </div>
+                    <h3>No scenarios have been created for this opportunity.</h3>
+                    {onNewScenario && (
+                      <button className="add-btn" onClick={onNewScenario}>
+                        <FolderPlus size={16} />
+                        Create First Scenario
+                      </button>
+                    )}
+                  </div>
+                )}
               </td>
             </tr>
 
@@ -148,23 +161,23 @@ export default function ScenarioTable({
                     <FolderOpen size={17} />
                   </button>
 
-                 <button
-  className="icon-btn"
-  title="Edit"
-  onClick={() => onEditScenario?.(scenario)}
->
-  <Pencil size={17} />
-</button>
+                  <button
+                    className="icon-btn"
+                    title="Edit"
+                    onClick={() => onEditScenario?.(scenario)}
+                  >
+                    <Pencil size={17} />
+                  </button>
 
-                 <button
-  className="icon-btn icon-btn-danger"
-  title="Delete"
-  onClick={() =>
-    onDeleteScenario?.(scenario.scenario_id)
-  }
->
-  <Trash2 size={17} />
-</button>
+                  <button
+                    className="icon-btn icon-btn-danger"
+                    title="Delete"
+                    onClick={() =>
+                      onDeleteScenario?.(scenario.scenario_id)
+                    }
+                  >
+                    <Trash2 size={17} />
+                  </button>
 
                 </td>
 
@@ -183,11 +196,6 @@ export default function ScenarioTable({
           <span>
             Showing {filteredScenarios.length} of {scenarios.length} scenarios
           </span>
-          {/* <div className="pagination-bar">
-            <button className="page-btn" disabled>Previous</button>
-            <button className="page-btn page-btn-current">1</button>
-            <button className="page-btn">Next</button>
-          </div> */}
         </div>
       )}
 

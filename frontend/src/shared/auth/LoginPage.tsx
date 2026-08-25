@@ -1,4 +1,4 @@
-import { type FormEvent, useState } from "react";
+﻿﻿import { type FormEvent, useState } from "react";
 import { useLocation, useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import { LogIn, Shield, Lock, Zap, Users } from "lucide-react";
@@ -7,20 +7,21 @@ export function LoginPage() {
   const [employeeId, setEmployeeId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { login, employee, isLoading } = useAuth();
+  const { login, employee, isLoading, deactivatedMessage, clearDeactivatedMessage } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from =
     (location.state as { from?: { pathname: string } } | null)?.from
       ?.pathname ?? "/";
 
-  // Already logged in → go to app
+  // Already logged in â†’ go to app
   if (!isLoading && employee) {
     return <Navigate to={from} replace />;
   }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    clearDeactivatedMessage();
     if (!employeeId.trim()) {
       setError("Enter your employee ID to continue.");
       return;
@@ -28,13 +29,6 @@ export function LoginPage() {
     setError(null);
     setIsSubmitting(true);
     try {
-      const emp = await login(employeeId.trim());
-
-if (emp.access_tier === "Administrator") {
-    navigate("/dashboard", { replace: true });
-} else {
-    navigate("/employee-dashboard", { replace: true });
-}
       await login(employeeId.trim());
       navigate(from, { replace: true });
     } catch (err) {
@@ -54,7 +48,7 @@ if (emp.access_tier === "Administrator") {
 
   return (
     <div className="min-h-screen flex font-sans">
-      {/* ─── Left brand panel ─────────────────────────────────────────── */}
+      {/* â”€â”€â”€ Left brand panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <aside className="hidden lg:flex w-[42%] bg-[#1A1614] flex-col justify-between p-12 relative overflow-hidden">
         {/* Subtle orange glow */}
         <div className="absolute -top-32 -left-32 w-96 h-96 bg-[#F37021]/10 rounded-full blur-3xl pointer-events-none" />
@@ -123,11 +117,11 @@ if (emp.access_tier === "Administrator") {
         </div>
 
         <p className="relative z-10 text-[12px] text-gray-500 mt-10">
-          © {new Date().getFullYear()} Uzvi Services · Internal use only
+          Â© {new Date().getFullYear()} Uzvi Services Â· Internal use only
         </p>
       </aside>
 
-      {/* ─── Right form side ──────────────────────────────────────────── */}
+      {/* â”€â”€â”€ Right form side â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <main className="flex-1 bg-[#F4F6F8] flex items-center justify-center p-6 md:p-12">
         <div className="w-full max-w-[400px]">
           {/* Mobile logo */}
@@ -158,6 +152,11 @@ if (emp.access_tier === "Administrator") {
               </div>
             </div>
 
+            {deactivatedMessage && (
+              <div role="alert" className="flex items-start space-x-2 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-3 mb-4">
+                <span>{deactivatedMessage}</span>
+              </div>
+            )}
             <form onSubmit={handleSubmit} noValidate className="space-y-5">
               <div>
                 <label

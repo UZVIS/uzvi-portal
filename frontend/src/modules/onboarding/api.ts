@@ -25,6 +25,8 @@ export interface OnboardingTask {
   name: string;
   seq: number;
   responsible_role: string;
+  expected_days: number | null;
+  required_doc_type: string | null;
 }
 
 export interface OnboardingInstance {
@@ -63,20 +65,18 @@ export function listTasksForTemplate(templateId: string): Promise<OnboardingTask
 
 /** POST /api/v1/onboarding/templates - Admin/Leadership only */
 export function createTemplate(
-  templateId: string,
   name: string,
   requesterId: string
 ): Promise<OnboardingTemplate> {
   return fetch(`${BASE_PATH}/templates`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ template_id: templateId, name, requester_id: requesterId }),
+    body: JSON.stringify({ name, requester_id: requesterId }),
   }).then((r) => handle(r, "Could not create the template."));
 }
 
 /** POST /api/v1/onboarding/tasks ordered tasks within a template, Admin/Leadership only */
 export function addTask(input: {
-  task_id: string;
   template_id: string;
   name: string;
   seq: number;
@@ -94,7 +94,6 @@ export function addTask(input: {
 
 /** POST /api/v1/onboarding/instances */
 export function startOnboarding(
-  instanceId: string,
   employeeId: string,
   templateId: string,
   requesterId: string
@@ -103,7 +102,6 @@ export function startOnboarding(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      instance_id: instanceId,
       employee_id: employeeId,
       template_id: templateId,
       requester_id: requesterId,
@@ -116,6 +114,19 @@ export function getInstance(instanceId: string): Promise<OnboardingInstance> {
   return fetch(`${BASE_PATH}/instances/${encodeURIComponent(instanceId)}`).then((r) =>
     handle(r, "That onboarding instance wasn't found.")
   );
+}
+
+/** GET /api/v1/onboarding/instances/by-employee/{id}?requester_id=... - own instance only for a plain Employee, or Admin/HR for anyone */
+export function getInstanceForEmployee(
+  employeeId: string,
+  requesterId: string
+): Promise<OnboardingInstance | null> {
+  return fetch(
+    `${BASE_PATH}/instances/by-employee/${encodeURIComponent(employeeId)}?requester_id=${encodeURIComponent(requesterId)}`
+  ).then((r) => {
+    if (r.status === 404) return null;
+    return handle(r, "Could not load your onboarding instance.");
+  });
 }
 
 /** GET /api/v1/onboarding/instances/{id}/progress */
@@ -186,4 +197,33 @@ export function completeTask(
       completed_by: completedBy,
     }),
   }).then((r) => handle(r, "Could not mark the task complete."));
+}
+
+/** PATCH /api/v1/onboarding/tasks/{id}?requester_id=... - Admin/Leadership only */
+export function updateTask(
+  taskId: string,
+  input: {
+    name?: string;
+    seq?: number;
+    responsible_role?: string;
+    expected_days?: number;
+    required_doc_type?: string;
+  },
+  requesterId: string
+): Promise<OnboardingTask> {
+  return fetch(`${BASE_PATH}/tasks/${encodeURIComponent(taskId)}?requester_id=${encodeURIComponent(requesterId)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  }).then((r) => handle(r, "Could not update the task."));
+}
+
+/** DELETE /api/v1/onboarding/tasks/{id}?requester_id=... - Admin/Leadership only, blocked if the task has completions */
+export function deleteTask(taskId: string, requesterId: string): Promise<void> {
+  return fetch(`${BASE_PATH}/tasks/${encodeURIComponent(taskId)}?requester_id=${encodeURIComponent(requesterId)}`, {
+    method: "DELETE",
+  }).then((r) => {
+    if (r.status === 204) return;
+    return handle(r, "Could not delete the task.");
+  });
 }

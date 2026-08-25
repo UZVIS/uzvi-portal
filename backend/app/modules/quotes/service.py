@@ -1,14 +1,4 @@
-"""
-M13 business logic (kept separate from routes/models per the FRD's layering
-convention: Python business logic -> storage -> FastAPI routes -> React).
 
-Margin convention (FR-BD-04): target_margin is a MARGIN on selling price,
-not a markup on cost. i.e. target_margin = (selling_price - cost) / selling_price.
-Rearranged, required selling price = cost / (1 - target_margin).
-This is applied uniformly per line, so per-line prices roll up consistently
-to the scenario-level total, and resulting_margin recomputes from the
-actual totals (should equal target_margin barring rounding).
-"""
 from sqlalchemy.orm import Session
 
 from . import models, schemas
@@ -105,16 +95,142 @@ def list_scenarios_for_opportunity(
         models.QuoteScenario.opportunity_id == opportunity_id
     ).all()
 
+def compare_scenarios(
+    db: Session,
+    opportunity_id: str,
+    scenario_ids: list[str],
+) -> schemas.ScenarioComparison:
 
+    scenarios = (
+        db.query(models.QuoteScenario)
+        .filter(
+            models.QuoteScenario.opportunity_id == opportunity_id,
+            models.QuoteScenario.scenario_id.in_(scenario_ids),
+        )
+        .all()
+    )
+
+    # Make sure every requested scenario belongs to this opportunity
+    found_ids = {scenario.scenario_id for scenario in scenarios}
+
+    if len(found_ids) != len(set(scenario_ids)):
+        raise ValueError(
+            "One or more scenarios do not belong to this opportunity"
+        )
+
+    comparison_items = []
+
+    for scenario in scenarios:
+
+        quote_view = compute_quote_view(scenario)
+
+        comparison_items.append(
+            schemas.ScenarioComparisonItem(
+                scenario_id=scenario.scenario_id,
+                scenario_name=scenario.name,
+                output_type=scenario.output_type,
+                target_margin=quote_view.target_margin,
+                total_cost=quote_view.total_cost,
+                selling_price=quote_view.selling_price,
+                resulting_margin=quote_view.resulting_margin,
+            )
+        )
+
+    return schemas.ScenarioComparison(
+        opportunity_id=opportunity_id,
+        scenarios=comparison_items,
+    )
+
+def duplicate_scenario(
+    db: Session,
+    scenario_id: str,
+    data: schemas.ScenarioDuplicateRequest,
+) -> models.QuoteScenario | None:
+
+    original = get_scenario(db, scenario_id)
+
+    if not original:
+        return None
+
+    # Create new scenario with the same configuration
+    new_scenario = models.QuoteScenario(
+        opportunity_id=original.opportunity_id,
+        created_by=original.created_by,
+        name=data.name,
+        output_type=original.output_type,
+        target_margin=original.target_margin,
+    )
+
+    db.add(new_scenario)
+    db.flush()
+
+    # Copy all line items
+    for item in original.line_items:
+        new_item = models.CostLineItem(
+            scenario_id=new_scenario.scenario_id,
+            library_item_id=item.library_item_id,
+            description=item.description,
+            vendor_cost=item.vendor_cost,
+            internal_cost=item.internal_cost,
+            quantity=item.quantity,
+            cohort=item.cohort,
+        )
+
+        db.add(new_item)
+
+    db.commit()
+    db.refresh(new_scenario)
+
+    return new_scenario
+
+
+def compare_scenarios(
+    db: Session,
+    opportunity_id: str,
+    scenario_ids: list[str],
+) -> schemas.ScenarioComparison:
+
+    scenarios = (
+        db.query(models.QuoteScenario)
+        .filter(
+            models.QuoteScenario.opportunity_id == opportunity_id,
+            models.QuoteScenario.scenario_id.in_(scenario_ids),
+        )
+        .all()
+    )
+
+    found_ids = {scenario.scenario_id for scenario in scenarios}
+
+    if len(found_ids) != len(set(scenario_ids)):
+        raise ValueError(
+            "One or more scenarios do not belong to this opportunity"
+        )
+
+    comparison_items = []
+
+    for scenario in scenarios:
+        quote_view = compute_quote_view(scenario)
+
+        comparison_items.append(
+            schemas.ScenarioComparisonItem(
+                scenario_id=scenario.scenario_id,
+                scenario_name=scenario.name,
+                output_type=scenario.output_type,
+                target_margin=quote_view.target_margin,
+                total_cost=quote_view.total_cost,
+                selling_price=quote_view.selling_price,
+                resulting_margin=quote_view.resulting_margin,
+            )
+        )
+
+    return schemas.ScenarioComparison(
+        opportunity_id=opportunity_id,
+        scenarios=comparison_items,
+    )
 def add_line_item(
     db: Session, scenario_id: str, data: schemas.CostLineItemCreate
 ) -> models.CostLineItem:
-    """
-    Add a cost line item to a scenario (FR-BD-01). If library_item_id is
-    given, that library item's unit_cost overrides whichever of
-    vendor_cost/internal_cost matches its cost_component -- pulling from
-    the library (FR-BD-06) shouldn't require re-typing the rate.
-    """  
+     
     payload = data.model_dump()
     if payload.get("library_item_id"):
      lib_item = db.query(models.StandardCostLibrary).filter(

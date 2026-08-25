@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿﻿import { useState } from "react";
 import type { Employee, Team } from "../api";
 
 interface EmployeeRowProps {
@@ -32,6 +32,9 @@ export function EmployeeRow({
   onUpdate,
   canManage,
 }: EmployeeRowProps) {
+  const isLastActiveAdmin =
+    employee.access_tier === "Admin/Leadership" &&
+    employees.filter((e) => e.access_tier === "Admin/Leadership").length <= 1;
   const [isEditing, setIsEditing] = useState(false);
   const [designation, setDesignation] = useState(employee.designation ?? "");
   const [teamId, setTeamId] = useState(employee.team_id ?? "");
@@ -104,6 +107,7 @@ export function EmployeeRow({
             <option value="">No manager</option>
             {employees
               .filter((e) => e.employee_id !== employee.employee_id)
+              .filter((e) => e.access_tier === "Manager" || e.access_tier === "Admin/Leadership")
               .map((e) => (
                 <option key={e.employee_id} value={e.employee_id}>
                   {e.name} ({e.employee_id})
@@ -162,22 +166,22 @@ export function EmployeeRow({
 
   return (
     <tr className="directory-row">
-      <td className="directory-row__id">{employee.employee_id}</td>
+      <td className="directory-row__id" style={{ whiteSpace: "nowrap" }}>{employee.employee_id}</td>
       <td>
         <div className="directory-row__name">{employee.name}</div>
         {employee.designation && (
           <div className="directory-row__designation">{employee.designation}</div>
         )}
       </td>
-      <td>{teamName ?? <span className="directory-row__muted">Unassigned</span>}</td>
-      <td>{employee.manager_id ?? <span className="directory-row__muted">—</span>}</td>
+      <td title={teamName ?? undefined}>{teamName ?? <span className="directory-row__muted">Unassigned</span>}</td>
+      <td>{managerNameFor(employee.manager_id, employees) ?? <span className="directory-row__muted">—</span>}</td>
       <td>
         <span className={`tier-badge tier-badge--${employee.access_tier.toLowerCase().replace(/[^a-z]/g, "-")}`}>
           {employee.access_tier}
         </span>
       </td>
-      <td>{employee.contact_details ?? <span className="directory-row__muted">—</span>}</td>
-      <td>{employee.join_date ?? <span className="directory-row__muted">—</span>}</td>
+      <td className="directory-row__truncate" title={employee.contact_details ?? undefined}>{employee.contact_details ?? <span className="directory-row__muted">—</span>}</td>
+      <td style={{ whiteSpace: "nowrap" }}>{employee.join_date ?? <span className="directory-row__muted">—</span>}</td>
       {canManage && employee.employment_status === "active" && (
         <td className="directory-row__actions">
           <button className="button-secondary directory-row__exit-btn" onClick={startEdit}>
@@ -186,6 +190,8 @@ export function EmployeeRow({
           <button
             className="button-secondary directory-row__exit-btn"
             onClick={() => onExit(employee.employee_id)}
+            disabled={isLastActiveAdmin}
+            title={isLastActiveAdmin ? "Cannot exit the last active Admin - promote another employee to Admin/Leadership first." : undefined}
           >
             Mark exited
           </button>
@@ -198,4 +204,12 @@ export function EmployeeRow({
 export function teamNameFor(teamId: string | null, teams: Team[]): string | null {
   if (!teamId) return null;
   return teams.find((t) => t.team_id === teamId)?.name ?? teamId;
+}
+
+export function managerNameFor(
+  managerId: string | null | undefined,
+  employees: { employee_id: string; name: string }[]
+): string | null {
+  if (!managerId) return null;
+  return employees.find((e) => e.employee_id === managerId)?.name ?? null;
 }

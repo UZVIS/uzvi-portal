@@ -1,26 +1,28 @@
 import { useState, type FormEvent } from "react";
 import type { Team } from "../api";
+import { Toast } from "../../../shared/components/Toast";
 
 interface TeamManagerProps {
   teams: Team[];
-  onCreate: (teamId: string, name: string) => Promise<void>;
+  onCreate: (name: string) => Promise<void>;
 }
 
 export function TeamManager({ teams, onCreate }: TeamManagerProps) {
-  const [teamId, setTeamId] = useState("");
   const [name, setName] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!teamId.trim() || !name.trim()) return;
+    if (!name.trim()) return;
     setIsSubmitting(true);
     setError(null);
+    setSuccess(false);
     try {
-      await onCreate(teamId.trim(), name.trim());
-      setTeamId("");
+      await onCreate(name.trim());
       setName("");
+      setSuccess(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create the team.");
     } finally {
@@ -31,7 +33,8 @@ export function TeamManager({ teams, onCreate }: TeamManagerProps) {
   return (
     <div className="team-manager">
       <h3 className="directory-form__title">Teams</h3>
-      {error && <div className="error-banner">{error}</div>}
+      {error && <Toast message={error} kind="error" onDismiss={() => setError(null)} />}
+      {success && <Toast message="Team created successfully." kind="success" onDismiss={() => setSuccess(false)} />}
       <ul className="team-manager__list">
         {teams.length === 0 && (
           <li className="directory-row__muted">No teams yet — add one below.</li>
@@ -44,12 +47,6 @@ export function TeamManager({ teams, onCreate }: TeamManagerProps) {
         ))}
       </ul>
       <form className="team-manager__form" onSubmit={handleSubmit}>
-        <input
-          className="field__input"
-          value={teamId}
-          onChange={(e) => setTeamId(e.target.value)}
-          placeholder="Team ID (T3)"
-        />
         <input
           className="field__input"
           value={name}

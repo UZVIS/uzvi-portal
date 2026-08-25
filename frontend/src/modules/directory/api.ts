@@ -33,7 +33,7 @@ export interface Team {
 }
 
 export interface CreateEmployeeInput {
-  employee_id: string;
+  employee_id?: string;
   name: string;
   designation?: string;
   team_id?: string;
@@ -58,6 +58,13 @@ export interface UpdateEmployeeInput {
 export function listActiveEmployees(): Promise<Employee[]> {
   return fetch(`${EMPLOYEES_PATH}/`).then((r) =>
     handle(r, "Could not load the directory.")
+  );
+}
+
+/** GET /api/v1/employees/exited?requester_id=... - Admin/HR-Restricted only */
+export function listExitedEmployees(requesterId: string): Promise<Employee[]> {
+  return fetch(`${EMPLOYEES_PATH}/exited?requester_id=${encodeURIComponent(requesterId)}`).then(
+    (r) => handle(r, "Could not load exited employees.")
   );
 }
 
@@ -115,10 +122,10 @@ export function listTeams(): Promise<Team[]> {
 }
 
 /** POST /api/v1/teams/ */
-export function createTeam(teamId: string, name: string): Promise<Team> {
+export function createTeam(name: string): Promise<Team> {
   return fetch(`${TEAMS_PATH}/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ team_id: teamId, name }),
+    body: JSON.stringify({ name }),
   }).then((r) => handle(r, "Could not create the team."));
 }

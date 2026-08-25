@@ -1,6 +1,10 @@
-import { useState, type FormEvent } from "react";
+﻿﻿﻿import { useState, type FormEvent } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { FileWarning, X } from "lucide-react";
 import type { OnboardingInstance, OnboardingProgress, OnboardingTask, OnboardingTemplate, TaskCompletionDetail } from "../api";
 import { ProgressBar } from "./ProgressBar";
+import { Toast } from "../../../shared/components/Toast";
+import { ROLE_LABELS } from "./TemplateBuilder";
 
 interface InstanceTrackerProps {
   employees: { employee_id: string; name: string }[];
@@ -15,8 +19,13 @@ interface InstanceTrackerProps {
   canManage: boolean;
   currentEmployeeId: string;
   onEmployeeChange: (employeeId: string) => void;
-  onStart: (instanceId: string, employeeId: string, templateId: string) => Promise<void>;
+  onStart: (employeeId: string, templateId: string) => Promise<void>;
   onCompleteTask: (taskId: string) => Promise<void>;
+  onReset: () => void;
+  emptyStateMessage?: string;
+  showResetButton?: boolean;
+  canAssistWithDocuments?: boolean;
+  ownDocumentTypes?: Set<string>;
 }
 
 export function InstanceTracker({
@@ -34,23 +43,41 @@ export function InstanceTracker({
   onEmployeeChange,
   onStart,
   onCompleteTask,
+  onReset,
+  emptyStateMessage,
+  showResetButton = true,
+  canAssistWithDocuments = false,
+  ownDocumentTypes = new Set(),
 }: InstanceTrackerProps) {
-  const [instanceId, setInstanceId] = useState("");
   const [templateId, setTemplateId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [openDocTaskId, setOpenDocTaskId] = useState<string | null>(null);
+  const [showJoinDatePopup, setShowJoinDatePopup] = useState(false);
+  const navigate = useNavigate();
+
+  function nameFor(employeeId: string): string {
+    return employees.find((e) => e.employee_id === employeeId)?.name ?? employeeId;
+  }
 
   async function handleStart(e: FormEvent) {
     e.preventDefault();
-    if (!instanceId.trim() || !currentEmployeeId || !templateId) return;
+    if (!currentEmployeeId || !templateId) return;
     setIsSubmitting(true);
     setError(null);
+    setSuccess(false);
     try {
-      await onStart(instanceId.trim(), currentEmployeeId, templateId);
-      setInstanceId("");
+      await onStart(currentEmployeeId, templateId);
       setTemplateId("");
+      setSuccess(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not start onboarding.");
+      const message = err instanceof Error ? err.message : "Could not start onboarding.";
+      if (message.includes("no join date is set")) {
+        setShowJoinDatePopup(true);
+      } else {
+        setError(message);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -61,21 +88,38 @@ export function InstanceTracker({
   return (
     <div className="instance-tracker">
       <h3 className="directory-form__title">Track a new joiner</h3>
-      {error && <div className="error-banner">{error}</div>}
+      {error && <Toast message={error} kind="error" onDismiss={() => setError(null)} />}
+      {success && <Toast message="Onboarding instance created successfully." kind="success" onDismiss={() => setSuccess(false)} />}
 
-      {instance ? (
+    {instance ? (
         <div className="instance-tracker__viewing">
-          <span className="field__label">Viewing</span>
-          <div className="instance-tracker__viewing-name">
-            {employees.find((e) => e.employee_id === instance.employee_id)?.name ?? instance.employee_id}
-            {" "}
-            <span className="directory-row__muted">({instance.employee_id})</span>
+          <div className="instance-tracker__viewing-header">
+            <div>
+              <span className="field__label">Viewing</span>
+              <div className="instance-tracker__viewing-name">
+                {employees.find((e) => e.employee_id === instance.employee_id)?.name ?? instance.employee_id}
+                {" "}
+                <span className="directory-row__muted">({instance.employee_id})</span>
+              </div>
+            </div>
+            {showResetButton && (
+              <button
+                className="button-secondary"
+                style={{ fontSize: 12, padding: "7px 12px", whiteSpace: "nowrap" }}
+                onClick={onReset}
+              >
+                Track another joiner
+              </button>
+            )}
           </div>
         </div>
       ) : canManage ? (
         <>
+          <p className="instance-tracker__hint" style={{ marginBottom: 16 }}>
+            Select an employee below to create a new onboarding instance for them.
+          </p>
           <label className="field">
-            <span className="field__label">Employee</span>
+            <span className="field__label" style={{ color: "var(--color-ink)", fontWeight: 700 }}>Employee</span>
             <select
               className="field__input"
               value={currentEmployeeId}
@@ -89,15 +133,8 @@ export function InstanceTracker({
               ))}
             </select>
           </label>
-
           {currentEmployeeId && (
             <form className="instance-tracker__start" onSubmit={handleStart}>
-              <input
-                className="field__input"
-                value={instanceId}
-                onChange={(e) => setInstanceId(e.target.value)}
-                placeholder="Instance ID (OI2)"
-              />
               <select
                 className="field__input"
                 value={templateId}
@@ -118,15 +155,18 @@ export function InstanceTracker({
         </>
       ) : (
         <p className="directory-row__muted">
-          Only Admin/Leadership may start a new onboarding instance. Use "Look up
-          an existing instance" below to view or complete tasks on one already started.
+          {emptyStateMessage ?? (
+            <>
+              Only Admin/Leadership may start a new onboarding instance. Use "Look up
+              an existing instance" below to view or complete tasks on one already started.
+            </>
+          )}
         </p>
       )}
-
+  
       {instance && progress && (
         <div className="instance-tracker__progress">
           <ProgressBar pct={progress.completion_pct} />
-
           <ul className="instance-tracker__tasks">
             {tasks
               .slice()
@@ -146,15 +186,28 @@ export function InstanceTracker({
                             onChange={() => onCompleteTask(task.task_id)}
                           />
                           <span className={done ? "instance-tracker__task-done" : ""}>{task.name}</span>
-                          <span className="directory-row__muted"> · {task.responsible_role}</span>
+                          <span className="directory-row__muted"> · {ROLE_LABELS[task.responsible_role] ?? task.responsible_role}</span>
                           {overdue && !done && (
                             <span className="instance-tracker__overdue-badge">Overdue</span>
+                          )}
+                          {task.required_doc_type && !done && canAssistWithDocuments && !ownDocumentTypes.has(task.required_doc_type) && (
+                            <button
+                              type="button"
+                              className="instance-tracker__doc-icon"
+                              aria-label={`Document required: ${task.required_doc_type}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenDocTaskId(task.task_id);
+                              }}
+                            >
+                              <FileWarning size={15} />
+                            </button>
                           )}
                         </div>
                         {done && completionDetails[task.task_id]?.completed_at && (
                           <div className="instance-tracker__task-meta">
                             Completed {new Date(completionDetails[task.task_id].completed_at! + "Z").toLocaleString()}
-                            {completionDetails[task.task_id]?.completed_by && ` by ${completionDetails[task.task_id].completed_by}`}
+                            {completionDetails[task.task_id]?.completed_by && ` by ${nameFor(completionDetails[task.task_id].completed_by!)}`}
                           </div>
                         )}
                       </label>
@@ -162,7 +215,17 @@ export function InstanceTracker({
                       <div className="instance-tracker__task-unknown">
                         <span>
                           {task.name}
-                          <span className="directory-row__muted"> · {task.responsible_role}</span>
+                          <span className="directory-row__muted"> · {ROLE_LABELS[task.responsible_role] ?? task.responsible_role}</span>
+                          {task.required_doc_type && canAssistWithDocuments && !ownDocumentTypes.has(task.required_doc_type) && (
+                            <button
+                              type="button"
+                              className="instance-tracker__doc-icon"
+                              aria-label={`Document required: ${task.required_doc_type}`}
+                              onClick={() => setOpenDocTaskId(task.task_id)}
+                            >
+                              <FileWarning size={15} />
+                            </button>
+                          )}
                         </span>
                         <button
                           className="button-secondary"
@@ -182,6 +245,84 @@ export function InstanceTracker({
           </ul>
         </div>
       )}
+
+      {showJoinDatePopup && (
+        <div
+          className="instance-tracker__doc-popup-overlay"
+          onClick={() => setShowJoinDatePopup(false)}
+        >
+          <div className="instance-tracker__doc-popup" onClick={(e) => e.stopPropagation()}>
+            <div className="instance-tracker__doc-popup-header">
+              <FileWarning size={20} />
+              <button
+                type="button"
+                className="instance-tracker__doc-popup-close"
+                aria-label="Close"
+                onClick={() => setShowJoinDatePopup(false)}
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <p className="instance-tracker__doc-popup-title">No join date set</p>
+            <p className="instance-tracker__doc-popup-text">
+              This employee needs a join date on their Directory record before onboarding can start.
+            </p>
+            <button
+              type="button"
+              className="button-primary"
+              style={{ width: "100%" }}
+              onClick={() => {
+                setShowJoinDatePopup(false);
+                navigate("/directory");
+              }}
+            >
+              Go to directory
+            </button>
+          </div>
+        </div>
+      )}
+
+      {openDocTaskId && (() => {
+        const openTask = tasks.find((t) => t.task_id === openDocTaskId);
+        if (!openTask || !openTask.required_doc_type) return null;
+        return (
+          <div
+            className="instance-tracker__doc-popup-overlay"
+            onClick={() => setOpenDocTaskId(null)}
+          >
+            <div className="instance-tracker__doc-popup" onClick={(e) => e.stopPropagation()}>
+              <div className="instance-tracker__doc-popup-header">
+                <FileWarning size={20} />
+                <button
+                  type="button"
+                  className="instance-tracker__doc-popup-close"
+                  aria-label="Close"
+                  onClick={() => setOpenDocTaskId(null)}
+                >
+                  <X size={16} />
+                </button>
+              </div>
+              <p className="instance-tracker__doc-popup-title">
+                Requires: {openTask.required_doc_type.replace(/_/g, " ")}
+              </p>
+              <p className="instance-tracker__doc-popup-text">
+                Upload this document before the task can be marked complete.
+              </p>
+              <button
+                type="button"
+                className="button-primary"
+                style={{ width: "100%" }}
+                onClick={() => {
+                  setOpenDocTaskId(null);
+                  navigate("/documents");
+                }}
+              >
+                Go to documents
+              </button>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

@@ -30,6 +30,7 @@ export interface Candidate {
   candidate_id: string;
   name: string;
   resume_details?: string | null;
+  aadhar_number?: string | null;
   applied_role: string;
   source?: string | null;
   stage: CandidateStage;
@@ -79,13 +80,14 @@ export interface FunnelStats {
 export interface DuplicateFlag {
   candidate_id: string;
   other_candidate_id: string;
-  similarity: number;
+  aadhar_number: string;
 }
 
 export interface CandidateInput {
   candidate_id: string;
   name: string;
   resume_details?: string;
+  aadhar_number?: string;
   applied_role: string;
   source?: string;
 }
@@ -93,6 +95,7 @@ export interface CandidateInput {
 export interface CandidateUpdateInput {
   name?: string;
   resume_details?: string;
+  aadhar_number?: string;
   applied_role?: string;
   source?: string;
   stage?: CandidateStage;
@@ -112,7 +115,9 @@ export interface ScorecardInput {
 }
 
 export interface HireConversionInput {
-  employee_id: string;
+  // employee_id is intentionally not sent — the backend always
+  // auto-increments the next EMP### id (see
+  // backend/app/modules/directory/service.py::_generate_next_employee_id).
   requester_id: string;
   designation?: string;
   team_id?: string;
@@ -188,8 +193,7 @@ export const recruitingApi = {
 
   getFunnelStats: () => request<FunnelStats>("/candidates/funnel-stats"),
 
-  getDuplicates: (threshold = 0.8) =>
-    request<DuplicateFlag[]>(`/candidates/duplicates?threshold=${threshold}`),
+  getDuplicates: () => request<DuplicateFlag[]>(`/candidates/duplicates`),
 
   getCandidate: (candidateId: string) =>
     request<CandidateDetail>(`/candidates/${encodeURIComponent(candidateId)}`),

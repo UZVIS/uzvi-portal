@@ -100,7 +100,20 @@ export interface LineItemCreate {
     cohort?: string;
     library_item_id?: string;
 }
+export interface ComparisonResult {
+    scenario_id: string;
+    scenario_name: string;
+    output_type: "quote" | "tender";
+    target_margin: number;
+    total_cost: number;
+    selling_price: number;
+    resulting_margin: number;
+}
 
+export interface ScenarioComparisonResponse {
+    opportunity_id: string;
+    scenarios: ComparisonResult[];
+}
 export async function addLineItem(
     scenarioId: string,
     data: LineItemCreate
@@ -172,5 +185,48 @@ export async function deleteLineItem(
 ) {
     return apiDelete(
         `${BASE_URL}/line-items/${lineItemId}`
+    );
+}
+
+
+// ======================================
+// Scenario Comparison — FR-BD-05
+// ======================================
+
+export interface ScenarioComparisonResult {
+  opportunity_id: string;
+
+  scenarios: {
+    scenario_id: string;
+    scenario_name: string;
+    output_type: "quote" | "tender";
+    target_margin: number;
+    total_cost: number;
+    selling_price: number;
+    resulting_margin: number;
+  }[];
+}
+
+export async function compareScenarios(
+    opportunityId: string,
+    scenarioIds: string[]
+): Promise<ScenarioComparisonResponse> {
+    return apiPost(
+        `${BASE_URL}/opportunities/${opportunityId}/scenarios/compare`,
+        scenarioIds
+    );
+}
+
+export interface ScenarioDuplicateRequest {
+    name: string;
+}
+
+export async function duplicateScenario(
+    scenarioId: string,
+    data: ScenarioDuplicateRequest
+): Promise<QuoteScenario> {
+    return apiPost(
+        `${BASE_URL}/scenarios/${scenarioId}/duplicate`,
+        data
     );
 }

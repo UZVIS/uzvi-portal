@@ -1,0 +1,134 @@
+/* PerformanceModulePage.css */
+
+.performance-page {
+  padding: 24px;
+  background: #f4f6f8;
+  min-height: 100vh;
+}
+
+
+/* Header */
+
+.performance-header {
+  margin-bottom: 24px;
+}
+
+
+.performance-header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 8px;
+}
+
+
+.performance-header p {
+  color: #6b7280;
+  font-size: 15px;
+}
+
+
+
+/* Tabs */
+
+.performance-tabs {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 24px;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 12px;
+}
+
+
+.performance-tab {
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  background: #e5e7eb;
+  color: #374151;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+
+.performance-tab:hover {
+  background: #fed7aa;
+  color: #ea580c;
+}
+
+
+.performance-tab.active {
+  background: #f37021;
+  color: white;
+}
+
+
+
+/* Content */
+
+.performance-content {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  min-height: 400px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+
+
+/* Cards */
+
+.performance-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  border: 1px solid #e5e7eb;
+}
+
+
+
+/* Buttons */
+
+.performance-btn {
+  background: #f37021;
+  color: white;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+
+.performance-btn:hover {
+  background: #d95f16;
+}
+
+
+
+/* Responsive */
+
+@media (max-width: 768px) {
+
+  .performance-page {
+    padding: 16px;
+  }
+
+
+  .performance-header h1 {
+    font-size: 24px;
+  }
+
+
+  .performance-tabs {
+    flex-direction: column;
+  }
+
+
+  .performance-tab {
+    width: 100%;
+  }
+
+}

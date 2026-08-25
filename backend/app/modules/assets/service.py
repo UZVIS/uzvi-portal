@@ -20,17 +20,21 @@ from app.modules.directory.models import Employee
 # Create Asset
 # ----------------------------
 def create_asset(asset: AssetCreate, db: Session):
-    existing_asset = (
+    # Generate the next Asset ID
+    last_asset = (
         db.query(Asset)
-        .filter(Asset.asset_id == asset.asset_id)
+        .filter(Asset.asset_id.like("AST%"))
+        .order_by(Asset.asset_id.desc())
         .first()
     )
 
-    if existing_asset:
-        raise HTTPException(
-            status_code=400,
-            detail="Asset with this ID already exists."
-        )
+    if last_asset:
+        last_number = int(last_asset.asset_id.replace("AST", ""))
+        next_number = last_number + 1
+    else:
+        next_number = 1
+
+    asset_id = f"AST{next_number:03d}"
 
     # Check Asset Tag
     existing_tag = (
@@ -45,14 +49,16 @@ def create_asset(asset: AssetCreate, db: Session):
             detail="Asset tag already exists."
         )
 
-    new_asset = Asset(**asset.model_dump())
+    new_asset = Asset(
+        asset_id=asset_id,
+        **asset.model_dump()
+    )
 
     db.add(new_asset)
     db.commit()
     db.refresh(new_asset)
 
     return new_asset
-
 
 # ----------------------------
 # Get InStock Assets

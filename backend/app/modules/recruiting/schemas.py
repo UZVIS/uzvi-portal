@@ -52,7 +52,10 @@ class InterviewStageResponse(InterviewStageBase):
 class CandidateBase(BaseModel):
     name: str = Field(..., description="Candidate full name")
     resume_details: Optional[str] = Field(
-        None, description="Resume details/summary used for FR-REC-03/04"
+        None, description="Resume details/summary used for FR-REC-03"
+    )
+    aadhar_number: Optional[str] = Field(
+        None, description="Candidate's Aadhar card number, used for FR-REC-04 duplicate detection"
     )
     applied_role: str = Field(..., description="Role applied for")
     source: Optional[str] = Field(None, description="Sourcing channel")
@@ -71,7 +74,10 @@ class CandidateStageUpdate(BaseModel):
 class CandidateUpdate(BaseModel):
     name: Optional[str] = Field(None, description="Candidate full name")
     resume_details: Optional[str] = Field(
-        None, description="Resume details/summary used for FR-REC-03/04"
+        None, description="Resume details/summary used for FR-REC-03"
+    )
+    aadhar_number: Optional[str] = Field(
+        None, description="Candidate's Aadhar card number, used for FR-REC-04 duplicate detection"
     )
     applied_role: Optional[str] = Field(None, description="Role applied for")
     source: Optional[str] = Field(None, description="Sourcing channel")
@@ -100,7 +106,7 @@ class CandidateDetailResponse(CandidateResponse):
 class DuplicateFlag(BaseModel):
     candidate_id: str
     other_candidate_id: str
-    similarity: float
+    aadhar_number: str
 
 
 # ---------- FR-REC-06: funnel stats ----------
@@ -126,7 +132,10 @@ class FunnelStats(BaseModel):
 # ---------- FR-REC-05: hire conversion ----------
 
 class HireConversionRequest(BaseModel):
-    employee_id: str = Field(..., description="New Employee Directory (M0) ID to create")
+    employee_id: Optional[str] = Field(
+        None,
+        description="Ignored - the server always auto-increments the next EMP### ID (see directory_service._generate_next_employee_id).",
+    )
     requester_id: str = Field(..., description="Employee ID of whoever is performing the hire")
     designation: Optional[str] = Field(
         None, description="Defaults to the candidate's applied_role if omitted"

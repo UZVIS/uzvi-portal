@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { recruitingApi } from "./api";
 import type { Candidate, DuplicateFlag } from "./api";
 import { PipelineFunnelPage } from "./PipelineFunnelPage";
@@ -22,37 +22,43 @@ type ActiveView = "funnel" | "pipeline" | "sourcing" | "duplicates" | null;
 export function RecruitingHomePage() {
   const [activeView, setActiveView] = useState<ActiveView>(null);
 
+  // Bumped whenever a candidate is added, edited, moved, or deleted so the
+  // stat cards and any open inline panel refetch immediately instead of
+  // only updating after a full page reload.
+  const [refreshKey, setRefreshKey] = useState(0);
+
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [duplicates, setDuplicates] = useState<DuplicateFlag[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
+  const loadHub = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-    Promise.all([
-      recruitingApi.listCandidates(),
-      recruitingApi.getDuplicates(0.8),
-    ])
-      .then(([allCandidates, dupes]) => {
-        if (cancelled) return;
-        setCandidates(allCandidates);
-        setDuplicates(dupes);
-      })
-      .catch((err) => {
-        if (!cancelled)
-          setError(
-            err instanceof Error ? err.message : "Couldn't load the hub."
-          );
-      })
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
+    try {
+      const [allCandidates, dupes] = await Promise.all([
+        recruitingApi.listCandidates(),
+        recruitingApi.getDuplicates(),
+      ]);
+      setCandidates(allCandidates);
+      setDuplicates(dupes);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't load the hub.");
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    void loadHub();
+  }, [loadHub, refreshKey]);
+
+  // Call this after any action that changes candidate data (add, edit,
+  // delete, move stage, hire) so everything on this page reflects it
+  // right away.
+  function refresh() {
+    setRefreshKey((k) => k + 1);
+  }
 
   const totals = useMemo(() => {
     const total = candidates.length;
@@ -185,10 +191,12 @@ export function RecruitingHomePage() {
       {/* ── Inline content for the selected card, shown on this same page ── */}
       {activeView && (
         <section className="rhub-inline">
-          {activeView === "funnel" && <PipelineFunnelPage key="funnel" />}
-          {activeView === "pipeline" && <CandidatePipelinePage key="pipeline" />}
-          {activeView === "sourcing" && <SourcingPage key="sourcing" />}
-          {activeView === "duplicates" && <DuplicatesPage key="duplicates" />}
+          {activeView === "funnel" && <PipelineFunnelPage key={`funnel-${refreshKey}`} />}
+          {activeView === "pipeline" && (
+            <CandidatePipelinePage key={`pipeline-${refreshKey}`} onChange={refresh} />
+          )}
+          {activeView === "sourcing" && <SourcingPage key={`sourcing-${refreshKey}`} />}
+          {activeView === "duplicates" && <DuplicatesPage key={`duplicates-${refreshKey}`} />}
         </section>
       )}
     </div>

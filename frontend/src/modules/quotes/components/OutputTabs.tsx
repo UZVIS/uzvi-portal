@@ -14,10 +14,12 @@ import type {
 
 interface Props {
     scenarioId: string;
+    reload: boolean;
 }
 
 export default function OutputTabs({
     scenarioId,
+    reload,
 }: Props) {
 
     const [activeTab, setActiveTab] =
@@ -57,7 +59,7 @@ export default function OutputTabs({
 
         load();
 
-    }, [scenarioId]);
+    }, [scenarioId,reload]);
 
     return (
 

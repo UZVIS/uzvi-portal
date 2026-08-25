@@ -59,8 +59,8 @@ def pipeline_funnel_stats(db: Session = Depends(get_db)):
 
 
 @router.get("/duplicates", response_model=List[DuplicateFlag])
-def flagged_duplicate_candidates(threshold: float = 0.8, db: Session = Depends(get_db)):
-    return service.detect_duplicate_candidates(db, threshold=threshold)
+def flagged_duplicate_candidates(db: Session = Depends(get_db)):
+    return service.detect_duplicate_candidates(db)
 
 
 @router.get("/{candidate_id}", response_model=CandidateDetailResponse)

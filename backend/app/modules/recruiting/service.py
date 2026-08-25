@@ -1,4 +1,5 @@
-import difflib
+from collections import defaultdict
+
 from sqlalchemy.orm import Session
 
 from app.modules.directory import service as directory_service
@@ -12,7 +13,6 @@ from app.modules.recruiting.schemas import (
 )
 
 VALID_STAGES = ["Applied", "Screened", "Interview", "Offer", "Hired", "Rejected"]
-DUPLICATE_SIMILARITY_THRESHOLD = 0.8
 
 
 class CandidateAlreadyExists(Exception):
@@ -176,30 +176,44 @@ def add_scorecard(
     return new_scorecard
 
 
-# ---------- FR-REC-04: duplicate resume/content detection ----------
+# ---------- FR-REC-04: duplicate candidate detection ----------
 
-def _similarity(a: str | None, b: str | None) -> float:
-    return difflib.SequenceMatcher(None, a or "", b or "").ratio()
+def _normalize_aadhar(value: str | None) -> str | None:
+    """Aadhar numbers are 12 digits; ignore formatting differences (spaces/
+    hyphens) so e.g. '1234 5678 9012' and '1234-5678-9012' are still treated
+    as the same candidate."""
+    if not value:
+        return None
+    digits = "".join(ch for ch in value if ch.isdigit())
+    return digits or None
 
 
-def detect_duplicate_candidates(
-    db: Session, threshold: float = DUPLICATE_SIMILARITY_THRESHOLD
-) -> list[dict]:
-    """Flags candidates with highly similar project descriptions/resume content
-    across the candidate pool, per FR-REC-04."""
+def detect_duplicate_candidates(db: Session) -> list[dict]:
+    """Flags candidates that share the same Aadhar card number, per
+    FR-REC-04. This is an exact-match check (not a fuzzy/similarity check):
+    a real, unique government ID is a far more reliable duplicate signal
+    than comparing resume text. Candidates with no Aadhar number on file are
+    skipped since there's nothing to match on."""
     candidates = db.query(Candidate).all()
-    flags: list[dict] = []
 
-    for i in range(len(candidates)):
-        for j in range(i + 1, len(candidates)):
-            c1, c2 = candidates[i], candidates[j]
-            similarity = _similarity(c1.resume_details, c2.resume_details)
-            if similarity >= threshold:
+    by_aadhar: dict[str, list[Candidate]] = defaultdict(list)
+    for candidate in candidates:
+        normalized = _normalize_aadhar(candidate.aadhar_number)
+        if normalized:
+            by_aadhar[normalized].append(candidate)
+
+    flags: list[dict] = []
+    for normalized, group in by_aadhar.items():
+        if len(group) < 2:
+            continue
+        for i in range(len(group)):
+            for j in range(i + 1, len(group)):
+                c1, c2 = group[i], group[j]
                 flags.append(
                     {
                         "candidate_id": c1.candidate_id,
                         "other_candidate_id": c2.candidate_id,
-                        "similarity": round(similarity, 4),
+                        "aadhar_number": normalized,
                     }
                 )
     return flags

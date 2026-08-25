@@ -5,7 +5,7 @@ This module defines the RESTful API endpoints for the Calendar system.
 It handles routing for retrieving and creating company holidays and internal events.
 """
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, File, UploadFile
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
@@ -29,6 +29,14 @@ def create_holiday(holiday: schemas.HolidayCreate, db: Session = Depends(get_db)
     """
     return service.create_holiday(db=db, holiday=holiday)
 
+# --- NEW: EXCEL/CSV BULK IMPORT ENDPOINT FOR HOLIDAYS ---
+@router.post("/holidays/import", status_code=status.HTTP_201_CREATED)
+def import_holidays(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    """
+    Import bulk holidays from an uploaded Excel (.xlsx) or CSV file.
+    """
+    return service.import_holidays_from_file(db=db, file=file)
+
 @router.get("/holidays", response_model=List[schemas.HolidayResponse])
 def get_holidays(year: Optional[int] = None, month: Optional[int] = None, db: Session = Depends(get_db)):
     """
@@ -36,31 +44,6 @@ def get_holidays(year: Optional[int] = None, month: Optional[int] = None, db: Se
     Supports optional query parameters to filter the results by a specific year and month.
     """
     return service.get_holidays(db=db, year=year, month=month)
-
-
-# ==========================================
-# 2. Company Event Endpoints
-# ==========================================
-
-@router.post("/events", response_model=schemas.CompanyEventResponse, status_code=status.HTTP_201_CREATED)
-def create_event(event: schemas.CompanyEventCreate, db: Session = Depends(get_db)):
-    """
-    Create a new internal company event.
-    Typically used by administrators to schedule townhalls, meetings, or team-building activities.
-    """
-    return service.create_company_event(db=db, event=event)
-
-@router.get("/events", response_model=List[schemas.CompanyEventResponse])
-def get_events(year: Optional[int] = None, month: Optional[int] = None, db: Session = Depends(get_db)):
-    """
-    Retrieve a list of company events.
-    Supports optional query parameters to filter the results by a specific year and month.
-    """
-    return service.get_company_events(db=db, year=year, month=month)
-
-# ==========================================
-# Missing Holiday Endpoints (Update & Delete)
-# ==========================================
 
 @router.put("/holidays/{holiday_id}", response_model=schemas.HolidayResponse)
 def update_holiday(holiday_id: str, holiday_update: schemas.HolidayUpdate, db: Session = Depends(get_db)):
@@ -77,9 +60,32 @@ def delete_holiday(holiday_id: str, db: Session = Depends(get_db)):
     service.delete_holiday(db=db, holiday_id=holiday_id)
     return None
 
+
 # ==========================================
-# Missing Event Endpoints (Update & Delete)
+# 2. Company Event Endpoints
 # ==========================================
+
+@router.post("/events", response_model=schemas.CompanyEventResponse, status_code=status.HTTP_201_CREATED)
+def create_event(event: schemas.CompanyEventCreate, db: Session = Depends(get_db)):
+    """
+    Create a new internal company event.
+    """
+    return service.create_company_event(db=db, event=event)
+
+# --- NEW: EXCEL/CSV BULK IMPORT ENDPOINT FOR EVENTS ---
+@router.post("/events/import", status_code=status.HTTP_201_CREATED)
+def import_events(file: UploadFile = File(...), db: Session = Depends(get_db)):
+    """
+    Import bulk internal events from an uploaded Excel (.xlsx) or CSV file.
+    """
+    return service.import_events_from_file(db=db, file=file)
+
+@router.get("/events", response_model=List[schemas.CompanyEventResponse])
+def get_events(year: Optional[int] = None, month: Optional[int] = None, db: Session = Depends(get_db)):
+    """
+    Retrieve a list of company events.
+    """
+    return service.get_company_events(db=db, year=year, month=month)
 
 @router.put("/events/{event_id}", response_model=schemas.CompanyEventResponse)
 def update_event(event_id: str, event_update: schemas.CompanyEventUpdate, db: Session = Depends(get_db)):

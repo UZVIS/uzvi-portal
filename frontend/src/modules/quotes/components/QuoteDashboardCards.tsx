@@ -4,12 +4,14 @@ interface QuoteDashboardCardsProps {
   totalOpportunities: number;
   totalScenarios: number;
   totalQuotes: number;
+  totalTenders: number;
 }
 
 export default function QuoteDashboardCards({
   totalOpportunities,
   totalScenarios,
   totalQuotes,
+  totalTenders,
 }: QuoteDashboardCardsProps) {
   return (
     <div className="dashboard-cards">
@@ -46,6 +48,17 @@ export default function QuoteDashboardCards({
           <span className="card-caption">Quotes generated</span>
         </div>
       </div>
+      <div className="dashboard-card">
+  <div className="card-icon card-icon-orange">
+    <FileText size={20} />
+  </div>
+
+  <div className="card-body">
+    <h2>{totalTenders}</h2>
+    <span className="card-title">Tenders Generated</span>
+    <span className="card-caption">Tenders generated</span>
+  </div>
+</div>
 
     </div>
   );

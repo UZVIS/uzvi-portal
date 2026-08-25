@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
+﻿﻿const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
 const BASE_PATH = `${API_BASE}/api/v1/documents`;
 
 async function handle<T>(res: Response, notFoundMessage: string): Promise<T> {
@@ -30,7 +30,6 @@ export interface DocumentAccessLog {
 
 /** POST /api/v1/documents/ — HR-Restricted uploads on an employee's behalf */
 export function registerDocument(input: {
-  document_id: string;
   employee_id: string;
   uploaded_by: string;
   doc_type: string;
@@ -61,5 +60,28 @@ export function getAccessLogs(documentId: string): Promise<DocumentAccessLog[]> 
 export function getExpiredDocuments(requesterId: string): Promise<DocumentRecord[]> {
   return fetch(`${BASE_PATH}/expired/list?requester_id=${encodeURIComponent(requesterId)}`).then(
     (r) => handle(r, "Could not load expired documents.")
+  );
+}
+
+/** GET /api/v1/documents/?requester_id=... - HR sees all, an employee sees only their own */
+export function getVisibleDocuments(requesterId: string): Promise<DocumentRecord[]> {
+  return fetch(`${BASE_PATH}/?requester_id=${encodeURIComponent(requesterId)}`).then(
+    (r) => handle(r, "Could not load documents.")
+  );
+}
+
+
+/** GET /api/v1/documents/exists - narrow, safe check: does this employee have a document of this type? Never exposes the document itself. */
+export function checkDocumentExists(employeeId: string, docType: string, requesterId: string): Promise<boolean> {
+  return fetch(`${BASE_PATH}/exists?employee_id=${encodeURIComponent(employeeId)}&doc_type=${encodeURIComponent(docType)}&requester_id=${encodeURIComponent(requesterId)}`)
+    .then((r) => handle(r, "Could not check document status."))
+    .then((data) => data.exists);
+}
+
+
+/** GET /api/v1/documents/all - HR-only, every document across every employee */
+export function getAllDocuments(requesterId: string): Promise<DocumentRecord[]> {
+  return fetch(`${BASE_PATH}/all?requester_id=${encodeURIComponent(requesterId)}`).then(
+    (r) => handle(r, "Could not load all documents.")
   );
 }

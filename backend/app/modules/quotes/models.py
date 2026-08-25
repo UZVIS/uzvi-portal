@@ -1,15 +1,4 @@
-"""
-M13 — Quote & Tender Calculator (BD)
 
-Tables per the ERD, extended where the FRD requires fields the ERD only
-implies:
-- FR-BD-01 requires per-user counts and cohort splits -> CostLineItem gets
-  `quantity` (the per-user/per-line count) and `cohort` (nullable label).
-- FR-BD-06's library needs to tell us whether a standard item is a vendor
-  cost (e.g. a software license) or an internal cost (e.g. a day-rate), so
-  pulling it into a scenario populates the right cost field ->
-  StandardCostLibrary gets `cost_component`.
-"""
 import enum
 import uuid
 from datetime import datetime, timezone

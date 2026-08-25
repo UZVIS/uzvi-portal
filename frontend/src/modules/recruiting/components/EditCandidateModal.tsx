@@ -14,6 +14,7 @@ export function EditCandidateModal({ candidate, onClose, onSave }: Props) {
   const [appliedRole, setAppliedRole] = useState(candidate.applied_role);
   const [source, setSource] = useState(candidate.source ?? "");
   const [resumeDetails, setResumeDetails] = useState(candidate.resume_details ?? "");
+  const [aadharNumber, setAadharNumber] = useState(candidate.aadhar_number ?? "");
   const [stage, setStage] = useState<CandidateStage>(candidate.stage);
   const [status, setStatus] = useState<"idle" | "saving" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
@@ -32,6 +33,7 @@ export function EditCandidateModal({ candidate, onClose, onSave }: Props) {
         applied_role: appliedRole.trim(),
         source: source.trim(),
         resume_details: resumeDetails.trim(),
+        aadhar_number: aadharNumber.trim(),
         stage,
       });
       onClose();
@@ -112,7 +114,18 @@ export function EditCandidateModal({ candidate, onClose, onSave }: Props) {
               rows={3}
               value={resumeDetails}
               onChange={(e) => setResumeDetails(e.target.value)}
-              placeholder="Short summary used for interview prep and duplicate detection"
+              placeholder="Short summary used for interview prep"
+            />
+          </label>
+
+          <label className="field">
+            <span className="field__label">Aadhar number</span>
+            <input
+              className="field__input"
+              value={aadharNumber}
+              onChange={(e) => setAadharNumber(e.target.value)}
+              placeholder="e.g. 1234 5678 9012 (used for duplicate detection)"
+              inputMode="numeric"
             />
           </label>
 

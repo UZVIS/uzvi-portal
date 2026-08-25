@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../shared/auth/AuthContext";
 import {
   listActiveEmployees,
@@ -14,18 +13,20 @@ import {
 import { EmployeeRow, teamNameFor } from "./components/EmployeeRow";
 import { EmployeeForm } from "./components/EmployeeForm";
 import { TeamManager } from "./components/TeamManager";
+import { ExitedEmployeesList } from "./components/ExitedEmployeesList";
+import { OrgChartView } from "./components/OrgChartView";
+import { Toast } from "../../shared/components/Toast";
 import "../shared-theme.css";
 import "./DirectoryPage.css";
 
-// FR-DIR-05: only these tiers may add employees, edit profiles, or mark exits.
-const MANAGE_TIERS = new Set(["Admin/Leadership", "HR-Restricted"]);
+const MANAGE_TIERS = new Set(["Admin", "Admin/Leadership", "HR-Restricted"]);
 
 export function DirectoryPage() {
-  const { employee, logout } = useAuth();
-  const navigate = useNavigate();
+  const { employee } = useAuth();
   const canManage = employee ? MANAGE_TIERS.has(employee.access_tier) : false;
 
   const [employees, setEmployees] = useState<Employee[]>([]);
+  const [exitedRefreshKey, setExitedRefreshKey] = useState(0);
   const [teams, setTeams] = useState<Team[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -64,8 +65,8 @@ export function DirectoryPage() {
     await load();
   }
 
-  async function handleCreateTeam(teamId: string, name: string) {
-    await createTeam(teamId, name);
+  async function handleCreateTeam(name: string) {
+    await createTeam(name);
     await load();
   }
 
@@ -77,52 +78,49 @@ export function DirectoryPage() {
     try {
       await exitEmployee(employeeId, employee.employee_id);
       await load();
+      setExitedRefreshKey((k) => k + 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not mark the employee as exited.");
     }
   }
 
-  const filtered = employees.filter((e) => {
-    const q = search.trim().toLowerCase();
-    if (!q) return true;
-    const teamName = teamNameFor(e.team_id, teams) ?? "";
-    return (
-      e.name.toLowerCase().includes(q) ||
-      e.employee_id.toLowerCase().includes(q) ||
-      (e.designation ?? "").toLowerCase().includes(q) ||
-      teamName.toLowerCase().includes(q)
-    );
-  });
+  const TIER_ORDER: Record<string, number> = {
+    "Admin/Leadership": 0,
+    "HR-Restricted": 1,
+    "Manager": 2,
+    "Employee": 3,
+  };
+
+  const filtered = employees
+    .filter((e) => {
+      const q = search.trim().toLowerCase();
+      if (!q) return true;
+      const teamName = teamNameFor(e.team_id, teams) ?? "";
+      return (
+        e.name.toLowerCase().includes(q) ||
+        e.employee_id.toLowerCase().includes(q) ||
+        (e.designation ?? "").toLowerCase().includes(q) ||
+        teamName.toLowerCase().includes(q)
+      );
+    })
+    .sort((a, b) => {
+      const orderA = TIER_ORDER[a.access_tier] ?? 99;
+      const orderB = TIER_ORDER[b.access_tier] ?? 99;
+      return orderA - orderB;
+    });
 
   return (
     <div className="directory-page uzvi-portal-theme">
       <header className="directory-page__header">
         <div>
-          <button className="button-secondary" onClick={() => navigate("/")}>
-            ← Modules
-          </button>
           <h1>Employee Directory</h1>
           <p className="directory-page__subtitle">
             The single source of truth for who exists — every other module references this list.
           </p>
         </div>
-        {employee && (
-          <div className="directory-page__me">
-            <div className="directory-page__me-avatar">
-              {employee.name.charAt(0).toUpperCase()}
-            </div>
-            <div className="directory-page__me-info">
-              <span className="directory-page__me-name">{employee.name}</span>
-              <span className="directory-page__me-tier">{employee.access_tier}</span>
-            </div>
-            <button className="button-secondary" onClick={logout}>
-              Log out
-            </button>
-          </div>
-        )}
       </header>
 
-      {error && <div className="error-banner">{error}</div>}
+      {error && <Toast message={error} kind="error" onDismiss={() => setError(null)} />}
 
       {canManage && (
         <section className="directory-page__manage">
@@ -147,6 +145,7 @@ export function DirectoryPage() {
         ) : filtered.length === 0 ? (
           <p className="directory-row__muted">No employees match your search.</p>
         ) : (
+          <div className="directory-table__scroll">
           <table className="directory-table">
             <colgroup>
               <col />
@@ -185,7 +184,24 @@ export function DirectoryPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
+      </section>
+
+      {canManage && employee && (
+        <section className="directory-page__list">
+          <h2 className="directory-form__title">
+            Exited employees
+          </h2>
+          <ExitedEmployeesList requesterId={employee.employee_id} refreshKey={exitedRefreshKey} />
+        </section>
+      )}
+
+      <section className="directory-page__list">
+        <h2 className="directory-form__title">
+          Org chart
+        </h2>
+        <OrgChartView employees={employees} />
       </section>
     </div>
   );

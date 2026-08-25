@@ -52,9 +52,10 @@ export default function OpportunityDialog({
             <X size={20} />
           </button>
         </div>
+{/* Form */}
+<div className="modal-body">
 
-        {/* Form */}
-        <div className="form-group">
+  <div className="form-group">
           <label>Opportunity Name</label>
 
           <input
@@ -75,7 +76,7 @@ export default function OpportunityDialog({
             onChange={(e) => setClient(e.target.value)}
           />
         </div>
-
+</div>
         {/* Footer */}
         <div className="modal-actions">
           <button

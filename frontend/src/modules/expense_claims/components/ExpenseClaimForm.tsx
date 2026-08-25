@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import type { ExpenseCategory } from "../api";
 import "./ExpenseClaimForm.css";
 
@@ -20,22 +20,38 @@ interface Props {
   }) => Promise<void>;
 }
 
-export function ExpenseClaimForm({ categories, projects, onSubmit }: Props) {
-  const [categoryId, setCategoryId] = useState(categories[0]?.category_id ?? "");
+export function ExpenseClaimForm({
+  categories,
+  projects,
+  onSubmit,
+}: Props) {
+  const [categoryId, setCategoryId] = useState(
+    categories[0]?.category_id ?? ""
+  );
   const [projectId, setProjectId] = useState("");
   const [amount, setAmount] = useState("");
-  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(() =>
+    new Date().toISOString().slice(0, 10)
+  );
   const [description, setDescription] = useState("");
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
-  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
-  const [errorMsg, setErrorMsg] = useState("");
+  const [fileInputKey, setFileInputKey] = useState(0);
 
-  // Ref for clearing the file input
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [status, setStatus] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
+
+  const [errorMsg, setErrorMsg] = useState("");
 
   const selectedCategory = categories.find(
     (c) => c.category_id === categoryId
   );
+
+  useEffect(() => {
+    if (!categoryId && categories.length > 0) {
+      setCategoryId(categories[0].category_id);
+    }
+  }, [categories, categoryId]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -48,7 +64,20 @@ export function ExpenseClaimForm({ categories, projects, onSubmit }: Props) {
       return;
     }
 
+    if (!receiptFile) {
+      setStatus("error");
+      setErrorMsg("Please attach a receipt before submitting.");
+      return;
+    }
+
+    if (!projectId) {
+      setStatus("error");
+      setErrorMsg("Please select a project before submitting.");
+      return;
+    }
+
     setStatus("saving");
+    setErrorMsg("");
 
     try {
       await onSubmit({
@@ -60,21 +89,24 @@ export function ExpenseClaimForm({ categories, projects, onSubmit }: Props) {
         projectId: projectId || null,
       });
 
-      // Reset form fields
       setAmount("");
       setDescription("");
       setReceiptFile(null);
+      setFileInputKey((k) => k + 1);
       setProjectId("");
+
       setStatus("saved");
 
-      // Clear selected file from the input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+      // Hide success message after 2 seconds
+      setTimeout(() => {
+        setStatus("idle");
+      }, 2000);
     } catch (err) {
       setStatus("error");
       setErrorMsg(
-        err instanceof Error ? err.message : "Couldn't submit this claim."
+        err instanceof Error
+          ? err.message
+          : "Couldn't submit this claim."
       );
     }
   }
@@ -116,18 +148,23 @@ export function ExpenseClaimForm({ categories, projects, onSubmit }: Props) {
           <input
             type="date"
             value={date}
+            max={new Date().toISOString().slice(0, 10)}
             onChange={(e) => setDate(e.target.value)}
           />
         </label>
       </div>
 
       <label className="claim-form__field">
-        Project (optional)
+        Project
         <select
           value={projectId}
           onChange={(e) => setProjectId(e.target.value)}
+          required
         >
-          <option value="">No project</option>
+          <option value="" disabled>
+            Select a project
+          </option>
+
           {projects.map((p) => (
             <option key={p.project_id} value={p.project_id}>
               {p.name}
@@ -147,12 +184,15 @@ export function ExpenseClaimForm({ categories, projects, onSubmit }: Props) {
       </label>
 
       <label className="claim-form__field">
-        Receipt
+        Receipt (required)
         <input
-          ref={fileInputRef}
+          key={fileInputKey}
           type="file"
           accept=".pdf,.png,.jpg,.jpeg"
-          onChange={(e) => setReceiptFile(e.target.files?.[0] ?? null)}
+          required
+          onChange={(e) =>
+            setReceiptFile(e.target.files?.[0] ?? null)
+          }
         />
       </label>
 
@@ -164,7 +204,8 @@ export function ExpenseClaimForm({ categories, projects, onSubmit }: Props) {
 
       {selectedCategory?.cap_amount != null && (
         <p className="claim-form__hint">
-          Cap for this category: ₹{selectedCategory.cap_amount.toLocaleString()}
+          Cap for this category: ₹
+          {selectedCategory.cap_amount.toLocaleString()}
         </p>
       )}
 

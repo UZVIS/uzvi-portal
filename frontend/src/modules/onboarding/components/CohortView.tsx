@@ -1,11 +1,12 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { getCohort, type CohortRow } from "../api";
 
 interface CohortViewProps {
   requesterId: string;
+  refreshKey: number;
 }
 
-export function CohortView({ requesterId }: CohortViewProps) {
+export function CohortView({ requesterId, refreshKey }: CohortViewProps) {
   const [rows, setRows] = useState<CohortRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,14 +27,22 @@ export function CohortView({ requesterId }: CohortViewProps) {
     return () => {
       cancelled = true;
     };
-  }, [requesterId]);
+  }, [requesterId, refreshKey]);
 
   if (isLoading) return <p className="directory-row__muted">Loading cohort…</p>;
   if (error) return <div className="error-banner">{error}</div>;
   if (rows.length === 0) return <p className="directory-row__muted">No onboarding instances yet.</p>;
 
   return (
-    <table className="directory-table" style={{ tableLayout: "auto" }}>
+    <table className="directory-table directory-table--compact">
+      <colgroup>
+        <col style={{ width: "24%" }} />
+        <col style={{ width: "13%" }} />
+        <col style={{ width: "13%" }} />
+        <col style={{ width: "14%" }} />
+        <col style={{ width: "14%" }} />
+        <col style={{ width: "22%" }} />
+      </colgroup>
       <thead>
         <tr>
           <th>Employee</th>

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+﻿from fastapi import APIRouter, HTTPException, Depends
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -38,6 +38,8 @@ def register_new_employee(
         return service.create_employee(db, employee_in, requester_id)
     except service.EmployeeAlreadyExists:
         raise HTTPException(status_code=400, detail="Employee code already exists.")
+    except service.InvalidManager as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except service.NotAuthorized as e:
         raise HTTPException(status_code=403, detail=str(e))
 
@@ -45,6 +47,14 @@ def register_new_employee(
 @router.get("/", response_model=List[EmployeeResponse])
 def list_active_directory_profiles(db: Session = Depends(get_db)):
     return service.list_active_employees(db)
+
+
+@router.get("/exited", response_model=List[EmployeeResponse])
+def list_exited_directory_profiles(requester_id: str, db: Session = Depends(get_db)):
+    try:
+        return service.list_exited_employees(db, requester_id)
+    except service.NotAuthorized as e:
+        raise HTTPException(status_code=403, detail=str(e))
 
 
 @router.get("/{employee_id}", response_model=EmployeeResponse)
@@ -66,6 +76,10 @@ def edit_employee_profile(
         return service.update_employee(db, employee_id, update_in, requester_id)
     except service.EmployeeNotFound:
         raise HTTPException(status_code=404, detail="Employee not found.")
+    except service.LastAdminError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except service.InvalidManager as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except service.NotAuthorized as e:
         raise HTTPException(status_code=403, detail=str(e))
 
@@ -78,5 +92,7 @@ def mark_employee_as_exited(
         return service.mark_employee_exited(db, employee_id, requester_id)
     except service.EmployeeNotFound:
         raise HTTPException(status_code=404, detail="Employee not found.")
+    except service.LastAdminError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except service.NotAuthorized as e:
         raise HTTPException(status_code=403, detail=str(e))

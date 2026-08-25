@@ -1,25 +1,59 @@
 import { useState, useEffect } from "react";
-// 🌟 Premium Icons
-import { Lightbulb, Plus, Activity, Settings2, Wallet } from "lucide-react";
+import { useAuth } from "../../../shared/auth/AuthContext";
+import { apiGet } from "../../../api/client";
+import { Activity, CheckCircle, AlertCircle, X, Check } from "lucide-react";
 
 export default function AdminDashboard() {
-    const [activeTab, setActiveTab] = useState<'tracker' | 'config' | 'balances'>('tracker');
-    const [isAddLeaveModalOpen, setIsAddLeaveModalOpen] = useState(false);
-    const [isBalanceModalOpen, setIsBalanceModalOpen] = useState(false);
-
-    const [leaveName, setLeaveName] = useState("");
-    const [accrualMethod, setAccrualMethod] = useState("");
-    const [carryForwardLimit, setCarryForwardLimit] = useState("");
-    const [docThreshold, setDocThreshold] = useState("");
-
-    const [targetEmployeeId, setTargetEmployeeId] = useState("EMP123");
-    const [selectedLeaveTypeId, setSelectedLeaveTypeId] = useState("");
-    const [allocateBalanceValue, setAllocateBalanceValue] = useState("");
-    const [allocateYear, setAllocateYear] = useState("2026");
-
     const [allLeaves, setAllLeaves] = useState<any[]>([]);
     const [leaveTypes, setLeaveTypes] = useState<any[]>([]);
+    const [holidays, setHolidays] = useState<string[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+
+    const [modalState, setModalState] = useState({
+        isOpen: false,
+        title: "",
+        message: "",
+        isError: false
+    });
+
+    const { employee } = useAuth();
+    const adminId = employee?.employee_id;
+
+    const getDurationNumber = (start: string, end: string) => {
+        if (!start || !end) return 0;
+
+        const [sYear, sMonth, sDay] = start.split('-').map(Number);
+        const [eYear, eMonth, eDay] = end.split('-').map(Number);
+
+        let currDate = new Date(sYear, sMonth - 1, sDay);
+        const endDateObj = new Date(eYear, eMonth - 1, eDay);
+
+        if (currDate > endDateObj) return 0;
+
+        let workingDays = 0;
+        while (currDate <= endDateObj) {
+            const dayOfWeek = currDate.getDay();
+            const yyyy = currDate.getFullYear();
+            const mm = String(currDate.getMonth() + 1).padStart(2, '0');
+            const dd = String(currDate.getDate()).padStart(2, '0');
+            const formattedDate = `${yyyy}-${mm}-${dd}`;
+
+            const isWeekend = (dayOfWeek === 0 || dayOfWeek === 6);
+            const isHoliday = holidays.includes(formattedDate);
+
+            if (!isWeekend && !isHoliday) {
+                workingDays++;
+            }
+            currDate.setDate(currDate.getDate() + 1);
+        }
+        return workingDays;
+    };
+
+    const getDurationDays = (start: string, end: string) => {
+        const days = getDurationNumber(start, end);
+        if (days <= 0) return 0;
+        return days;
+    };
 
     useEffect(() => {
         fetchAdminData();
@@ -28,20 +62,34 @@ export default function AdminDashboard() {
     const fetchAdminData = async () => {
         setIsLoading(true);
         try {
-            const typesResponse = await fetch("http://127.0.0.1:8000/api/v1/leave/leave-types");
-            if (typesResponse.ok) {
-                const typesData = await typesResponse.json();
-                const validTypes = Array.isArray(typesData) ? typesData : [];
-                setLeaveTypes(validTypes);
-                if (validTypes.length > 0) {
-                    setSelectedLeaveTypeId(validTypes[0].leave_type_id);
-                }
-            }
+            const typesData = await apiGet('/v1/leave/leave-types');
+            const validTypes = Array.isArray(typesData) ? typesData : [];
+            setLeaveTypes(validTypes);
 
-            const appsResponse = await fetch("http://127.0.0.1:8000/api/v1/leave/applications");
-            if (appsResponse.ok) {
-                const appsData = await appsResponse.json();
-                setAllLeaves(Array.isArray(appsData) ? appsData : []);
+            const appsData = await apiGet('/v1/leave/applications?role=Admin');
+            const allApps = Array.isArray(appsData) ? appsData : [];
+
+            allApps.sort((a, b) => {
+                const aPending = a.status === 'PENDING' || a.status === 'PENDING_HR';
+                const bPending = b.status === 'PENDING' || b.status === 'PENDING_HR';
+                if (aPending && !bPending) return -1;
+                if (!aPending && bPending) return 1;
+                return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime();
+            });
+
+            setAllLeaves(allApps);
+
+            try {
+                const holidaysData = await apiGet('/v1/calendar/holidays');
+                if (Array.isArray(holidaysData)) {
+                    const hDates = holidaysData.map((h: any) => {
+                        if (typeof h.date === 'string') return h.date.split('T')[0];
+                        return new Date(h.date).toISOString().split('T')[0];
+                    });
+                    setHolidays(hDates);
+                }
+            } catch (calErr) {
+                console.error("Error fetching holidays:", calErr);
             }
         } catch (error) {
             console.error("Error fetching admin data:", error);
@@ -61,135 +109,135 @@ export default function AdminDashboard() {
         return new Date(dateString).toLocaleDateString('en-US', options);
     };
 
-    const getDurationDays = (start: string, end: string) => {
-        if (!start || !end) return 0;
-        const s = new Date(start);
-        const e = new Date(end);
-        const diffTime = Math.abs(e.getTime() - s.getTime());
-        return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-    };
-
-    const handleSaveLeaveType = async () => {
-        if (!leaveName) return;
-
-        const payload = {
-            name: leaveName,
-            accrual_method: accrualMethod || "Standard",
-            carry_forward_limit: carryForwardLimit ? parseInt(carryForwardLimit, 10) : 0,
-            doc_required_threshold: docThreshold ? parseInt(docThreshold, 10) : 0
-        };
+    const handleAction = async (applicationId: string, actionType: 'APPROVED' | 'REJECTED') => {
+        if (!adminId) return;
 
         try {
-            const response = await fetch("http://127.0.0.1:8000/api/v1/leave/leave-types", {
-                method: "POST",
+            const payload = {
+                status: actionType,
+                approver_id: adminId
+            };
+
+            const response = await fetch(`http://127.0.0.1:8000/api/v1/leave/applications/${applicationId}/status`, {
+                method: "PUT",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
+                body: JSON.stringify(payload)
             });
 
             if (response.ok) {
                 fetchAdminData();
-                setIsAddLeaveModalOpen(false);
-                setLeaveName("");
-                setAccrualMethod("");
-                setCarryForwardLimit("");
-                setDocThreshold("");
-            } else {
-                alert("Failed to create leave type.");
-            }
-        } catch (error) {
-            console.error("Error connecting to backend API:", error);
-        }
-    };
-
-    const handleAllocateBalance = async () => {
-        if (!targetEmployeeId || !selectedLeaveTypeId || !allocateBalanceValue || !allocateYear) {
-            alert("Please fill all fields!");
-            return;
-        }
-
-        const payload = {
-            employee_id: targetEmployeeId.trim(),
-            leave_type_id: selectedLeaveTypeId,
-            year: parseInt(allocateYear, 10),
-            balance: parseFloat(allocateBalanceValue)
-        };
-
-        try {
-            const response = await fetch("http://127.0.0.1:8000/api/v1/leave/leave-balances", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-            });
-
-            if (response.ok) {
-                alert("Leave balance allocated successfully!");
-                setIsBalanceModalOpen(false);
-                setAllocateBalanceValue("");
-                fetchAdminData();
+                setModalState({
+                    isOpen: true,
+                    title: "Success",
+                    message: `Leave application successfully ${actionType.toLowerCase()} by Admin.`,
+                    isError: false
+                });
             } else {
                 const err = await response.json();
-                alert(`Failed to allocate balance: ${JSON.stringify(err.detail || err)}`);
+                setModalState({
+                    isOpen: true,
+                    title: "Action Failed",
+                    message: err.detail || "Error occurred while processing request.",
+                    isError: true
+                });
             }
         } catch (error) {
-            console.error("Error allocating balance:", error);
-            alert("Network error occurred.");
+            console.error("Error updating status:", error);
+            setModalState({
+                isOpen: true,
+                title: "Network Error",
+                message: "Unable to connect to the server.",
+                isError: true
+            });
         }
     };
 
     return (
-        <div className="space-y-6 max-w-7xl mx-auto p-4 md:p-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-                <div>
-                    <h2 className="text-2xl font-extrabold text-gray-800">Admin Control Center</h2>
-                    <p className="text-sm text-gray-500 mt-1">Manage org-wide leaves, policies, and employee balances.</p>
-                </div>
-                <div className="mt-4 md:mt-0 flex space-x-2 bg-gray-100 p-1 rounded-lg">
-                    <button onClick={() => setActiveTab('tracker')} className={`px-4 py-2 text-sm font-bold rounded-md transition flex items-center space-x-2 ${activeTab === 'tracker' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-                        <Activity size={16} /> <span>Tracker</span>
-                    </button>
-                    <button onClick={() => setActiveTab('config')} className={`px-4 py-2 text-sm font-bold rounded-md transition flex items-center space-x-2 ${activeTab === 'config' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-                        <Settings2 size={16} /> <span>Configurations</span>
-                    </button>
-                    <button onClick={() => setActiveTab('balances')} className={`px-4 py-2 text-sm font-bold rounded-md transition flex items-center space-x-2 ${activeTab === 'balances' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}>
-                        <Wallet size={16} /> <span>Balances</span>
-                    </button>
-                </div>
-            </div>
+        <div className="max-w-7xl mx-auto p-4 md:p-6 relative">
 
-            {isLoading && <div className="text-center py-10 text-gray-500 font-bold">Loading Data...</div>}
-
-            {!isLoading && activeTab === 'tracker' && (
+            {isLoading ? (
+                <div className="text-center py-20 text-gray-500 font-bold animate-pulse">Loading Data...</div>
+            ) : (
                 <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden animate-in fade-in duration-300">
-                    <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
-                        <h3 className="font-bold text-gray-800">Global Leave Activity</h3>
+
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center p-6 border-b border-gray-100 bg-gray-50/30">
+                        <div>
+                            <h2 className="text-xl font-extrabold text-gray-800">Admin Control Center</h2>
+                            <p className="text-sm text-gray-500 mt-1">Manage org-wide leave activity and approvals.</p>
+                        </div>
+                        <div className="mt-4 md:mt-0 flex items-center space-x-2 bg-white px-4 py-2 rounded-lg border border-gray-200 text-gray-700 shadow-sm">
+                            <Activity size={16} className="text-indigo-600" />
+                            <span className="text-sm font-extrabold tracking-wide">Global Tracker</span>
+                        </div>
                     </div>
+
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead className="bg-white border-b border-gray-100">
                                 <tr className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                                    <th className="py-4 px-6">Employee</th>
-                                    <th className="py-4 px-6">Leave Details</th>
-                                    <th className="py-4 px-6 text-right">Status</th>
+                                    <th className="py-4 px-6 w-[25%]">Employee</th>
+                                    <th className="py-4 px-6 w-[35%]">Leave Details</th>
+                                    <th className="py-4 px-6 w-[15%]">Status</th>
+                                    <th className="py-4 px-6 w-[25%] text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                                 {allLeaves.length === 0 ? (
-                                    <tr><td colSpan={3} className="py-8 text-center text-gray-500">No leave applications found.</td></tr>
+                                    <tr><td colSpan={4} className="py-8 text-center text-gray-500">No leave applications found.</td></tr>
                                 ) : (
-                                    allLeaves.map((leave) => (
-                                        <tr key={leave.application_id} className="hover:bg-gray-50 transition">
-                                            <td className="py-4 px-6 font-bold text-gray-900">{leave.employee_id}</td>
-                                            <td className="py-4 px-6">
-                                                <span className="font-bold text-sm text-gray-800">{getLeaveName(leave.leave_type_id)}</span>
-                                                <span className="text-xs text-gray-500 block">
-                                                    {formatDate(leave.start_date)} – {formatDate(leave.end_date)} ({getDurationDays(leave.start_date, leave.end_date)} Days)
-                                                </span>
-                                            </td>
-                                            <td className="py-4 px-6 text-right">
-                                                <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs font-bold">{leave.status}</span>
-                                            </td>
-                                        </tr>
-                                    ))
+                                    allLeaves.map((leave) => {
+                                        const currentStatus = leave.status?.toUpperCase() || "";
+                                        const isPendingAction = currentStatus === "PENDING" || currentStatus === "PENDING_HR";
+                                        const daysCount = getDurationDays(leave.start_date, leave.end_date);
+
+                                        const empName = leave.employee?.name || (leave.employee?.first_name ? `${leave.employee.first_name} ${leave.employee.last_name || ''}`.trim() : null) || leave.employee_id;
+                                        const teamId = leave.employee?.team_id || "Unassigned";
+
+                                        return (
+                                            <tr key={leave.application_id} className={`hover:bg-gray-50 transition ${isPendingAction ? 'bg-amber-50/20' : ''}`}>
+                                                <td className="py-4 px-6">
+                                                    <div className="font-bold text-gray-900">{empName}</div>
+                                                    <div className="text-xs text-gray-500 mt-0.5">
+                                                        ID: <span className="font-semibold text-gray-600">{leave.employee_id}</span> • Team: {teamId}
+                                                    </div>
+                                                </td>
+                                                <td className="py-4 px-6">
+                                                    <span className="font-bold text-sm text-gray-800">{getLeaveName(leave.leave_type_id)}</span>
+                                                    <span className="text-xs text-gray-500 block mt-0.5">
+                                                        {formatDate(leave.start_date)} – {formatDate(leave.end_date)} ({daysCount} Day{daysCount > 1 ? 's' : ''})
+                                                    </span>
+                                                </td>
+                                                <td className="py-4 px-6">
+                                                    <span className={`px-2.5 py-1 rounded text-xs font-bold ${currentStatus === 'APPROVED' ? 'bg-green-100 text-green-700' :
+                                                        currentStatus === 'REJECTED' ? 'bg-red-100 text-red-700' :
+                                                            'bg-amber-100 text-amber-700'
+                                                        }`}>
+                                                        {currentStatus || "PENDING"}
+                                                    </span>
+                                                </td>
+                                                <td className="py-4 px-6">
+                                                    {isPendingAction ? (
+                                                        <div className="flex justify-center space-x-2">
+                                                            <button
+                                                                onClick={() => handleAction(leave.application_id, 'REJECTED')}
+                                                                className="px-3 py-1.5 border border-red-200 text-red-600 hover:bg-red-50 rounded-lg text-xs font-bold transition flex items-center space-x-1">
+                                                                <X size={14} /> <span>Reject</span>
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleAction(leave.application_id, 'APPROVED')}
+                                                                className="px-3 py-1.5 bg-gray-900 hover:bg-black text-white rounded-lg text-xs font-bold transition flex items-center space-x-1 shadow-sm">
+                                                                <Check size={14} /> <span>Approve</span>
+                                                            </button>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="flex justify-center">
+                                                            <span className="text-xs text-gray-400 font-medium italic">Action Completed</span>
+                                                        </div>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
                                 )}
                             </tbody>
                         </table>
@@ -197,117 +245,30 @@ export default function AdminDashboard() {
                 </div>
             )}
 
-            {!isLoading && activeTab === 'config' && (
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden animate-in fade-in duration-300">
-                    <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
-                        <h3 className="font-bold text-gray-800">Leave Policies & Setup</h3>
-                        <button onClick={() => setIsAddLeaveModalOpen(true)} className="bg-gray-900 text-white px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-gray-800 transition flex items-center space-x-1">
-                            <Plus size={14} /> <span>Add Leave Type</span>
-                        </button>
-                    </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead className="bg-white border-b border-gray-100">
-                                <tr className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                                    <th className="py-4 px-6">Leave Name</th>
-                                    <th className="py-4 px-6">Accrual Method</th>
-                                    <th className="py-4 px-6">Carry Forward</th>
-                                    <th className="py-4 px-6">Doc Threshold</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                {leaveTypes.map((type) => (
-                                    <tr key={type.leave_type_id} className="hover:bg-gray-50 transition">
-                                        <td className="py-4 px-6 font-bold text-gray-900 text-sm">{type.name}</td>
-                                        <td className="py-4 px-6 text-xs text-gray-700">{type.accrual_method}</td>
-                                        <td className="py-4 px-6 text-xs font-bold text-gray-800">{type.carry_forward_limit} Days</td>
-                                        <td className="py-4 px-6 text-xs text-orange-600 font-medium">{type.doc_required_threshold} Days</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            )}
-
-            {!isLoading && activeTab === 'balances' && (
-                <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden animate-in fade-in duration-300">
-                    <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
-                        <div>
-                            <h3 className="font-bold text-gray-800">Employee Leave Balances</h3>
-                            <p className="text-xs text-gray-500 mt-0.5">Allocate and manage entitled leaves for employees.</p>
-                        </div>
-                        <button onClick={() => setIsBalanceModalOpen(true)} className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-indigo-700 transition shadow-sm flex items-center space-x-1">
-                            <Plus size={14} /> <span>Allocate Balance</span>
-                        </button>
-                    </div>
-                    <div className="p-6">
-                        <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4 flex items-start space-x-4">
-                            <Lightbulb className="text-indigo-600 shrink-0 mt-0.5" size={24} />
-                            <div>
-                                <h4 className="font-bold text-indigo-900 text-sm">Quick Fix for "Leave Balance Not Found"</h4>
-                                <p className="text-xs text-indigo-700 mt-1">If managers face errors while approving leaves, make sure the employee has an active balance allocated here.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Modals are kept exactly the same (logic wise) */}
-            {isAddLeaveModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]">
-                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-[480px] overflow-hidden">
-                        <div className="p-8 pb-4"><h2 className="text-[20px] font-bold text-gray-900 mb-1">Create Leave Type</h2></div>
-                        <div className="px-8 space-y-4">
-                            <input type="text" value={leaveName} onChange={(e) => setLeaveName(e.target.value)} placeholder="Leave Name (e.g. Casual Leave)" className="w-full border rounded-xl px-4 py-2.5 text-sm outline-none focus:border-indigo-600" />
-                            <input type="text" value={accrualMethod} onChange={(e) => setAccrualMethod(e.target.value)} placeholder="Accrual Method" className="w-full border rounded-xl px-4 py-2.5 text-sm outline-none focus:border-indigo-600" />
-                            <input type="number" value={carryForwardLimit} onChange={(e) => setCarryForwardLimit(e.target.value)} placeholder="Carry Forward Limit" className="w-full border rounded-xl px-4 py-2.5 text-sm outline-none focus:border-indigo-600" />
-                            <input type="number" value={docThreshold} onChange={(e) => setDocThreshold(e.target.value)} placeholder="Doc Required Threshold" className="w-full border rounded-xl px-4 py-2.5 text-sm outline-none focus:border-indigo-600" />
-                        </div>
-                        <div className="p-8 pt-6 flex justify-end space-x-3 bg-gray-50 border-t mt-4">
-                            <button onClick={() => setIsAddLeaveModalOpen(false)} className="px-5 py-2.5 bg-white border rounded-xl text-sm font-semibold hover:bg-gray-100">Cancel</button>
-                            <button onClick={handleSaveLeaveType} className="px-5 py-2.5 bg-gray-900 text-white rounded-xl text-sm font-semibold hover:bg-gray-800">Save</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {isBalanceModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]">
-                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-[480px] overflow-hidden animate-in fade-in duration-200">
-                        <div className="p-6 pb-4 border-b">
-                            <h2 className="text-[18px] font-bold text-gray-900">Allocate Leave Balance</h2>
-                            <p className="text-xs text-gray-500">Post initial balance for an employee.</p>
-                        </div>
-                        <div className="p-6 space-y-4">
-                            <div>
-                                <label className="block text-xs font-bold text-gray-700 mb-1">Employee ID</label>
-                                <input type="text" value={targetEmployeeId} onChange={(e) => setTargetEmployeeId(e.target.value)} placeholder="e.g. EMP123" className="w-full border rounded-xl px-4 py-2 text-sm outline-none focus:border-indigo-600" />
+            {/* MODAL POPUP */}
+            {modalState.isOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px] px-4">
+                    <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className={`p-5 flex items-start space-x-4 border-b ${modalState.isError ? 'bg-red-50 border-red-100' : 'bg-emerald-50 border-emerald-100'}`}>
+                            <div className={`p-2 rounded-full ${modalState.isError ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'}`}>
+                                {modalState.isError ? <AlertCircle size={24} /> : <CheckCircle size={24} />}
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-700 mb-1">Leave Type</label>
-                                <select value={selectedLeaveTypeId} onChange={(e) => setSelectedLeaveTypeId(e.target.value)} className="w-full border rounded-xl px-4 py-2 text-sm bg-white outline-none focus:border-indigo-600">
-                                    {leaveTypes.map((type) => (
-                                        <option key={type.leave_type_id} value={type.leave_type_id}>{type.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-gray-700 mb-1">Year</label>
-                                <input type="number" value={allocateYear} onChange={(e) => setAllocateYear(e.target.value)} placeholder="e.g. 2026" className="w-full border rounded-xl px-4 py-2 text-sm outline-none focus:border-indigo-600" />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-gray-700 mb-1">Entitlement Balance (Days)</label>
-                                <input type="number" value={allocateBalanceValue} onChange={(e) => setAllocateBalanceValue(e.target.value)} placeholder="e.g. 12" className="w-full border rounded-xl px-4 py-2 text-sm outline-none focus:border-indigo-600" />
+                                <h3 className={`text-lg font-bold ${modalState.isError ? 'text-red-900' : 'text-emerald-900'}`}>{modalState.title}</h3>
+                                <p className={`text-sm mt-1 ${modalState.isError ? 'text-red-800' : 'text-emerald-800'}`}>{modalState.message}</p>
                             </div>
                         </div>
-                        <div className="p-4 px-6 flex justify-end space-x-3 bg-gray-50 border-t">
-                            <button onClick={() => setIsBalanceModalOpen(false)} className="px-4 py-2 bg-white border rounded-xl text-xs font-semibold hover:bg-gray-100">Cancel</button>
-                            <button onClick={handleAllocateBalance} className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold hover:bg-indigo-700 transition">Allocate</button>
+                        <div className="px-6 py-4 bg-gray-50 flex justify-end border-t border-gray-100">
+                            <button
+                                onClick={() => setModalState({ isOpen: false, title: "", message: "", isError: false })}
+                                className={`px-5 py-2 text-white rounded-xl text-sm font-bold shadow-sm transition ${modalState.isError ? 'bg-red-600 hover:bg-red-700' : 'bg-slate-900 hover:bg-black'}`}
+                            >
+                                OK
+                            </button>
                         </div>
                     </div>
                 </div>
             )}
         </div>
     );
-}
+} 

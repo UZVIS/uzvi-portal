@@ -8,7 +8,7 @@ class TeamBase(BaseModel):
 
 
 class TeamCreate(TeamBase):
-    team_id: str = Field(..., description="Primary unique team identifier")
+    team_id: Optional[str] = Field(None, description="Ignored - the server always auto-generates a TM### ID")
 
 
 class TeamResponse(TeamBase):
@@ -36,8 +36,8 @@ class EmployeeBase(BaseModel):
 
 
 class EmployeeCreate(EmployeeBase):
-    employee_id: str = Field(
-        ..., description="Primary alpha-numeric unique registration key"
+    employee_id: Optional[str] = Field(
+        None, description="Ignored - the server always auto-generates a unified EMP### ID"
     )
 
 

@@ -3,7 +3,6 @@ Leave Management (M2) Pydantic Schemas
 ======================================
 This module defines the Pydantic models used for data validation, 
 request payload parsing, and response serialization in the API layer.
-
 """
 
 from pydantic import BaseModel, Field, ConfigDict
@@ -14,11 +13,12 @@ from enum import Enum
 
 class LeaveStatusEnum(str, Enum):
     """
-    Enumeration for leave application statuses.
+    Enumeration representing the possible states of a leave application.
     """
     PENDING = "pending"
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
+    PENDING_HR = "PENDING_HR"
 
 
 # ==========================================
@@ -26,20 +26,14 @@ class LeaveStatusEnum(str, Enum):
 # ==========================================
 
 class LeaveTypeCreate(BaseModel):
-    """
-    Schema for creating a new leave type.
-    """
-    name: str = Field(..., description="Name of the leave (e.g., Casual Leave, Sick Leave)")
+    name: str = Field(..., description="Name of the leave type (e.g., Casual Leave, Sick Leave)")
     accrual_method: str
     carry_forward_limit: int
     doc_required_threshold: Optional[int] = None
+    requires_hr_approval: bool = False
 
 class LeaveTypeResponse(LeaveTypeCreate):
-    """
-    Schema for returning leave type details.
-    """
     leave_type_id: str
-
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -47,31 +41,49 @@ class LeaveTypeResponse(LeaveTypeCreate):
 # Leave Application Schemas
 # ==========================================
 
+class EmployeeBasicInfo(BaseModel):
+    """
+    Schema for fetching basic employee details from M0 without data duplication.
+    Ensure these fields match your M0 Employee model attributes.
+    """
+    employee_id: str
+    name: Optional[str] = None 
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    team_id: Optional[str] = None
+    gender: Optional[str] = "Male"
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class LeaveApplicationCreate(BaseModel):
-    """
-    Schema for an employee applying for a new leave.
-    """
     employee_id: str
     leave_type_id: str
     start_date: date
     end_date: date
 
+
 class LeaveApplicationResponse(LeaveApplicationCreate):
-    """
-    Schema for returning leave application details, including its current status.
-    """
     application_id: str
     status: LeaveStatusEnum
     approver_id: Optional[str] = None
     
+    # Appended Employee Details from M0 via joinedload
+    employee: Optional[EmployeeBasicInfo] = None
+    
     model_config = ConfigDict(from_attributes=True)
 
+
 class LeaveStatusUpdate(BaseModel):
-    """
-    Schema for managers to approve or reject a leave application.
-    """
-    status: LeaveStatusEnum = Field(..., description="Leave status (APPROVED or REJECTED)")
-    approver_id: str = Field(..., description="Employee ID of the manager taking action")
+    status: LeaveStatusEnum = Field(..., description="Target leave status action")
+    approver_id: str = Field(..., description="Employee ID of the actor executing the change")
+
+class LeaveApprovalResponse(BaseModel):
+    approved: bool
+    status: LeaveStatusEnum
+    warning: bool = False
+    percentage: Optional[float] = 0.0
+    message: str
 
 
 # ==========================================
@@ -79,20 +91,13 @@ class LeaveStatusUpdate(BaseModel):
 # ==========================================
 
 class LeaveBalanceCreate(BaseModel):
-    """
-    Schema for initializing or adding to an employee's leave balance wallet.
-    """
     employee_id: str
     leave_type_id: str
     year: int
     balance: int
 
 class LeaveBalanceResponse(LeaveBalanceCreate):
-    """
-    Schema for returning an employee's leave balance details.
-    """
     id: str
-
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -101,13 +106,9 @@ class LeaveBalanceResponse(LeaveBalanceCreate):
 # ==========================================
 
 class LeaveAuditLogResponse(BaseModel):
-    """
-    Schema for returning audit log entries to track the history of leave actions.
-    """
     log_id: str
     application_id: str
     actor_id: str
     action: str
     timestamp: datetime
-
     model_config = ConfigDict(from_attributes=True)
