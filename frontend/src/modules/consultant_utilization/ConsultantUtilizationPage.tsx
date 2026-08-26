@@ -18,6 +18,7 @@ import {
 
 import "./ConsultantUtilizationPage.css";
 
+
 /* =========================================================
    DATE HELPER
 
@@ -53,7 +54,9 @@ function toLocalISODate(d: Date): string {
    GET DATE N DAYS AGO
 ========================================================= */
 
-function isoDateNDaysAgo(n: number): string {
+function isoDateNDaysAgo(
+  n: number
+): string {
   const d = new Date();
 
   d.setDate(
@@ -61,6 +64,108 @@ function isoDateNDaysAgo(n: number): string {
   );
 
   return toLocalISODate(d);
+}
+
+
+/* =========================================================
+   FORMAT OT DECISION TIMESTAMP
+
+   Backend stores the decision timestamp in UTC.
+
+   Example backend value:
+
+   2026-08-26T05:19:00
+
+   This means:
+
+   05:19 UTC
+
+   India time:
+
+   10:49 AM IST
+
+   If the backend timestamp does not contain timezone
+   information, we explicitly treat it as UTC.
+
+   If it already contains:
+   - Z
+   - +05:30
+   - another timezone offset
+
+   we keep that timezone information.
+========================================================= */
+
+function formatDecisionTimestamp(
+  timestamp: string | null | undefined
+): string {
+  if (!timestamp) {
+    return "";
+  }
+
+  /*
+   * Check whether the timestamp already contains
+   * timezone information.
+   *
+   * Examples:
+   *
+   * 2026-08-26T05:19:00Z
+   * 2026-08-26T05:19:00+00:00
+   * 2026-08-26T10:49:00+05:30
+   */
+  const hasTimezone =
+    /(?:Z|[+-]\d{2}:\d{2})$/.test(
+      timestamp
+    );
+
+  /*
+   * If there is no timezone information,
+   * explicitly treat the timestamp as UTC.
+   *
+   * Example:
+   *
+   * 2026-08-26T05:19:00
+   *
+   * becomes:
+   *
+   * 2026-08-26T05:19:00Z
+   */
+  const normalizedTimestamp =
+    hasTimezone
+      ? timestamp
+      : `${timestamp}Z`;
+
+  const parsedDate =
+    new Date(
+      normalizedTimestamp
+    );
+
+  if (
+    Number.isNaN(
+      parsedDate.getTime()
+    )
+  ) {
+    return "";
+  }
+
+  /*
+   * Always display the decision time
+   * in India Standard Time.
+   */
+  return new Intl.DateTimeFormat(
+    "en-IN",
+    {
+      timeZone: "Asia/Kolkata",
+
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+
+      hour: "2-digit",
+      minute: "2-digit",
+
+      hour12: true,
+    }
+  ).format(parsedDate);
 }
 
 
@@ -92,8 +197,10 @@ export function ConsultantUtilizationPage() {
    * Employees that the logged-in user
    * is allowed to log hours for.
    */
-  const [timeEntryEmployees, setTimeEntryEmployees] =
-    useState<TimeEntryEmployee[]>([]);
+  const [
+    timeEntryEmployees,
+    setTimeEntryEmployees,
+  ] = useState<TimeEntryEmployee[]>([]);
 
   const [loading, setLoading] =
     useState(true);
@@ -186,7 +293,9 @@ export function ConsultantUtilizationPage() {
        UPDATE STATE
     ===================================================== */
 
-    setProjects(projectList);
+    setProjects(
+      projectList
+    );
 
     setDashboard(
       personalDashboard
@@ -244,14 +353,16 @@ export function ConsultantUtilizationPage() {
      LOG HOURS
   ======================================================= */
 
-  async function handleLogHours(entry: {
-    employeeId: string;
-    projectId: string;
-    date: string;
-    hours: number;
-    billable: boolean;
-    notes?: string;
-  }) {
+  async function handleLogHours(
+    entry: {
+      employeeId: string;
+      projectId: string;
+      date: string;
+      hours: number;
+      billable: boolean;
+      notes?: string;
+    }
+  ) {
 
     /*
      * Clear any old OT notice before creating
@@ -406,16 +517,16 @@ export function ConsultantUtilizationPage() {
   /* =======================================================
      DECISION DISPLAY HELPER
 
-     IMPORTANT:
-     Backend field is:
+     Backend fields:
 
        ot_decided_by_name
-
-     and:
-
        ot_decided_by_role
+       ot_decided_at
 
-     So we MUST use those exact fields.
+     Example:
+
+       Approved by Yeswanth
+       24 Aug 2026, 10:35 AM
   ======================================================= */
 
   function getDecisionDisplay(
@@ -803,17 +914,54 @@ export function ConsultantUtilizationPage() {
 
 
                     {/* =================================================
-                        DECIDED BY
-
-                        Uses:
-                          ot_decided_by_name
+                        DECIDED BY + TIMESTAMP
 
                         Example:
-                          Approved by Yeswanth
+
+                        Approved by Bharath
+                        21 Aug 2026, 10:35 AM
+
+                        Rejected by Bharath
+                        21 Aug 2026, 11:15 AM
                     ================================================= */}
 
                     <td>
-                      {getDecisionDisplay(entry)}
+
+                      {entry.ot_decided_by_name ? (
+
+                        <div>
+
+                          <div>
+                            {getDecisionDisplay(entry)}
+                          </div>
+
+                          {entry.ot_decided_at && (
+
+                            <div
+                              style={{
+                                fontSize: "12px",
+                                color: "#6b7280",
+                                marginTop: "4px",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+
+                              {formatDecisionTimestamp(
+                                entry.ot_decided_at
+                              )}
+
+                            </div>
+
+                          )}
+
+                        </div>
+
+                      ) : (
+
+                        "—"
+
+                      )}
+
                     </td>
 
 
