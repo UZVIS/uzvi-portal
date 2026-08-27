@@ -14,6 +14,11 @@
   color: #1f2430;
 }
 
+
+/* =========================================================
+   CATEGORY / AMOUNT / DATE ROW
+========================================================= */
+
 .claim-form__row {
   display: flex;
   gap: 14px;
@@ -39,7 +44,29 @@
   margin-bottom: 10px;
 }
 
-/* Style ALL inputs, selects and textareas */
+
+/* =========================================================
+   FIELD LABEL
+========================================================= */
+
+.claim-form__label {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.claim-form__optional {
+  color: #9aa1ab;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+
+/* =========================================================
+   INPUTS / SELECTS / TEXTAREAS
+========================================================= */
+
 .claim-form__row input,
 .claim-form__row select,
 .claim-form__field input,
@@ -56,20 +83,36 @@
   font-family: inherit;
 }
 
-/* Keep textarea resizable */
+
+/* =========================================================
+   TEXTAREA
+========================================================= */
+
 .claim-form__field textarea {
   resize: vertical;
   min-height: 80px;
 }
 
-/* Make file input look normal */
+
+/* =========================================================
+   FILE INPUT
+========================================================= */
+
 .claim-form__field input[type="file"] {
+  width: 100%;
   padding: 6px 0;
   border: none;
   background: transparent;
+  font-size: 14px;
+  color: #1f2430;
+  cursor: pointer;
 }
 
-/* Improve select appearance */
+
+/* =========================================================
+   SELECT
+========================================================= */
+
 .claim-form__field select,
 .claim-form__row select {
   appearance: auto;
@@ -77,6 +120,11 @@
   -moz-appearance: auto;
   cursor: pointer;
 }
+
+
+/* =========================================================
+   CHECKBOX
+========================================================= */
 
 .claim-form__checkbox {
   display: flex;
@@ -87,6 +135,11 @@
   margin-bottom: 8px;
 }
 
+
+/* =========================================================
+   HINT
+========================================================= */
+
 .claim-form__hint {
   font-size: 12px;
   color: #9aa1ab;
@@ -96,6 +149,11 @@
 .claim-form__hint--warn {
   color: #c9822b;
 }
+
+
+/* =========================================================
+   BUTTON
+========================================================= */
 
 .claim-form button {
   background: #F37021;
@@ -118,6 +176,11 @@
   cursor: default;
 }
 
+
+/* =========================================================
+   ERROR / SUCCESS
+========================================================= */
+
 .claim-form__error {
   color: #b8433a;
   font-size: 13px;
@@ -130,14 +193,10 @@
   margin-top: 10px;
 }
 
-/* Receipt file input */
-.claim-form__field input[type="file"] {
-  width: 100%;
-  font-size: 14px;
-  color: #1f2430;
-  cursor: pointer;
-}
 
+/* =========================================================
+   FILE SELECT BUTTON
+========================================================= */
 
 .claim-form__field input[type="file"]::file-selector-button {
   background: #F37021;
@@ -154,7 +213,6 @@
   background: #d95f16;
 }
 
-
 .claim-form__field input[type="file"]::-webkit-file-upload-button {
   background: #F37021;
   color: #fff;
@@ -164,4 +222,8 @@
   margin-right: 10px;
   cursor: pointer;
   font-weight: 600;
+}
+
+.claim-form__field input[type="file"]::-webkit-file-upload-button:hover {
+  background: #d95f16;
 }
