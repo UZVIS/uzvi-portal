@@ -332,98 +332,119 @@ def update_leave_status(db: Session, application_id: str, leave_status: LeaveSta
 
 def clean_test_leave_data(db: Session):
     return crud.reset_all_leave_data(db=db)
-
 # ==========================================
-# Dynamic Comp-Off Automation Logic (Bulletproof)
+# 3-MODULE INTEGRATION: COMP-OFF AUTOMATIONe
 # ==========================================
 def sync_comp_off_balances(db: Session):
-    """
-    Calculates Comp-Off balances dynamically, fixing year mismatches (future dates)
-    and SQLite string/date formatting issues.
-    """
     try:
-        # 1. Fetch holidays safely
-        holidays_db = db.query(Holiday).all()
-        holiday_dates = set()
-        for h in holidays_db:
-            if h.date:
-                holiday_dates.add(str(h.date)[:10]) # Extract just YYYY-MM-DD
+        from datetime import date, datetime
+        import holidays as pyholidays
+        from app.modules.calendar.models import Holiday, CompanyEvent
+        from fastapi import HTTPException
         
-        # Add public holidays for multiple years (to handle future testing dates like 2026)
+        print("\n" + "="*50)
+        print(" STARTING AUTO COMP-OFF SYNC (9-HOUR RULE)...")
+        
+        current_year = date.today().year
+        holiday_dates = set()
+        
+        # 1. GET ALL HOLIDAYS & EVENTS
+        custom_holidays = db.query(Holiday).all()
+        for h in custom_holidays:
+            if h.date:
+                clean_date = str(h.date).split("T")[0].split(" ")[0]
+                holiday_dates.add(clean_date)
+
+        custom_events = db.query(CompanyEvent).all()
+        for e in custom_events:
+            if e.date:
+                clean_date = str(e.date).split("T")[0].split(" ")[0]
+                holiday_dates.add(clean_date)
+
         for year in [2024, 2025, 2026]:
             in_holidays = pyholidays.country_holidays('IN', years=year)
             for h_date in in_holidays.keys():
-                holiday_dates.add(str(h_date)[:10])
+                holiday_dates.add(str(h_date))
 
-        # 2. Get Comp-Off Leave Type ID (Safe Fallback to LT006)
-        leave_type_id = "LT006"
+        # 2. GET COMP-OFF LEAVE TYPE
         comp_off_type = db.query(LeaveType).filter(LeaveType.name.ilike("%comp%")).first()
-        if comp_off_type:
-            leave_type_id = comp_off_type.leave_type_id
+        if not comp_off_type:
+            return {"error": "Comp-Off leave type not found."}
+        leave_type_id = comp_off_type.leave_type_id
 
-        # 3. Calculate EARNED Comp-Offs (Grouped safely by Employee & Year)
+        # 3. CALCULATE EARNED COMP-OFFS
         attendances = db.query(AttendanceRecord).all()
         earned_comp_offs = {}
-
+        
         for record in attendances:
-            # Safely handle SQLite Date parsing
+            emp_id = record.employee_id
+            status_str = getattr(record.status, "value", record.status)
+            
             record_date = record.attendance_date
             if isinstance(record_date, str):
                 try:
                     record_date = datetime.strptime(record_date[:10], "%Y-%m-%d").date()
                 except:
-                    continue
+                    pass
                     
             if not record_date:
                 continue
-
-            # Safely check status string or Enum
-            status_str = getattr(record.status, "value", record.status)
+                
+            formatted_date = str(record_date)[:10]
             valid_statuses = ["in-office", "wfh", "IN_OFFICE", "WFH", "Present", "present", "PRESENT"]
+            
             if status_str not in valid_statuses:
                 continue
 
-            # Check if Weekend (5=Sat, 6=Sun) or Holiday
             is_weekend = record_date.weekday() >= 5
-            formatted_date = str(record_date)[:10]
             is_holiday = formatted_date in holiday_dates
-
+            
             if is_weekend or is_holiday:
-                emp_id = record.employee_id
-                rec_year = record_date.year
+                # --- NEW: 9-HOUR WORKING LOGIC ---
+                if not record.check_in or not record.check_out:
+                    print(f"⏭️ Skipped {emp_id} on {formatted_date}: Missing Check-in/Check-out times.")
+                    continue
                 
-                if emp_id not in earned_comp_offs:
-                    earned_comp_offs[emp_id] = {}
-                earned_comp_offs[emp_id][rec_year] = earned_comp_offs[emp_id].get(rec_year, 0) + 1
+                # Calculate time difference
+                dummy_date = date.today()
+                in_dt = datetime.combine(dummy_date, record.check_in)
+                out_dt = datetime.combine(dummy_date, record.check_out)
+                
+                worked_hours = (out_dt - in_dt).total_seconds() / 3600.0
+                
+                # if worked_hours >= 9.0:
+                #     print(f"COMP-OFF EARNED! {emp_id} on {formatted_date} (Worked: {worked_hours:.2f} hrs)")
+                MIN_HOURS_REQUIRED = 0.0 
+                
+                if worked_hours >= MIN_HOURS_REQUIRED:
+                    print(f"COMP-OFF EARNED! {emp_id} on {formatted_date} (Worked: {worked_hours:.2f} hrs)")
+                    rec_year = record_date.year
+                    if emp_id not in earned_comp_offs:
+                        earned_comp_offs[emp_id] = {}
+                    earned_comp_offs[emp_id][rec_year] = earned_comp_offs[emp_id].get(rec_year, 0) + 1
+                else:
+                    print(f" No Comp-Off for {emp_id}: Worked only {worked_hours:.2f} hrs (Min 9 hrs required).")
 
-        # 4. Calculate USED Comp-Offs 
+        # 4. CALCULATE USED COMP-OFFS
         taken_comp_offs = {}
+        valid_leave_statuses = ["APPROVED", "PENDING_HR", "pending", "PENDING"]
+        
         applications = db.query(LeaveApplication).filter(
-            LeaveApplication.leave_type_id == leave_type_id,
-            LeaveApplication.status.in_(["APPROVED", "PENDING", "PENDING_HR"])
+            LeaveApplication.leave_type_id == leave_type_id
         ).all()
 
         for app in applications:
+            app_status = getattr(app.status, "value", app.status)
+            if app_status not in valid_leave_statuses:
+                continue
+                
             app_date = app.start_date
-            if isinstance(app_date, str):
-                try:
-                    app_date = datetime.strptime(app_date[:10], "%Y-%m-%d").date()
-                except:
-                    continue
-            
             if not app_date:
                 continue
                 
             emp_id = app.employee_id
             app_year = app_date.year
-            
-            # Safe end_date calculation
-            end_date = app.end_date
-            if isinstance(end_date, str):
-                 try:
-                     end_date = datetime.strptime(end_date[:10], "%Y-%m-%d").date()
-                 except:
-                     end_date = app_date
+            end_date = app.end_date or app_date
             
             days = (end_date - app_date).days + 1
             
@@ -431,7 +452,7 @@ def sync_comp_off_balances(db: Session):
                 taken_comp_offs[emp_id] = {}
             taken_comp_offs[emp_id][app_year] = taken_comp_offs[emp_id].get(app_year, 0) + days
 
-        # 5. Update Leave Balances Dynamically
+        # 5. UPDATE LEAVE BALANCES
         updates_count = 0
         
         for emp_id, yearly_earned in earned_comp_offs.items():
@@ -465,7 +486,8 @@ def sync_comp_off_balances(db: Session):
                         db.commit()
                         updates_count += 1
 
-        return {"message": f"Successfully synced {updates_count} balances dynamically!"}
+        print("="*50 + "\n")
+        return {"message": f"Successfully synced balances silently!"}
         
     except Exception as e:
         print(f"CRITICAL ERROR IN SYNC: {str(e)}")

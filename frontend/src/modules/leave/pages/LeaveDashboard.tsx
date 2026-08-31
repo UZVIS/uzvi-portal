@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { apiPost, apiGet } from "../../../api/client";
 import { useAuth } from "../../../shared/auth/AuthContext";
-import { CalendarPlus, Paperclip, Lock, Check, X, Clock, AlertCircle, CheckCircle, RefreshCw } from "lucide-react"; // Added RefreshCw
+import { CalendarPlus, Paperclip, Lock, Check, X, Clock, AlertCircle, CheckCircle } from "lucide-react";
 
 export default function LeaveDashboard() {
     const [isFormOpen, setIsFormOpen] = useState(false);
@@ -15,8 +15,6 @@ export default function LeaveDashboard() {
     const [endDate, setEndDate] = useState("");
     const [attachment, setAttachment] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const [isSyncing, setIsSyncing] = useState(false); // NEW STATE FOR SYNC
 
     // --- NEW: MODAL STATE FOR SUCCESS/ERROR POPUPS ---
     const [modalState, setModalState] = useState({
@@ -33,6 +31,14 @@ export default function LeaveDashboard() {
         if (!employeeId) return;
 
         try {
+            // --- NEW: SILENT BACKGROUND SYNC ---
+            // This runs instantly before fetching balances so user always sees the latest Comp-Off
+            try {
+                await apiPost('/v1/leave/sync-comp-offs', {});
+            } catch (syncError) {
+                console.warn("Silent Comp-Off sync failed in background", syncError);
+            }
+
             // 1. Fetch Balances First
             const balancesData = await apiGet(`/v1/leave/leave-balances/${employeeId}`);
             const balances = Array.isArray(balancesData) ? balancesData : [balancesData];
@@ -43,7 +49,7 @@ export default function LeaveDashboard() {
             const validTypes = Array.isArray(typesData) ? typesData : [];
             setLeaveTypes(validTypes);
 
-            // 3. Set Default Dropdown Value (Only from eligible leaves!)
+            // 3. Set Default Dropdown Value
             if (validTypes.length > 0 && balances.length > 0) {
                 const filteredTypes = validTypes.filter(type =>
                     balances.some(b => b.leave_type_id === type.leave_type_id)
@@ -79,36 +85,7 @@ export default function LeaveDashboard() {
         fetchDashboardData();
     }, [employeeId]);
 
-    // --- NEW: MANUAL SYNC FUNCTION ---
-    const handleSyncBalances = async () => {
-        setIsSyncing(true);
-        try {
-            // Force backend to calculate comp-offs dynamically
-            await apiPost('/v1/leave/sync-comp-offs', {});
-            // Re-fetch latest balances after calculation
-            await fetchDashboardData();
-
-            setModalState({
-                isOpen: true,
-                title: "Synced Successfully",
-                message: "Your leave balances have been refreshed with the latest data.",
-                isError: false
-            });
-        } catch (error) {
-            console.error("Error syncing balances:", error);
-            setModalState({
-                isOpen: true,
-                title: "Sync Failed",
-                message: "Unable to refresh balances. Please try again later.",
-                isError: true
-            });
-        } finally {
-            setIsSyncing(false);
-        }
-    };
-
     // --- PURE BACKEND DRIVEN LOGIC ---
-    // Only display leave types for which the backend has provided a balance. Independent of gender.
     const eligibleLeaveTypes = leaveTypes.filter(type =>
         leaveBalances.some(balance => balance.leave_type_id === type.leave_type_id)
     );
@@ -212,17 +189,12 @@ export default function LeaveDashboard() {
         if (new Date(startDate) < today) return;
         if (new Date(startDate) > new Date(endDate)) return;
 
-        // --- FIX: FRONTEND OVERLAPPING DATES CHECK ---
         const isOverlapping = leaveHistory.some((leave) => {
-            // Ignore rejected leaves in the overlap check
             if (leave.status?.toUpperCase() === "REJECTED") return false;
-
             const existingStart = new Date(leave.start_date).setHours(0, 0, 0, 0);
             const existingEnd = new Date(leave.end_date).setHours(23, 59, 59, 999);
             const newStart = new Date(startDate).setHours(0, 0, 0, 0);
             const newEnd = new Date(endDate).setHours(23, 59, 59, 999);
-
-            // Logic to check if the new dates overlap with any existing active leave
             return (newStart <= existingEnd && newEnd >= existingStart);
         });
 
@@ -230,25 +202,23 @@ export default function LeaveDashboard() {
             setModalState({
                 isOpen: true,
                 title: "Duplicate Leave Request",
-                message: "You already have an active leave request applied for these dates. Please choose different dates.",
+                message: "You already have an active leave request applied for these dates.",
                 isError: true
             });
-            return; // Stop execution here, no API call is made
+            return;
         }
-        // ---------------------------------------------
 
         if (isDocumentMandatory && !attachment) {
             setModalState({
                 isOpen: true,
                 title: "Document Required",
-                message: "Please attach a supporting document to proceed with this leave application.",
+                message: "Please attach a supporting document to proceed.",
                 isError: true
             });
             return;
         }
 
         if (!employeeId) return;
-
         setIsSubmitting(true);
 
         const leaveData = {
@@ -264,41 +234,27 @@ export default function LeaveDashboard() {
             if (attachment && response?.application_id) {
                 const fileDataUrl = await fileToDataUrl(attachment);
                 const storedDocs = JSON.parse(localStorage.getItem("leaveDocuments") || "{}");
-
                 storedDocs[response.application_id] = {
                     fileName: attachment.name,
                     fileType: attachment.type,
                     fileData: fileDataUrl,
                     uploadedAt: new Date().toISOString()
                 };
-
                 localStorage.setItem("leaveDocuments", JSON.stringify(storedDocs));
             }
 
-            const updatedMyApps = await apiGet(`/v1/leave/applications?employee_id=${employeeId}&role=Employee`);
-            setLeaveHistory(Array.isArray(updatedMyApps) ? updatedMyApps : []);
-
-            await fetchDashboardData(); // Refresh balances after applying leave
-
+            await fetchDashboardData();
             resetForm();
 
-            // --- SUCCESS MODAL TRIGGER ---
             setModalState({
                 isOpen: true,
                 title: "Leave Applied",
-                message: "Your leave request has been submitted successfully and is pending review.",
+                message: "Your leave request has been submitted successfully.",
                 isError: false
             });
 
         } catch (error: any) {
-            console.error("Error submitting leave:", error);
-
-            // Extra safety to catch and display backend error messages clearly
-            const errorMsg = error?.response?.data?.detail
-                || error?.message
-                || (typeof error === 'string' ? error : "An error occurred while submitting your leave request. Please try again.");
-
-            // --- ERROR MODAL TRIGGER ---
+            const errorMsg = error?.response?.data?.detail || "An error occurred while submitting your request.";
             setModalState({
                 isOpen: true,
                 title: "Submission Failed",
@@ -325,17 +281,7 @@ export default function LeaveDashboard() {
                     <p className="text-sm text-gray-500 mt-1">Manage your balances and track upcoming time off.</p>
                 </div>
 
-                {/* --- NEW BUTTONS SECTION --- */}
                 <div className="flex items-center space-x-3 mt-4 md:mt-0">
-                    <button
-                        onClick={handleSyncBalances}
-                        disabled={isSyncing}
-                        className="bg-white border border-gray-300 text-gray-700 px-4 py-2.5 rounded-lg font-semibold hover:bg-gray-50 transition flex items-center space-x-2 shadow-sm disabled:opacity-50"
-                    >
-                        <RefreshCw size={18} className={isSyncing ? "animate-spin text-blue-600" : ""} />
-                        <span>{isSyncing ? "Syncing..." : "Sync Balances"}</span>
-                    </button>
-
                     <button onClick={() => setIsFormOpen(true)} className="bg-gray-900 text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-gray-800 transition flex items-center space-x-2 shadow-md">
                         <CalendarPlus size={18} />
                         <span>Request Leave</span>
