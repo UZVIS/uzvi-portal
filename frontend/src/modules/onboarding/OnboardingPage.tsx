@@ -8,6 +8,8 @@ import {
   listTasksForTemplate,
   createTemplate,
   addTask,
+  updateTask,
+  deleteTask,
   startOnboarding,
   getInstance,
   getInstanceForEmployee,
@@ -178,6 +180,30 @@ export function OnboardingPage() {
     }));
   }
 
+  async function handleUpdateTask(
+    taskId: string,
+    input: { name?: string; responsible_role?: string; expected_days?: number; required_doc_type?: string }
+  ) {
+    if (!employee) return;
+    const updated = await updateTask(taskId, input, employee.employee_id);
+    setTasksByTemplate((prev) => ({
+      ...prev,
+      [updated.template_id]: (prev[updated.template_id] ?? []).map((t) => (t.task_id === taskId ? updated : t)),
+    }));
+  }
+
+  async function handleDeleteTask(taskId: string) {
+    if (!employee) return;
+    await deleteTask(taskId, employee.employee_id);
+    setTasksByTemplate((prev) => {
+      const next: typeof prev = {};
+      for (const [templateId, tasks] of Object.entries(prev)) {
+        next[templateId] = tasks.filter((t) => t.task_id !== taskId);
+      }
+      return next;
+    });
+  }
+
   function handleEmployeeChange(employeeId: string) {
     setSelectedEmployeeId(employeeId);
     setInstance(null);
@@ -276,6 +302,8 @@ export function OnboardingPage() {
             tasksByTemplate={tasksByTemplate}
             onCreateTemplate={handleCreateTemplate}
             onAddTask={handleAddTask}
+            onUpdateTask={handleUpdateTask}
+            onDeleteTask={handleDeleteTask}
           />
         )}
         <InstanceTracker

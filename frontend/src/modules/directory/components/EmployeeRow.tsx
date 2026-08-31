@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿﻿import { useState } from "react";
 import type { Employee, Team } from "../api";
 
 interface EmployeeRowProps {
@@ -32,6 +32,9 @@ export function EmployeeRow({
   onUpdate,
   canManage,
 }: EmployeeRowProps) {
+  const isLastActiveAdmin =
+    employee.access_tier === "Admin/Leadership" &&
+    employees.filter((e) => e.access_tier === "Admin/Leadership").length <= 1;
   const [isEditing, setIsEditing] = useState(false);
   const [designation, setDesignation] = useState(employee.designation ?? "");
   const [teamId, setTeamId] = useState(employee.team_id ?? "");
@@ -187,6 +190,8 @@ export function EmployeeRow({
           <button
             className="button-secondary directory-row__exit-btn"
             onClick={() => onExit(employee.employee_id)}
+            disabled={isLastActiveAdmin}
+            title={isLastActiveAdmin ? "Cannot exit the last active Admin - promote another employee to Admin/Leadership first." : undefined}
           >
             Mark exited
           </button>
@@ -206,5 +211,5 @@ export function managerNameFor(
   employees: { employee_id: string; name: string }[]
 ): string | null {
   if (!managerId) return null;
-  return employees.find((e) => e.employee_id === managerId)?.name ?? managerId;
+  return employees.find((e) => e.employee_id === managerId)?.name ?? null;
 }

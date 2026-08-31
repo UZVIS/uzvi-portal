@@ -202,3 +202,19 @@ def test_check_document_exists_by_unrelated_employee_raises(db):
 
         service.check_document_exists(db, "EMP001", "offer_letter", "EMP002")
 
+
+
+def test_list_all_documents_for_hr_succeeds(db):
+    service.create_document(
+        db, DocumentCreate(employee_id="EMP001", uploaded_by="EMP001", doc_type="id_proof")
+    )
+    service.create_document(
+        db, DocumentCreate(employee_id="EMP002", uploaded_by="EMP003", doc_type="payslip")
+    )
+    all_docs = service.list_all_documents_for_hr(db, "EMP003")
+    assert len(all_docs) == 2
+
+
+def test_list_all_documents_for_hr_by_non_hr_raises(db):
+    with pytest.raises(service.NotAuthorized):
+        service.list_all_documents_for_hr(db, "EMP001")

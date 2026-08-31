@@ -1,4 +1,4 @@
-import pytest
+﻿import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -74,7 +74,10 @@ def test_create_employee_unknown_requester_raises(db, admin):
 
 
 def test_exited_requester_can_no_longer_manage(db, admin):
-    service.mark_employee_exited(db, admin, admin)
+    second_admin = service.create_employee(
+        db, EmployeeCreate(name="Second Admin", access_tier="Admin/Leadership"), admin
+    )
+    service.mark_employee_exited(db, admin, second_admin.employee_id)
     with pytest.raises(service.NotAuthorized):
         service.create_employee(db, EmployeeCreate(name="Should Fail"), admin)
 
@@ -190,3 +193,30 @@ def test_team_ids_auto_generate_in_sequence(db):
     b = service.create_team(db, TeamCreate(name="Engineering"))
     assert a.team_id == "TM001"
     assert b.team_id == "TM002"
+
+def test_exit_last_active_admin_raises(db, admin):
+    with pytest.raises(service.LastAdminError):
+        service.mark_employee_exited(db, admin, admin)
+
+
+def test_exit_admin_with_another_active_admin_succeeds(db, admin):
+    second_admin = service.create_employee(
+        db, EmployeeCreate(name="Second Admin", access_tier="Admin/Leadership"), admin
+    )
+    exited = service.mark_employee_exited(db, admin, second_admin.employee_id)
+    assert exited.employment_status == "exited"
+
+
+def test_demote_last_active_admin_raises(db, admin):
+    with pytest.raises(service.LastAdminError):
+        service.update_employee(db, admin, EmployeeUpdate(access_tier="Employee"), admin)
+
+
+def test_demote_admin_with_another_active_admin_succeeds(db, admin):
+    second_admin = service.create_employee(
+        db, EmployeeCreate(name="Second Admin", access_tier="Admin/Leadership"), admin
+    )
+    updated = service.update_employee(
+        db, admin, EmployeeUpdate(access_tier="Employee"), second_admin.employee_id
+    )
+    assert updated.access_tier == "Employee"

@@ -1,4 +1,4 @@
-
+﻿
 from sqlalchemy.orm import Session
 
 from app.modules.directory.models import Employee, Team
@@ -74,6 +74,10 @@ class InvalidManager(Exception):
     pass
 
 
+class LastAdminError(Exception):
+    pass
+
+
 def _validate_manager_id(db: Session, manager_id: str | None, employee_id: str | None) -> None:
     if manager_id is None:
         return
@@ -137,6 +141,26 @@ def update_employee(
     if "manager_id" in update_data:
         _validate_manager_id(db, update_data["manager_id"], employee_id=employee_id)
 
+    if (
+        "access_tier" in update_data
+        and update_data["access_tier"] != "Admin/Leadership"
+        and employee.access_tier == "Admin/Leadership"
+        and employee.employment_status == "active"
+    ):
+        other_active_admins = (
+            db.query(Employee)
+            .filter(
+                Employee.access_tier == "Admin/Leadership",
+                Employee.employment_status == "active",
+                Employee.employee_id != employee_id,
+            )
+            .count()
+        )
+        if other_active_admins == 0:
+            raise LastAdminError(
+                "Cannot change the last active Admin's tier - promote another employee to Admin/Leadership first."
+            )
+
     for field, value in update_data.items():
         setattr(employee, field, value)
 
@@ -151,6 +175,21 @@ def mark_employee_exited(db: Session, employee_id: str, requester_id: str) -> Em
     employee = get_employee(db, employee_id)
     if not employee:
         raise EmployeeNotFound(employee_id)
+
+    if employee.access_tier == "Admin/Leadership" and employee.employment_status == "active":
+        other_active_admins = (
+            db.query(Employee)
+            .filter(
+                Employee.access_tier == "Admin/Leadership",
+                Employee.employment_status == "active",
+                Employee.employee_id != employee_id,
+            )
+            .count()
+        )
+        if other_active_admins == 0:
+            raise LastAdminError(
+                "Cannot exit the last active Admin - promote another employee to Admin/Leadership first."
+            )
 
     employee.employment_status = "exited"
     db.commit()
