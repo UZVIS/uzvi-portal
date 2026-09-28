@@ -1,415 +1,169 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, AlertTriangle } from "lucide-react";
 
-import { helpdeskApi } from "./api";
-import type { Ticket } from "./types";
 import { useAuth } from "../../shared/auth/AuthContext";
-import { isHelpdeskPrivileged } from "./roles";
-import { HelpdeskToast } from "./components/HelpdeskToast";
-
+import { Toast } from "../../shared/components/Toast";
+import { getTicket, updateTicketStatus, reassignTicket, addComment, formatTicketId, type Ticket, type TicketStatus } from "./api";
+import { CommentThread } from "./components/CommentThread";
+import { StatusControls } from "./components/StatusControls";
+import { ReassignControl } from "./components/ReassignControl";
+import "../shared-theme.css";
 import "./TicketDetailsPage.css";
 
+const PRIVILEGED_TIERS = new Set(["Manager", "Admin/Leadership", "HR-Restricted"]);
+
+const PRIORITY_BADGE: Record<string, string> = {
+  High: "status-badge--danger",
+  Medium: "status-badge--warning",
+  Low: "status-badge--muted",
+};
+
+const STATUS_BADGE: Record<string, string> = {
+  Open: "status-badge--info",
+  "In Progress": "status-badge--warning",
+  Resolved: "status-badge--success",
+  Closed: "status-badge--muted",
+};
+
 export default function TicketDetailsPage() {
-  const { ticketId } = useParams();
-  const navigate = useNavigate();
+  const { ticketId } = useParams<{ ticketId: string }>();
   const { employee } = useAuth();
+  const navigate = useNavigate();
+  const ticketIdNum = Number(ticketId);
+  const employeeId = employee?.employee_id;
+
+  const isPrivileged = employee ? PRIVILEGED_TIERS.has(employee.access_tier) : false;
 
   const [ticket, setTicket] = useState<Ticket | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const [selectedStatus, setSelectedStatus] =
-    useState("");
+  const isRaiser = !!(employee && ticket && employee.employee_id === ticket.raised_by);
+  const isAssignee = !!(employee && ticket && employee.employee_id === ticket.assigned_to);
+  const canComment = isRaiser || isAssignee || isPrivileged;
 
-  const [assignedTo, setAssignedTo] =
-    useState("");
-
-  const [saving, setSaving] = useState(false);
-
-  const [comment, setComment] =
-    useState("");
-
-  const [toast, setToast] = useState<
-    { message: string; kind: "success" | "error" } | null
-  >(null);
-
-  // Mirrors the backend rule in change_ticket_status: only a privileged
-  // tier or the ticket's assigned owner may update status/assignment
-  // (FR-HLP-05). Everyone else gets a read-only view of this ticket.
-  const privileged = isHelpdeskPrivileged(employee?.access_tier);
-  const canManage =
-    !!ticket &&
-    (privileged || employee?.employee_id === ticket.assigned_to);
+  const loadTicket = useCallback(async () => {
+    if (!employeeId || !Number.isFinite(ticketIdNum)) return;
+    setIsLoading(true);
+    setError(null);
+    try {
+      setTicket(await getTicket(ticketIdNum, employeeId));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "That ticket wasn't found.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [employeeId, ticketIdNum]);
 
   useEffect(() => {
-    async function loadTicket() {
-      if (!ticketId) return;
+    void loadTicket();
+  }, [loadTicket]);
 
-      try {
-        const data =
-          await helpdeskApi.getTicket(
-            Number(ticketId)
-          );
-
-        setTicket(data);
-        setSelectedStatus(data.status);
-        setAssignedTo(
-          data.assigned_to ?? ""
-        );
-      } catch (err) {
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Failed to load ticket."
-        );
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadTicket();
-  }, [ticketId]);
-
-  async function handleStatusUpdate() {
-    if (!ticket) return;
-
+  async function handleStatusChange(status: TicketStatus) {
+    if (!employee) return;
     try {
-      setSaving(true);
-
-      const updatedTicket =
-        await helpdeskApi.updateTicket(
-          ticket.ticket_id,
-          {
-            status: selectedStatus,
-            assigned_to:
-              assignedTo.trim() || null,
-          }
-        );
-
-      setTicket(updatedTicket);
-
-      setSelectedStatus(
-        updatedTicket.status
-      );
-
-      setAssignedTo(
-        updatedTicket.assigned_to ?? ""
-      );
-
-      setToast({
-        message: "Ticket updated successfully.",
-        kind: "success",
-      });
+      await updateTicketStatus(ticketIdNum, status, employee.employee_id);
+      await loadTicket();
     } catch (err) {
-      setToast({
-        message:
-          err instanceof Error
-            ? err.message
-            : "Failed to update ticket.",
-        kind: "error",
-      });
-    } finally {
-      setSaving(false);
+      setError(err instanceof Error ? err.message : "Could not update the status.");
     }
   }
 
-  async function handleAddComment() {
-    if (!ticket) return;
-
-    if (!employee?.employee_id) {
-      setToast({
-        message: "You need to be signed in to comment.",
-        kind: "error",
-      });
-      return;
-    }
-
-    if (!comment.trim()) {
-      setToast({
-        message: "Please enter a comment.",
-        kind: "error",
-      });
-      return;
-    }
-
+  async function handleReassign(assignedTo: string) {
+    if (!employee) return;
     try {
-      await helpdeskApi.addComment(
-        ticket.ticket_id,
-        {
-          author_id: employee.employee_id,
-          comment,
-        }
-      );
-
-      setComment("");
-
-      const updatedTicket =
-        await helpdeskApi.getTicket(
-          ticket.ticket_id
-        );
-
-      setTicket(updatedTicket);
-
-      setToast({
-        message: "Comment added successfully.",
-        kind: "success",
-      });
+      await reassignTicket(ticketIdNum, assignedTo, employee.employee_id);
+      await loadTicket();
     } catch (err) {
-      setToast({
-        message:
-          err instanceof Error
-            ? err.message
-            : "Failed to add comment.",
-        kind: "error",
-      });
+      setError(err instanceof Error ? err.message : "Could not reassign the ticket.");
     }
   }
 
-  if (loading) {
-    return (
-      <div className="ticket-details-page">
-        Loading ticket...
-      </div>
-    );
+  async function handleAddComment(comment: string) {
+    if (!employee) return;
+    try {
+      await addComment(ticketIdNum, comment, employee.employee_id);
+      await loadTicket();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not add the comment.");
+    }
   }
 
-  if (error) {
+  if (isLoading) {
     return (
-      <div className="ticket-details-page">
-        {error}
+      <div className="directory-page uzvi-portal-theme">
+        <p className="directory-row__muted">Loading...</p>
       </div>
     );
   }
 
   if (!ticket) {
     return (
-      <div className="ticket-details-page">
-        Ticket not found.
+      <div className="directory-page uzvi-portal-theme">
+        {error && <Toast message={error} kind="error" onDismiss={() => setError(null)} />}
+        <p className="directory-row__muted">That ticket wasn't found.</p>
       </div>
     );
   }
 
   return (
-    <div className="ticket-details-page">
-
-      {toast && (
-        <HelpdeskToast
-          message={toast.message}
-          kind={toast.kind}
-          onDismiss={() => setToast(null)}
-        />
-      )}
-
-      <button
-        className="back-button"
-        onClick={() =>
-          navigate("/helpdesk")
-        }
-      >
-        ← Back to Tickets
+    <div className="directory-page uzvi-portal-theme">
+      <button type="button" className="button-secondary back-button" onClick={() => navigate("/helpdesk")}>
+        <ArrowLeft size={14} /> Back to Helpdesk
       </button>
 
-      <div className="details-card">
-
-        <h1>
-          Ticket #{ticket.ticket_id}
-        </h1>
-
-        <div className="details-grid">
-
-          <div className="detail-item">
-            <span>Category</span>
-            <strong>
-              {ticket.category}
-            </strong>
+      <header className="directory-page__header">
+        <div>
+          <h1>Ticket {formatTicketId(ticket.ticket_id)}</h1>
+          <div className="ticket-details__badges">
+            <span className="status-badge status-badge--info">{ticket.category}</span>
+            <span className={`status-badge ${PRIORITY_BADGE[ticket.priority]}`}>{ticket.priority}</span>
+            <span className={`status-badge ${STATUS_BADGE[ticket.status]}`}>{ticket.status}</span>
           </div>
-
-          <div className="detail-item">
-            <span>Priority</span>
-
-            <span
-              className={`priority-badge ${ticket.priority.toLowerCase()}`}
-            >
-              {ticket.priority}
-            </span>
-          </div>
-
-          <div className="detail-item">
-            <span>Status</span>
-
-            <span
-              className={`status-badge ${
-                ticket.status.toLowerCase() ===
-                "open"
-                  ? "open"
-                  : ticket.status
-                      .toLowerCase()
-                      .includes(
-                        "progress"
-                      )
-                  ? "progress"
-                  : "resolved"
-              }`}
-            >
-              {ticket.status}
-            </span>
-          </div>
-
-          <div className="detail-item">
-            <span>SLA Status</span>
-
-            {ticket.sla_breached ? (
-              <span className="sla-badge breached">
-                SLA Breached
-              </span>
-            ) : (
-              <span className="status-badge resolved">
-                Within SLA
-              </span>
-            )}
-          </div>
-
-          <div className="detail-item">
-            <span>Raised By</span>
-
-            <strong>
-              {ticket.raised_by}
-            </strong>
-          </div>
-
-          <div className="detail-item">
-            <span>
-              Assigned To
-            </span>
-
-            {canManage ? (
-              <input
-                type="text"
-                value={assignedTo}
-                placeholder="Assign employee"
-                onChange={(e) =>
-                  setAssignedTo(
-                    e.target.value
-                  )
-                }
-              />
-            ) : (
-              <strong>
-                {ticket.assigned_to || "Unassigned"}
-              </strong>
-            )}
-          </div>
-
         </div>
+      </header>
 
-      </div>
-            <div className="description-card">
-        <h2>Description</h2>
+      {error && <Toast message={error} kind="error" onDismiss={() => setError(null)} />}
 
-        <p>{ticket.description}</p>
-      </div>
-
-      {canManage ? (
-        <div className="status-update-card">
-          <h2>Update Ticket</h2>
-
-          <div className="form-group">
-            <label>Status</label>
-
-            <select
-              value={selectedStatus}
-              onChange={(e) =>
-                setSelectedStatus(
-                  e.target.value
-                )
-              }
-            >
-              <option value="Open">
-                Open
-              </option>
-
-              <option value="In Progress">
-                In Progress
-              </option>
-
-              <option value="Resolved">
-                Resolved
-              </option>
-            </select>
-          </div>
-
-          <button
-            className="save-button"
-            onClick={handleStatusUpdate}
-            disabled={saving}
-          >
-            {saving
-              ? "Saving..."
-              : "Save Changes"}
-          </button>
-        </div>
-      ) : (
-        <div className="status-update-card readonly-note">
-          <h2>Update Ticket</h2>
-          <p>
-            Only the assigned owner or a Manager/Admin-Leadership/HR-Restricted
-            account can change this ticket's status or assignment.
-          </p>
+      {ticket.sla_breached && (
+        <div className="ticket-details__sla-banner">
+          <AlertTriangle size={16} />
+          This ticket has breached its SLA response window.
         </div>
       )}
 
-      <div className="comments-card">
-        <h2>Comments</h2>
+      <section className="directory-page__list">
+        <h2 className="directory-form__title">Description</h2>
+        <p className="ticket-details__description">{ticket.description}</p>
+        <dl className="ticket-details__meta">
+          <dt>Raised by</dt>
+          <dd>{ticket.raised_by}</dd>
+          <dt>Assigned to</dt>
+          <dd>{ticket.assigned_to ?? "Unassigned"}</dd>
+          <dt>Created</dt>
+          <dd>{new Date(ticket.created_at).toLocaleString()}</dd>
+          <dt>Last updated</dt>
+          <dd>{new Date(ticket.updated_at).toLocaleString()}</dd>
+        </dl>
+      </section>
 
-        {ticket.comments.length === 0 ? (
-          <p>No comments yet.</p>
-        ) : (
-          <div className="comments-list">
-            {ticket.comments.map(
-              (item) => (
-                <div
-                  key={item.comment_id}
-                  className="comment-item"
-                >
-                  <div className="comment-header">
-                    <strong>
-                      {item.author_id}
-                    </strong>
-
-                    <span>
-                      {new Date(
-                        item.created_at
-                      ).toLocaleString()}
-                    </span>
-                  </div>
-
-                  <p>{item.comment}</p>
-                </div>
-              )
-            )}
-          </div>
-        )}
-
-        <div className="comment-form">
-          <textarea
-            placeholder="Write a comment..."
-            value={comment}
-            onChange={(e) =>
-              setComment(
-                e.target.value
-              )
-            }
-            rows={4}
+      {isPrivileged && (
+        <section className="directory-page__list">
+          <h2 className="directory-form__title">Manage</h2>
+          <StatusControls status={ticket.status} onChange={handleStatusChange} />
+          <ReassignControl
+            currentAssignee={ticket.assigned_to}
+            viewerId={employeeId}
+            onReassign={handleReassign}
           />
+        </section>
+      )}
 
-          <button
-            className="save-button"
-            onClick={handleAddComment}
-          >
-            Add Comment
-          </button>
-        </div>
-      </div>
+      <section className="directory-page__list">
+        <h2 className="directory-form__title">Activity</h2>
+        <CommentThread comments={ticket.comments} canComment={canComment} onAddComment={handleAddComment} />
+      </section>
     </div>
   );
 }

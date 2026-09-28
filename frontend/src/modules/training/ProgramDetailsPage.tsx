@@ -1,421 +1,286 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { trainingApi } from "./api";
-import type { Enrollment, TrainingUnit, UnitCompletion } from "./types";
-import "./ProgramDetailsPage.css";
+import { ArrowLeft, Trash2 } from "lucide-react";
+
 import { useAuth } from "../../shared/auth/AuthContext";
-import { isTrainingAdmin } from "./roles";
+import { Toast } from "../../shared/components/Toast";
+import {
+  getProgram,
+  listMyEnrollments,
+  createEnrollment,
+  createUnit,
+  deleteUnit,
+  updateUnit,
+  deleteProgram,
+  completeUnit,
+  deleteCompletion,
+  formatProgramId,
+  type TrainingProgram,
+  type Enrollment,
+} from "./api";
+import { UnitList } from "./components/UnitList";
+import "../shared-theme.css";
+import "./ProgramDetailsPage.css";
+
+const ADMIN_TIERS = new Set(["Admin/Leadership"]);
 
 export default function ProgramDetailsPage() {
-  const navigate = useNavigate();
-  const { programId } = useParams();
+  const { programId } = useParams<{ programId: string }>();
   const { employee } = useAuth();
-  // FR-LMS-01: only Admin/Leadership may add units to a program.
-  const admin = isTrainingAdmin(employee?.access_tier);
-  const [units, setUnits] = useState<TrainingUnit[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [unitName, setUnitName] = useState("");
-  const [sequence, setSequence] = useState("");
-  const [creating, setCreating] = useState(false);
-  const [createError, setCreateError] = useState("");
+  const navigate = useNavigate();
+  const programIdNum = Number(programId);
+  const employeeId = employee?.employee_id;
 
-  // Unit completion is self-tracked here: opening a unit marks it complete
-  // automatically, with a manual "Mark Complete" button next to each unit
-  // as a fallback in case the automatic marking doesn't fire (e.g. a slow
-  // network request). The button also doubles as an undo action, in case
-  // a unit gets marked complete by accident.
-  const [ownEnrollment, setOwnEnrollment] = useState<Enrollment | null>(null);
-  const [completedUnits, setCompletedUnits] = useState<Map<number, number>>(new Map());
-  const [completingUnitId, setCompletingUnitId] = useState<number | null>(null);
-  const [completionError, setCompletionError] = useState("");
+  const isAdmin = employee ? ADMIN_TIERS.has(employee.access_tier) : false;
 
-  async function loadUnits() {
-    if (!programId) {
-      return;
-    }
+  const [program, setProgram] = useState<TrainingProgram | null>(null);
+  const [myEnrollment, setMyEnrollment] = useState<Enrollment | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
+  const loadAll = useCallback(async () => {
+    if (!employeeId || !Number.isFinite(programIdNum)) return;
+    setIsLoading(true);
+    setError(null);
     try {
-      setLoading(true);
-
-      const data = await trainingApi.listUnits(
-        Number(programId)
-      );
-
-      setUnits(data);
-      setError("");
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to load training units."
-      );
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleCreateUnit() {
-    if (!unitName.trim()) {
-      setCreateError("Unit name is required.");
-      return;
-    }
-
-    if (unitName.trim().length < 2) {
-      setCreateError(
-        "Unit name must be at least 2 characters."
-      );
-      return;
-    }
-
-    if (!sequence.trim()) {
-      setCreateError("Sequence is required.");
-      return;
-    }
-
-    const sequenceNumber = Number(sequence);
-
-    if (
-      Number.isNaN(sequenceNumber) ||
-      sequenceNumber <= 0
-    ) {
-      setCreateError(
-        "Sequence must be greater than 0."
-      );
-      return;
-    }
-
-    try {
-      setCreating(true);
-      setCreateError("");
-
-      await trainingApi.createUnit(
-        Number(programId),
-        {
-          name: unitName.trim(),
-          sequence: sequenceNumber,
-        }
-      );
-
-      setUnitName("");
-      setSequence("");
-      setShowCreateForm(false);
-
-      await loadUnits();
-    } catch (err) {
-      setCreateError(
-        err instanceof Error
-          ? err.message
-          : "Failed to create training unit."
-      );
-    } finally {
-      setCreating(false);
-    }
-  }
-
-  useEffect(() => {
-    loadUnits();
-  }, [programId]);
-
-  useEffect(() => {
-    loadOwnCompletionState();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [programId, employee?.employee_id]);
-
-  async function loadOwnCompletionState() {
-    if (!programId || !employee?.employee_id || admin) {
-      // Admin/Leadership defines training rather than taking it, so they
-      // never have an enrollment or completions to track here.
-      return;
-    }
-
-    try {
-      const [enrollments, completions] = await Promise.all([
-        trainingApi.listEnrollments(),
-        trainingApi.listCompletions(),
+      const [prog, enrollments] = await Promise.all([
+        getProgram(programIdNum, employeeId),
+        listMyEnrollments(employeeId),
       ]);
-
-      const enrollment = enrollments.find(
-        (item: Enrollment) =>
-          item.program_id === Number(programId) &&
-          item.employee_id === employee.employee_id
-      );
-
-      setOwnEnrollment(enrollment ?? null);
-
-      if (enrollment) {
-        const completedMap = new Map(
-          completions
-            .filter(
-              (completion: UnitCompletion) =>
-                completion.enrollment_id === enrollment.enrollment_id
-            )
-            .map((completion: UnitCompletion) => [
-              completion.unit_id,
-              completion.completion_id,
-            ])
-        );
-        setCompletedUnits(completedMap);
-      } else {
-        setCompletedUnits(new Map());
-      }
-    } catch {
-      // Non-fatal: the units list still renders even if completion status
-      // can't be loaded right now.
-    }
-  }
-
-  async function markUnitComplete(unit: TrainingUnit) {
-    if (!ownEnrollment || completedUnits.has(unit.unit_id)) {
-      return;
-    }
-
-    setCompletionError("");
-    setCompletingUnitId(unit.unit_id);
-
-    try {
-      const completion = await trainingApi.completeUnit({
-        enrollment_id: ownEnrollment.enrollment_id,
-        unit_id: unit.unit_id,
-      });
-
-      setCompletedUnits((prev) => {
-        const next = new Map(prev);
-        next.set(unit.unit_id, completion.completion_id);
-        return next;
-      });
+      setProgram(prog);
+      setMyEnrollment(enrollments.find((e) => e.program_id === programIdNum) ?? null);
     } catch (err) {
-      setCompletionError(
-        err instanceof Error
-          ? err.message
-          : "Failed to mark unit complete."
-      );
+      setError(err instanceof Error ? err.message : "Could not load this program.");
     } finally {
-      setCompletingUnitId(null);
+      setIsLoading(false);
     }
-  }
+  }, [employeeId, programIdNum]);
 
-  // Fallback for an accidental completion — undoes it so the unit goes
-  // back to "not completed".
-  async function markUnitIncomplete(unit: TrainingUnit) {
-    const completionId = completedUnits.get(unit.unit_id);
+  useEffect(() => {
+    void loadAll();
+  }, [loadAll]);
 
-    if (!completionId) {
-      return;
-    }
-
-    setCompletionError("");
-    setCompletingUnitId(unit.unit_id);
-
+  async function handleEnroll() {
+    if (!employee) return;
     try {
-      await trainingApi.deleteCompletion(completionId);
-
-      setCompletedUnits((prev) => {
-        const next = new Map(prev);
-        next.delete(unit.unit_id);
-        return next;
-      });
+      await createEnrollment(programIdNum, employee.employee_id);
+      await loadAll();
     } catch (err) {
-      setCompletionError(
-        err instanceof Error
-          ? err.message
-          : "Failed to mark unit incomplete."
-      );
-    } finally {
-      setCompletingUnitId(null);
+      setError(err instanceof Error ? err.message : "Could not enroll in this program.");
     }
   }
 
-  // Opening a unit that isn't completed yet is treated as completing the
-  // lesson, so it's marked complete automatically. Once completed,
-  // re-opening it does nothing on its own — undoing has to be a deliberate
-  // click on the "Mark as Incomplete" button, not an accidental re-click
-  // on the row.
-  function handleOpenUnit(unit: TrainingUnit) {
-    if (!completedUnits.has(unit.unit_id)) {
-      markUnitComplete(unit);
+  async function handleAddUnit(name: string, sequence: number) {
+    if (!employee) return;
+    try {
+      await createUnit(programIdNum, name, sequence, employee.employee_id);
+      setSuccess(`Unit "${name}" was added.`);
+      await loadAll();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not add the unit.");
     }
   }
 
-  const sortedUnits = useMemo(() => {
-    return [...units].sort(
-      (a, b) => a.sequence - b.sequence
-    );
-  }, [units]);
+  async function handleDeleteUnit(unitId: number) {
+    if (!employee) return;
+    if (!window.confirm("Delete this unit? This can't be undone.")) return;
+    try {
+      await deleteUnit(unitId, employee.employee_id);
+      await loadAll();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not delete the unit.");
+    }
+  }
 
-  if (loading) {
+  async function handleUpdateUnit(unitId: number, name: string, sequence: number) {
+    if (!employee) return;
+    try {
+      await updateUnit(unitId, { name, sequence }, employee.employee_id);
+      setSuccess("Unit updated.");
+      await loadAll();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not update the unit.");
+    }
+  }
+
+  async function handleCompleteUnit(unitId: number, score?: number) {
+    if (!employee || !myEnrollment) return;
+    try {
+      await completeUnit(myEnrollment.enrollment_id, unitId, employee.employee_id, score);
+      await loadAll();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not mark that unit complete.");
+    }
+  }
+
+  async function handleUndoCompletion(completionId: number) {
+    if (!employee) return;
+    try {
+      await deleteCompletion(completionId, employee.employee_id);
+      await loadAll();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not undo that completion.");
+    }
+  }
+
+  async function handleDeleteProgram() {
+    if (!employee || !program) return;
+    if (!window.confirm(`Delete "${program.name}"? This can't be undone.`)) return;
+    try {
+      await deleteProgram(programIdNum, employee.employee_id);
+      navigate("/training");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not delete this program.");
+    }
+  }
+
+  if (isLoading) {
     return (
-      <div className="training-loading">
-        Loading training units...
+      <div className="directory-page uzvi-portal-theme">
+        <p className="directory-row__muted">Loading...</p>
       </div>
     );
   }
 
-  if (error) {
+  if (!program) {
     return (
-      <div className="training-error">
-        {error}
+      <div className="directory-page uzvi-portal-theme">
+        {error && <Toast message={error} kind="error" onDismiss={() => setError(null)} />}
+        <p className="directory-row__muted">That training program wasn't found.</p>
       </div>
     );
   }
 
   return (
-    <div className="program-details-page">
-
-      <button
-        className="back-button"
-        onClick={() => navigate("/training")}
-      >
-        ← Back
+    <div className="directory-page uzvi-portal-theme">
+      <button type="button" className="button-secondary back-button" onClick={() => navigate("/training")}>
+        <ArrowLeft size={14} /> Back to Training
       </button>
 
-      <h2>
-        Program #{programId}
-      </h2>
-
-      <div className="training-card">
-
-        <div className="training-card-header">
-          <h3>Training Units</h3>
-          {admin && (
-            <button
-              className="create-program-button"
-              onClick={() =>
-                setShowCreateForm(!showCreateForm)
-              }
-            >
-              {showCreateForm
-                ? "Cancel"
-                : "+ Add Unit"}
-            </button>
-          )}
+      <header className="directory-page__header">
+        <div>
+          <h1>{program.name}</h1>
+          <p className="directory-row__id">{formatProgramId(program.program_id)}</p>
+          <p className="directory-page__subtitle">
+            {program.units.length} unit{program.units.length === 1 ? "" : "s"}
+          </p>
         </div>
-        {admin && showCreateForm && (
-          <div className="create-program-form">
-
-            <input
-              type="text"
-              placeholder="Unit name"
-              value={unitName}
-              onChange={(e) => {
-                setUnitName(e.target.value);
-
-                if (createError) {
-                  setCreateError("");
-                }
-              }}
-            />
-
-            <input
-              type="number"
-              placeholder="Sequence"
-              value={sequence}
-              onChange={(e) => {
-                setSequence(e.target.value);
-
-                if (createError) {
-                  setCreateError("");
-                }
-              }}
-            />
-
-            {createError && (
-              <p className="form-error">
-                {createError}
-              </p>
-            )}
-
-            <button
-              onClick={handleCreateUnit}
-              disabled={creating}
-            >
-              {creating
-                ? "Saving..."
-                : "Save"}
-            </button>
-
-          </div>
+        {isAdmin && (
+          <button
+            type="button"
+            className="button-secondary program-details__delete"
+            onClick={handleDeleteProgram}
+          >
+            <Trash2 size={14} /> Delete program
+          </button>
         )}
+      </header>
 
-        <div className="units-table-header">
-          <span>Order</span>
-          <span>Title</span>
-          {!admin && <span>Status</span>}
+      {error && <Toast message={error} kind="error" onDismiss={() => setError(null)} />}
+      {success && <Toast message={success} kind="success" onDismiss={() => setSuccess(null)} />}
+
+      {myEnrollment ? (
+        <section className="directory-page__list">
+          <h2 className="directory-form__title">Your progress</h2>
+          <div className="progress-bar">
+            <div className="progress-bar__fill" style={{ width: `${myEnrollment.completion_pct}%` }} />
+            <span className="progress-bar__label">
+              {myEnrollment.completed_units} / {myEnrollment.total_units} (
+              {Math.round(myEnrollment.completion_pct)}%)
+            </span>
+          </div>
+        </section>
+      ) : (
+        <section className="directory-page__list">
+          <div className="enroll-prompt">
+            <p className="directory-row__muted">You're not enrolled in this program yet.</p>
+            <button type="button" className="button-primary" onClick={handleEnroll}>
+              Enroll
+            </button>
+          </div>
+        </section>
+      )}
+
+      <section className="directory-page__list">
+        <div className="directory-page__list-header">
+          <h2>Units</h2>
         </div>
 
-        {completionError && (
-          <p className="form-error">{completionError}</p>
+        {isAdmin && (
+          <AddUnitForm
+            onAdd={handleAddUnit}
+            nextSequence={
+              program.units.length > 0 ? Math.max(...program.units.map((u) => u.sequence)) + 1 : 1
+            }
+          />
         )}
 
-        {sortedUnits.length === 0 ? (
-          <div className="empty-state">
-            <h4>No units found</h4>
-            <p>
-              This program doesn't have any
-              training units yet.
-            </p>
-          </div>
-        ) : (
-          sortedUnits.map((unit) => {
-            const isCompleted = completedUnits.has(unit.unit_id);
-            const isCompleting = completingUnitId === unit.unit_id;
-
-            return (
-              <div
-                key={unit.unit_id}
-                className={
-                  "units-table-row" +
-                  (!admin && ownEnrollment ? " units-table-row-clickable" : "")
-                }
-                onClick={
-                  !admin && ownEnrollment
-                    ? () => handleOpenUnit(unit)
-                    : undefined
-                }
-              >
-                <div>{unit.sequence}</div>
-
-                <div>{unit.name}</div>
-
-                {!admin && (
-                  <div
-                    className="unit-status-cell"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {!ownEnrollment ? (
-                      <span className="unit-status-muted">
-                        Enroll to track
-                      </span>
-                    ) : (
-                      <button
-                        className={
-                          "mark-complete-inline-button" +
-                          (isCompleted ? " completed" : "")
-                        }
-                        onClick={() =>
-                          isCompleted
-                            ? markUnitIncomplete(unit)
-                            : markUnitComplete(unit)
-                        }
-                        disabled={isCompleting}
-                      >
-                        {isCompleting
-                          ? "Saving..."
-                          : isCompleted
-                          ? "✓ Mark as Incomplete"
-                          : "Mark Complete"}
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })
-        )}
-
-      </div>
-
+        <UnitList
+          units={program.units}
+          enrollment={myEnrollment}
+          isAdmin={isAdmin}
+          onDeleteUnit={handleDeleteUnit}
+          onCompleteUnit={handleCompleteUnit}
+          onUndoCompletion={handleUndoCompletion}
+          onUpdateUnit={handleUpdateUnit}
+        />
+      </section>
     </div>
+  );
+}
+
+function AddUnitForm({
+  onAdd,
+  nextSequence,
+}: {
+  onAdd: (name: string, sequence: number) => void | Promise<void>;
+  nextSequence: number;
+}) {
+  const [name, setName] = useState("");
+  const [sequence, setSequence] = useState(String(nextSequence));
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Keep the suggested order in sync as units are added - the admin can
+  // still type over it, this is just a sensible starting point.
+  useEffect(() => {
+    setSequence(String(nextSequence));
+  }, [nextSequence]);
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    const trimmedName = name.trim();
+    const seqNum = Number(sequence);
+    if (!trimmedName || !Number.isFinite(seqNum)) return;
+    setIsSubmitting(true);
+    try {
+      await onAdd(trimmedName, seqNum);
+      setName("");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <form className="template-builder__row" onSubmit={handleSubmit}>
+      <input
+        className="field__input"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Unit name"
+        required
+      />
+      <input
+        className="field__input unit-form__sequence"
+        type="number"
+        value={sequence}
+        onChange={(e) => setSequence(e.target.value)}
+        placeholder="Order (1, 2, 3...)"
+        required
+      />
+      <button type="submit" className="button-primary" disabled={isSubmitting}>
+        Add unit
+      </button>
+    </form>
   );
 }

@@ -1,239 +1,107 @@
-from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.modules.directory.models import Employee
-from app.modules.helpdesk.dependencies import (
-    PRIVILEGED_TIERS,
-    get_current_employee,
-)
-from app.modules.helpdesk.models import Ticket, TicketComment
-from app.modules.helpdesk.schemas import (
-    TicketCommentCreate,
-    TicketCommentResponse,
-    TicketCreate,
-    TicketResponse,
-    TicketUpdate,
-)
-from app.modules.helpdesk.service import (
-    OPEN_STATUSES,
-    add_comment,
-    create_ticket,
-    get_all_tickets,
-    get_ticket,
-    pick_resolver,
-    update_ticket,
-)
+from app.modules.helpdesk import schemas, service
+from app.modules.helpdesk.dependencies import get_current_employee, require_privileged
 
-router = APIRouter(
-    prefix="/api/helpdesk",
-    tags=["Helpdesk"],
-)
-
-# FR-HLP-02: pool of resolver employee_ids to auto-assign per category
-# when the caller doesn't already specify one. Categories currently
-# offered by the frontend (CreateTicketPage.tsx) are used as keys here;
-# fill in real employee_ids as HR/IT/Facilities ownership is decided.
-# create_helpdesk_ticket() picks the least-loaded *active* employee from
-# the list (see service.pick_resolver); an empty list, or a list with no
-# active employees left in it, leaves the ticket unassigned for manual
-# triage - same as today's behavior.
-CATEGORY_RESOLVERS: dict[str, list[str]] = {
-    "Hardware": ["EMP004", "EMP005"],
-    "Software": [],
-    "Network": [],
-    "Access": [],
-    "Email": [],
-    "Other": [],
-}
-
-# FR-HLP-06: SLA breach threshold in hours per priority. A priority not
-# listed here falls back to DEFAULT_SLA_THRESHOLD_HOURS.
-SLA_THRESHOLD_HOURS: dict[str, float] = {
-    "High": 8,
-    "Medium": 24,
-    "Low": 72,
-}
-DEFAULT_SLA_THRESHOLD_HOURS = 24
+router = APIRouter(prefix="/api/v1/helpdesk", tags=["helpdesk"])
 
 
-def _serialize_ticket(ticket: Ticket) -> TicketResponse:
-    """
-    Build a TicketResponse from a Ticket ORM object, computing the
-    sla_breached flag (FR-HLP-06) instead of relying on a stored column.
-    """
-    threshold = SLA_THRESHOLD_HOURS.get(
-        ticket.priority, DEFAULT_SLA_THRESHOLD_HOURS
-    )
-    age_hours = (
-        datetime.utcnow() - ticket.created_at
-    ).total_seconds() / 3600
-    sla_breached = (
-        ticket.status in OPEN_STATUSES and age_hours > threshold
-    )
-
-    return TicketResponse(
+def _to_ticket_out(ticket) -> schemas.TicketOut:
+    return schemas.TicketOut(
         ticket_id=ticket.ticket_id,
         raised_by=ticket.raised_by,
         category=ticket.category,
         priority=ticket.priority,
         status=ticket.status,
-        description=ticket.description,
         assigned_to=ticket.assigned_to,
+        description=ticket.description,
         created_at=ticket.created_at,
         updated_at=ticket.updated_at,
-        comments=[
-            TicketCommentResponse.model_validate(c)
-            for c in ticket.comments
-        ],
-        sla_breached=sla_breached,
+        sla_breached=service.is_sla_breached(ticket),
+        comments=ticket.comments,
     )
 
 
-@router.post(
-    "/tickets",
-    response_model=TicketResponse,
-    status_code=201,
-)
-def create_helpdesk_ticket(
-    ticket_in: TicketCreate,
+@router.post("/tickets", response_model=schemas.TicketOut)
+def create_ticket(
+    payload: schemas.TicketCreate,
     db: Session = Depends(get_db),
     current_employee: Employee = Depends(get_current_employee),
 ):
-    ticket_data = ticket_in.model_dump()
-
-    if not ticket_data.get("assigned_to"):
-        candidates = CATEGORY_RESOLVERS.get(ticket_data["category"], [])
-        ticket_data["assigned_to"] = pick_resolver(db, candidates)
-
-    ticket = Ticket(**ticket_data)
-    ticket = create_ticket(db, ticket)
-    return _serialize_ticket(ticket)
-
-
-@router.get(
-    "/tickets",
-    response_model=list[TicketResponse],
-)
-def list_helpdesk_tickets(
-    category: Optional[str] = None,
-    priority: Optional[str] = None,
-    status: Optional[str] = None,
-    min_age_hours: Optional[float] = None,
-    db: Session = Depends(get_db),
-    current_employee: Employee = Depends(get_current_employee),
-):
-    tickets = get_all_tickets(
-        db,
-        category=category,
-        priority=priority,
-        status=status,
-        min_age_hours=min_age_hours,
+    ticket = service.create_ticket(
+        db, current_employee.employee_id, payload.category, payload.priority, payload.description
     )
-
-    if current_employee.access_tier not in PRIVILEGED_TIERS:
-        tickets = [
-            t for t in tickets
-            if t.raised_by == current_employee.employee_id
-        ]
-
-    return [_serialize_ticket(t) for t in tickets]
+    return _to_ticket_out(ticket)
 
 
-@router.get(
-    "/tickets/{ticket_id}",
-    response_model=TicketResponse,
-)
-def get_helpdesk_ticket(
+# NOTE: "/tickets/me" and "/tickets/queue" are registered BEFORE the generic
+# "/tickets/{ticket_id}" wildcard, per the route-ordering rule already
+# learned in this project - a specific path must come before a wildcard.
+
+@router.get("/tickets/me", response_model=list[schemas.TicketOut])
+def list_my_tickets(
+    db: Session = Depends(get_db),
+    current_employee: Employee = Depends(get_current_employee),
+):
+    tickets = service.list_my_tickets(db, current_employee.employee_id)
+    return [_to_ticket_out(t) for t in tickets]
+
+
+@router.get("/tickets/queue", response_model=list[schemas.TicketOut])
+def list_queue(
+    category: Optional[schemas.Category] = Query(default=None),
+    priority: Optional[schemas.Priority] = Query(default=None),
+    status: Optional[schemas.Status] = Query(default=None),
+    min_age_hours: Optional[float] = Query(default=None, ge=0),
+    db: Session = Depends(get_db),
+    _: Employee = Depends(require_privileged),
+):
+    tickets = service.list_queue(db, category, priority, status, min_age_hours)
+    return [_to_ticket_out(t) for t in tickets]
+
+
+@router.get("/tickets/{ticket_id}", response_model=schemas.TicketOut)
+def get_ticket(
     ticket_id: int,
     db: Session = Depends(get_db),
     current_employee: Employee = Depends(get_current_employee),
 ):
-    ticket = get_ticket(db, ticket_id)
-
-    if not ticket:
-        raise HTTPException(
-            status_code=404,
-            detail="Ticket not found.",
-        )
-
-    if (
-        current_employee.access_tier not in PRIVILEGED_TIERS
-        and current_employee.employee_id != ticket.raised_by
-        and current_employee.employee_id != ticket.assigned_to
-    ):
-        raise HTTPException(
-            status_code=403,
-            detail="You can only view tickets you raised or are assigned to.",
-        )
-
-    return _serialize_ticket(ticket)
+    ticket = service.get_ticket_for_viewer(db, ticket_id, current_employee)
+    return _to_ticket_out(ticket)
 
 
-@router.patch(
-    "/tickets/{ticket_id}/status",
-    response_model=TicketResponse,
-)
-def change_ticket_status(
+@router.patch("/tickets/{ticket_id}/status", response_model=schemas.TicketOut)
+def update_status(
     ticket_id: int,
-    ticket_in: TicketUpdate,
+    payload: schemas.TicketStatusUpdate,
+    db: Session = Depends(get_db),
+    current_employee: Employee = Depends(require_privileged),
+):
+    ticket = service.update_status(db, ticket_id, payload.status, current_employee)
+    return _to_ticket_out(ticket)
+
+
+@router.patch("/tickets/{ticket_id}/assign", response_model=schemas.TicketOut)
+def reassign_ticket(
+    ticket_id: int,
+    payload: schemas.TicketReassign,
+    db: Session = Depends(get_db),
+    current_employee: Employee = Depends(require_privileged),
+):
+    ticket = service.reassign_ticket(db, ticket_id, payload.assigned_to, current_employee)
+    return _to_ticket_out(ticket)
+
+
+@router.post("/tickets/{ticket_id}/comments", response_model=schemas.CommentOut)
+def add_comment(
+    ticket_id: int,
+    payload: schemas.CommentCreate,
     db: Session = Depends(get_db),
     current_employee: Employee = Depends(get_current_employee),
 ):
-    ticket = get_ticket(db, ticket_id)
-
-    if not ticket:
-        raise HTTPException(
-            status_code=404,
-            detail="Ticket not found.",
-        )
-
-    if (
-        current_employee.access_tier not in PRIVILEGED_TIERS
-        and current_employee.employee_id != ticket.assigned_to
-    ):
-        raise HTTPException(
-            status_code=403,
-            detail="Only the assigned owner or an Admin/Manager/HR-Restricted account can update this ticket.",
-        )
-
-    updated = update_ticket(
-        db,
-        ticket,
-        ticket_in.status,
-        ticket_in.assigned_to,
-    )
-    return _serialize_ticket(updated)
-
-
-@router.post(
-    "/tickets/{ticket_id}/comments",
-    response_model=TicketCommentResponse,
-    status_code=201,
-)
-def create_ticket_comment(
-    ticket_id: int,
-    comment_in: TicketCommentCreate,
-    db: Session = Depends(get_db),
-    current_employee: Employee = Depends(get_current_employee),
-):
-    ticket = get_ticket(db, ticket_id)
-
-    if not ticket:
-        raise HTTPException(
-            status_code=404,
-            detail="Ticket not found.",
-        )
-
-    comment = TicketComment(
-        ticket_id=ticket_id,
-        **comment_in.model_dump(),
-    )
-
-    return add_comment(
-        db,
-        comment,
-    )
+    return service.add_comment(db, ticket_id, current_employee, payload.comment)

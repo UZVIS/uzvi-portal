@@ -1,128 +1,224 @@
-import type {
-  TrainingProgram,
-  TrainingProgramCreate,
-  TrainingUnit,
-  TrainingUnitCreate,
-  Enrollment,
-  EnrollmentCreate,
-  UnitCompletion,
-  UnitCompletionCreate,
-  Progress,
-  CohortProgress,
-} from "./types";
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "";
+const BASE_PATH = `${API_BASE}/api/v1/training`;
 
-const API_BASE = "/api/training";
-const EMPLOYEE_ID_STORAGE_KEY = "uzvi_portal_employee_id";
-
-function authHeaders(): HeadersInit {
-  const employeeId = localStorage.getItem(EMPLOYEE_ID_STORAGE_KEY);
-  return employeeId ? { "X-Employee-Id": employeeId } : {};
+/** Cosmetic-only display formatting matching the app's EMP001/T001 convention.
+ * The real identifier used for API calls and routing is always the plain
+ * numeric id - this only changes how it's shown to the user. */
+export function formatProgramId(programId: number): string {
+  return `PRG${String(programId).padStart(3, "0")}`;
 }
 
-async function request<T>(
-  path: string,
-  options?: RequestInit
-): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...authHeaders(),
-    },
-    ...options,
-  });
-
-  if (!response.ok) {
-    const body = await response.text().catch(() => "");
-
-    let message = "Request failed.";
-
-    try {
-      const data = JSON.parse(body);
-      message = data.detail ?? message;
-    } catch {
-      // Ignore if the response isn't JSON
-    }
-
+async function handle<T>(res: Response, notFoundMessage: string): Promise<T> {
+  if (res.status === 404) {
+    throw new Error(notFoundMessage);
+  }
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    const detail = body?.detail;
+    const message =
+      typeof detail === "string"
+        ? detail
+        : JSON.stringify(detail ?? "Something went wrong. Try again.");
     throw new Error(message);
   }
-
-  if (response.status === 204) {
+  if (res.status === 204) {
     return undefined as T;
   }
-
-  return response.json() as Promise<T>;
+  return res.json();
 }
 
-export const trainingApi = {
-  // Programs
-  listPrograms: () =>
-    request<TrainingProgram[]>("/programs"),
+function authHeaders(employeeId: string): HeadersInit {
+  return { "X-Employee-Id": employeeId };
+}
 
-  createProgram: (data: TrainingProgramCreate) =>
-    request<TrainingProgram>("/programs", {
-      method: "POST",
-      body: JSON.stringify(data),
+function jsonHeaders(employeeId: string): HeadersInit {
+  return { "Content-Type": "application/json", "X-Employee-Id": employeeId };
+}
+
+export interface TrainingUnit {
+  unit_id: number;
+  program_id: number;
+  name: string;
+  sequence: number;
+}
+
+export interface TrainingProgram {
+  program_id: number;
+  name: string;
+  units: TrainingUnit[];
+}
+
+export interface UnitCompletion {
+  completion_id: number;
+  enrollment_id: number;
+  unit_id: number;
+  completed_at: string;
+  score: number | null;
+}
+
+export interface Enrollment {
+  enrollment_id: number;
+  employee_id: string;
+  employee_name: string | null;
+  program_id: number;
+  enrolled_at: string;
+  total_units: number;
+  completed_units: number;
+  completion_pct: number;
+  completions: UnitCompletion[];
+}
+
+export interface CohortEmployeeProgress {
+  employee_id: string;
+  employee_name: string | null;
+  total_units: number;
+  completed_units: number;
+  completion_pct: number;
+  flagged_behind: boolean;
+}
+
+export interface CohortProgress {
+  program_id: number;
+  program_name: string;
+  total_units: number;
+  median_completion_pct: number;
+  employees: CohortEmployeeProgress[];
+}
+
+/** GET /api/v1/training/programs - list all programs, any authenticated employee */
+export function listPrograms(employeeId: string): Promise<TrainingProgram[]> {
+  return fetch(`${BASE_PATH}/programs`, { headers: authHeaders(employeeId) }).then((r) =>
+    handle(r, "Could not load training programs.")
+  );
+}
+
+/** GET /api/v1/training/programs/{id} */
+export function getProgram(programId: number, employeeId: string): Promise<TrainingProgram> {
+  return fetch(`${BASE_PATH}/programs/${programId}`, { headers: authHeaders(employeeId) }).then(
+    (r) => handle(r, "That training program wasn't found.")
+  );
+}
+
+/** POST /api/v1/training/programs - Admin/Leadership only */
+export function createProgram(name: string, employeeId: string): Promise<TrainingProgram> {
+  return fetch(`${BASE_PATH}/programs`, {
+    method: "POST",
+    headers: jsonHeaders(employeeId),
+    body: JSON.stringify({ name }),
+  }).then((r) => handle(r, "Could not create the program."));
+}
+
+/** DELETE /api/v1/training/programs/{id} - Admin/Leadership only, blocked if it has enrollments */
+export function deleteProgram(programId: number, employeeId: string): Promise<void> {
+  return fetch(`${BASE_PATH}/programs/${programId}`, {
+    method: "DELETE",
+    headers: authHeaders(employeeId),
+  }).then((r) => handle(r, "That training program wasn't found."));
+}
+
+/** POST /api/v1/training/programs/{id}/units - Admin/Leadership only */
+export function createUnit(
+  programId: number,
+  name: string,
+  sequence: number,
+  employeeId: string
+): Promise<TrainingUnit> {
+  return fetch(`${BASE_PATH}/programs/${programId}/units`, {
+    method: "POST",
+    headers: jsonHeaders(employeeId),
+    body: JSON.stringify({ name, sequence }),
+  }).then((r) => handle(r, "That training program wasn't found."));
+}
+
+/** DELETE /api/v1/training/units/{id} - Admin/Leadership only, blocked if it has completions */
+export function deleteUnit(unitId: number, employeeId: string): Promise<void> {
+  return fetch(`${BASE_PATH}/units/${unitId}`, {
+    method: "DELETE",
+    headers: authHeaders(employeeId),
+  }).then((r) => handle(r, "That training unit wasn't found."));
+}
+
+/** PATCH /api/v1/training/units/{id} - Admin/Leadership only, name and/or sequence */
+export function updateUnit(
+  unitId: number,
+  input: { name?: string; sequence?: number },
+  employeeId: string
+): Promise<TrainingUnit> {
+  return fetch(`${BASE_PATH}/units/${unitId}`, {
+    method: "PATCH",
+    headers: jsonHeaders(employeeId),
+    body: JSON.stringify(input),
+  }).then((r) => handle(r, "That training unit wasn't found."));
+}
+
+/** POST /api/v1/training/enrollments - self-enroll, or Admin/Leadership enrolling someone else */
+export function createEnrollment(
+  programId: number,
+  employeeId: string,
+  targetEmployeeId?: string
+): Promise<Enrollment> {
+  return fetch(`${BASE_PATH}/enrollments`, {
+    method: "POST",
+    headers: jsonHeaders(employeeId),
+    body: JSON.stringify({
+      program_id: programId,
+      ...(targetEmployeeId ? { employee_id: targetEmployeeId } : {}),
     }),
+  }).then((r) => handle(r, "That training program wasn't found."));
+}
 
-  // Units
-  listUnits: (programId: number) =>
-    request<TrainingUnit[]>(
-      `/programs/${programId}/units`
-    ),
+/** GET /api/v1/training/enrollments/me */
+export function listMyEnrollments(employeeId: string): Promise<Enrollment[]> {
+  return fetch(`${BASE_PATH}/enrollments/me`, { headers: authHeaders(employeeId) }).then((r) =>
+    handle(r, "Could not load your enrollments.")
+  );
+}
 
-  createUnit: (
-    programId: number,
-    data: TrainingUnitCreate
-  ) =>
-    request<TrainingUnit>(
-      `/programs/${programId}/units`,
-      {
-        method: "POST",
-        body: JSON.stringify(data),
-      }
-    ),
+/** GET /api/v1/training/enrollments/by-employee/{id} - self, or Manager/Admin/HR-Restricted for anyone */
+export function listEnrollmentsByEmployee(
+  targetEmployeeId: string,
+  viewerEmployeeId: string
+): Promise<Enrollment[]> {
+  return fetch(`${BASE_PATH}/enrollments/by-employee/${encodeURIComponent(targetEmployeeId)}`, {
+    headers: authHeaders(viewerEmployeeId),
+  }).then((r) => handle(r, "Could not load enrollments for that employee."));
+}
 
-  // Enrollments
-  listEnrollments: () =>
-    request<Enrollment[]>("/enrollments"),
+/** GET /api/v1/training/enrollments/{id} */
+export function getEnrollment(enrollmentId: number, employeeId: string): Promise<Enrollment> {
+  return fetch(`${BASE_PATH}/enrollments/${enrollmentId}`, {
+    headers: authHeaders(employeeId),
+  }).then((r) => handle(r, "That enrollment wasn't found."));
+}
 
-  createEnrollment: (data: EnrollmentCreate) =>
-    request<Enrollment>("/enrollments", {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
+/** POST /api/v1/training/enrollments/{id}/units/{unitId}/complete - self-attested only, score 0-100 optional */
+export function completeUnit(
+  enrollmentId: number,
+  unitId: number,
+  employeeId: string,
+  score?: number
+): Promise<UnitCompletion> {
+  return fetch(`${BASE_PATH}/enrollments/${enrollmentId}/units/${unitId}/complete`, {
+    method: "POST",
+    headers: jsonHeaders(employeeId),
+    body: JSON.stringify({ score: score ?? null }),
+  }).then((r) => handle(r, "That enrollment or unit wasn't found."));
+}
 
-  // Unit Completions
-  listCompletions: () =>
-    request<UnitCompletion[]>("/completions"),
+/** DELETE /api/v1/training/completions/{id} - undo, self-only */
+export function deleteCompletion(completionId: number, employeeId: string): Promise<void> {
+  return fetch(`${BASE_PATH}/completions/${completionId}`, {
+    method: "DELETE",
+    headers: authHeaders(employeeId),
+  }).then((r) => handle(r, "That completion wasn't found."));
+}
 
-  completeUnit: (
-    data: UnitCompletionCreate
-  ) =>
-    request<UnitCompletion>("/completions", {
-      method: "POST",
-      body: JSON.stringify(data),
-    }),
-
-  // Undo a unit completion (mark it incomplete again), e.g. after an
-  // accidental click.
-  deleteCompletion: (completionId: number) =>
-    request<void>(`/completions/${completionId}`, {
-      method: "DELETE",
-    }),
-
-  // Progress
-  getEmployeeProgress: (
-    employeeId: string
-  ) =>
-    request<Progress>(
-      `/progress/${employeeId}`
-    ),
-
-  getCohortProgress: (
-    programId: number
-  ) =>
-    request<CohortProgress>(
-      `/cohort-progress/${programId}`
-    ),
-};
+/** GET /api/v1/training/programs/{id}/cohort-progress - Manager/Admin/HR-Restricted only */
+export function getCohortProgress(
+  programId: number,
+  employeeId: string
+): Promise<CohortProgress> {
+  return fetch(`${BASE_PATH}/programs/${programId}/cohort-progress`, {
+    headers: authHeaders(employeeId),
+  }).then((r) => handle(r, "That training program wasn't found."));
+}
