@@ -4,111 +4,90 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict, Field
 
 
-# -------------------------
-# Training Program
-# -------------------------
-
-
-class TrainingProgramCreate(BaseModel):
-    name: str = Field(..., min_length=2, max_length=100)
-
-
-class TrainingProgramResponse(BaseModel):
-    program_id: int
+class TrainingUnitCreate(BaseModel):
     name: str
+    # A unit's position in its program - 0 or negative has no sensible
+    # meaning here, so the lower bound is enforced the same way score's is.
+    sequence: int = Field(ge=1)
 
-    # Allows Pydantic to create a response from a SQLAlchemy model object.
+
+class TrainingUnitUpdate(BaseModel):
+    # Both optional - admin can fix just the name, just the order, or both
+    # in one call. At least one should be set, but sending neither is a
+    # harmless no-op rather than an error.
+    name: Optional[str] = None
+    sequence: Optional[int] = Field(default=None, ge=1)
+
+
+class TrainingUnitOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-
-# -------------------------
-# Training Unit
-# -------------------------
-
-
-class TrainingUnitCreate(BaseModel):
-    name: str = Field(..., min_length=2, max_length=100)
-    sequence: int = Field(..., gt=0)
-
-
-class TrainingUnitResponse(BaseModel):
     unit_id: int
     program_id: int
     name: str
     sequence: int
 
-    # Allows conversion from the TrainingUnit SQLAlchemy model.
+
+class TrainingProgramCreate(BaseModel):
+    name: str
+
+
+class TrainingProgramOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
-
-# -------------------------
-# Enrollment
-# -------------------------
+    program_id: int
+    name: str
+    units: list[TrainingUnitOut] = []
 
 
 class EnrollmentCreate(BaseModel):
-    employee_id: str = Field(..., min_length=1)
-    program_id: int = Field(..., gt=0)
+    program_id: int
+    # Only Admin/Leadership may set this to someone other than themselves;
+    # enforced in service.enroll_employee, never trusted from the client alone.
+    employee_id: Optional[str] = None
 
 
-class EnrollmentResponse(BaseModel):
+class UnitCompletionCreate(BaseModel):
+    # FR-LMS-02 / FR-LMS-04: optional assessment score, 0-100.
+    score: Optional[int] = Field(default=None, ge=0, le=100)
+
+
+class UnitCompletionOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    completion_id: int
+    enrollment_id: int
+    unit_id: int
+    completed_at: datetime
+    score: Optional[int] = None
+
+
+class EnrollmentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     enrollment_id: int
     employee_id: str
     employee_name: Optional[str] = None
     program_id: int
     enrolled_at: datetime
-
-    # Allows conversion from the Enrollment SQLAlchemy model.
-    model_config = ConfigDict(from_attributes=True)
-
-
-# -------------------------
-# Unit Completion
-# -------------------------
-
-
-class UnitCompletionCreate(BaseModel):
-    enrollment_id: int = Field(..., gt=0)
-    unit_id: int = Field(..., gt=0)
-
-
-class UnitCompletionResponse(BaseModel):
-    completion_id: int
-    enrollment_id: int
-    unit_id: int
-    completed_at: datetime
-
-    # Allows conversion from the UnitCompletion SQLAlchemy model.
-    model_config = ConfigDict(from_attributes=True)
-
-
-# -------------------------
-# Progress
-# -------------------------
-
-
-class ProgressResponse(BaseModel):
-    employee_id: str
-    employee_name: Optional[str] = None
-    completed_units: int
     total_units: int
-    completion_percentage: float
+    completed_units: int
+    completion_pct: float
+    completions: list[UnitCompletionOut] = []
 
-# -------------------------
-# Cohort Progress
-# -------------------------
 
-class LaggingEnrollee(BaseModel):
+class CohortEmployeeProgress(BaseModel):
     employee_id: str
     employee_name: Optional[str] = None
-    completion_percentage: float
-    points_behind_average: float
+    total_units: int
+    completed_units: int
+    completion_pct: float
+    flagged_behind: bool
 
 
-class CohortProgressResponse(BaseModel):
+class CohortProgressOut(BaseModel):
     program_id: int
     program_name: str
-    total_enrollments: int
-    completed_enrollments: int
-    average_completion_percentage: float
-    lagging_employees: list[LaggingEnrollee] = []
+    total_units: int
+    median_completion_pct: float
+    employees: list[CohortEmployeeProgress]

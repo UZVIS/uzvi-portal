@@ -98,9 +98,8 @@ class Enrollment(Base):
         return self.employee.name if self.employee else None
 
 
-# M6 Training Module: Records completed units. Training is purely
-# learning-tracking (no assessment/score) — completion is a simple
-# self-attested boolean event.
+# M6 Training Module: Records completed units, with an optional
+# self-attested score/assessment result (FR-LMS-02, FR-LMS-04).
 class UnitCompletion(Base):
     __tablename__ = "training_unit_completions"
 
@@ -120,6 +119,7 @@ class UnitCompletion(Base):
         default=datetime.datetime.utcnow,
         nullable=False,
     )
+    score = Column(Integer, nullable=True)
 
     enrollment = relationship(
         "Enrollment",

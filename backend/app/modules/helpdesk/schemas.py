@@ -1,54 +1,66 @@
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, field_validator
+
+Category = Literal["HR", "IT", "Facilities", "Other"]
+Priority = Literal["High", "Medium", "Low"]
+Status = Literal["Open", "In Progress", "Resolved", "Closed"]
 
 
 class TicketCreate(BaseModel):
-    raised_by: str
-    category: str
-    priority: str
+    category: Category
+    priority: Priority
     description: str
-    assigned_to: Optional[str] = None
+
+    @field_validator("description")
+    @classmethod
+    def validate_description(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("description cannot be empty")
+        return v
 
 
-class TicketCommentResponse(BaseModel):
+class TicketStatusUpdate(BaseModel):
+    status: Status
+
+
+class TicketReassign(BaseModel):
+    assigned_to: str
+
+
+class CommentCreate(BaseModel):
+    comment: str
+
+    @field_validator("comment")
+    @classmethod
+    def validate_comment(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError("comment cannot be empty")
+        return v
+
+
+class CommentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     comment_id: int
     ticket_id: int
     author_id: str
     comment: str
     created_at: datetime
 
-    class Config:
-        from_attributes = True
 
+class TicketOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
 
-class TicketResponse(BaseModel):
     ticket_id: int
     raised_by: str
-    category: str
-    priority: str
-    status: str
+    category: Category
+    priority: Priority
+    status: Status
+    assigned_to: Optional[str] = None
     description: str
-    assigned_to: Optional[str]
     created_at: datetime
     updated_at: datetime
-
-    comments: list[TicketCommentResponse] = []
-
-    # FR-HLP-06: true when the ticket is still open and has been sitting
-    # longer than the configured SLA threshold for its priority.
-    sla_breached: bool = False
-
-    class Config:
-        from_attributes = True
-
-
-class TicketUpdate(BaseModel):
-    status: str
-    assigned_to: Optional[str] = None
-
-
-class TicketCommentCreate(BaseModel):
-    author_id: str
-    comment: str
+    sla_breached: bool
+    comments: list[CommentOut] = []

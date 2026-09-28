@@ -1,4 +1,4 @@
-from fastapi import Depends, Header, HTTPException
+﻿from fastapi import Depends, Header, HTTPException
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -22,3 +22,12 @@ def get_current_employee(
     if employee.employment_status != "active":
         raise HTTPException(status_code=403, detail="This account is no longer active.")
     return employee
+
+def require_privileged(current_employee: Employee = Depends(get_current_employee)) -> Employee:
+    if current_employee.access_tier not in PRIVILEGED_TIERS:
+        raise HTTPException(
+            status_code=403,
+            detail=f"{current_employee.access_tier} accounts do not have privileged access to this helpdesk action.",
+        )
+    return current_employee
+
